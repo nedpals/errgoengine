@@ -1,28 +1,41 @@
 package main
 
-import (
-	"strconv"
-)
-
 var NullPointerException = ErrorTemplate{
-	Name:              "NullPointerException",
-	Pattern:           `Exception in thread "(?P<thread>\w+)" java\.lang\.NullPointerException`,
-	StackTracePattern: `\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`,
-	LocationConverterFn: func(path, pos string) Location {
-		trueLine, err := strconv.Atoi(pos)
-		if err != nil {
-			panic(err)
+	Name:    "NullPointerException",
+	Pattern: `Exception in thread "(?P<thread>\w+)" java\.lang\.NullPointerException`,
+	OnGenExplainFn: func(cd *ContextData) string {
+		// sb := &strings.Builder{}
+		isSystemOut := false
+
+		if cd.MainError.Nearest.Type() == "expression_statement" {
+			exprNode := cd.MainError.Nearest.Child(0)
+
+			// NOTE: i hope we will be able to parse the entire
+			// java system library without hardcoding the definitions lol
+			if exprNode.Type() == "method_invocation" {
+				objNode := exprNode.ChildByFieldName("object")
+				nameNode := exprNode.ChildByFieldName("name")
+
+				if objNode.Text() == "System.out" && nameNode.Text() == "println" {
+					isSystemOut = true
+				}
+			}
+
+			if isSystemOut {
+
+			}
 		}
 
-		return Location{
-			DocumentPath: path,
-			Position:     Position{Line: trueLine},
-		}
+		// switch cd.MainError.Nearest.Type() {
+		// case "method_invocation":
+
+		// }
+
+		// sb.WriteString()
+		// return "Your program try to access or manipulate an object reference that is currently pointing to `null`, meaning it doesn't refer to any actual object in memory. This typically happens when you forget to initialize an object before using it, or when you try to access an object that hasn't been properly assigned a value. "
+		return cd.MainError.Nearest.Node.String()
 	},
-	OnGenExplainFn: func(doc *Document, cd *ContextData) string {
-		return "Your program try to access or manipulate an object reference that is currently pointing to `null`, meaning it doesn't refer to any actual object in memory. This typically happens when you forget to initialize an object before using it, or when you try to access an object that hasn't been properly assigned a value. "
-	},
-	OnGenBugFixFn: func(doc *Document, cd *ContextData) []BugFix {
+	OnGenBugFixFn: func(cd *ContextData) []BugFix {
 		return []BugFix{}
 	},
 }
