@@ -1,32 +1,87 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
-	"strconv"
 
-	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/java"
 )
 
-var nullSymbol = BuiltinSymbol("null")
-var booleanSymbol = BuiltinSymbol("boolean")
-var stringSymbol = BuiltinSymbol("string")
-var charSymbol = BuiltinSymbol("char")
-var intSymbol = BuiltinSymbol("int")
+type ArraySymbol struct {
+	ValueSymbol Symbol
+	Length      int
+}
 
-// var floatSymbol = BuiltinSymbol("float")
-var doubleSymbol = BuiltinSymbol("double")
-var voidSymbol = BuiltinSymbol("void")
+func (sym ArraySymbol) Name() string {
+	return fmt.Sprintf("[%d]%s", sym.Length, sym.ValueSymbol.Name())
+}
+
+func (sym ArraySymbol) Kind() SymbolKind {
+	return SymbolKindArray
+}
+
+func (sym ArraySymbol) Location() Location {
+	return sym.ValueSymbol.Location()
+}
+
+var BuiltinTypes = struct {
+	NullSymbol    Symbol
+	BooleanSymbol Symbol
+	StringSymbol  Symbol
+	Integral      struct {
+		ByteSymbol  Symbol
+		ShortSymbol Symbol
+		IntSymbol   Symbol
+		LongSymbol  Symbol
+		CharSymbol  Symbol
+	}
+	FloatingPoint struct {
+		FloatSymbol  Symbol
+		DoubleSymbol Symbol
+	}
+	VoidSymbol Symbol
+}{
+	NullSymbol:    BuiltinSymbol{"null"},
+	BooleanSymbol: BuiltinSymbol{"boolean"},
+	StringSymbol:  BuiltinSymbol{"string"},
+	Integral: struct {
+		ByteSymbol  Symbol
+		ShortSymbol Symbol
+		IntSymbol   Symbol
+		LongSymbol  Symbol
+		CharSymbol  Symbol
+	}{
+		ByteSymbol:  BuiltinSymbol{"byte"},
+		ShortSymbol: BuiltinSymbol{"short"},
+		IntSymbol:   BuiltinSymbol{"int"},
+		LongSymbol:  BuiltinSymbol{"long"},
+		CharSymbol:  BuiltinSymbol{"char"},
+	},
+	FloatingPoint: struct {
+		FloatSymbol  Symbol
+		DoubleSymbol Symbol
+	}{
+		FloatSymbol:  BuiltinSymbol{"float"},
+		DoubleSymbol: BuiltinSymbol{"double"},
+	},
+	VoidSymbol: BuiltinSymbol{"void"},
+}
+
+func arrayIfy(typ Symbol, len int) Symbol {
+	return ArraySymbol{
+		ValueSymbol: typ,
+		Length:      len,
+	}
+}
 
 var JavaLanguage = &Language{
 	Name:              "Java",
 	FilePatterns:      []string{".java"},
 	SitterLanguage:    java.GetLanguage(),
-	BuiltinTypes:      []string{"null", "boolean", "void", "string", "char", "int", "float", "double"},
 	StackTracePattern: regexp.MustCompile(`\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`),
 	LocationConverter: func(path, pos string) Location {
-		trueLine, err := strconv.Atoi(pos)
-		if err != nil {
+		var trueLine int
+		if _, err := fmt.Sscanf(pos, "%d", &trueLine); err != nil {
 			panic(err)
 		}
 		return Location{
@@ -34,53 +89,81 @@ var JavaLanguage = &Language{
 			Position:     Position{Line: trueLine},
 		}
 	},
-	ValueAnalyzer: func(an *NodeValueAnalyzer, n Node) *Symbol {
+	ValueAnalyzer: func(an *NodeValueAnalyzer, n Node) Symbol {
 		switch n.Type() {
+		// types first
+		case "array_type":
+			// TODO: types
+			return BuiltinTypes.VoidSymbol
+		case "boolean_type":
+			return BuiltinTypes.BooleanSymbol
+		case "void_type":
+			return BuiltinTypes.VoidSymbol
+		// then expressions
 		case "null_literal":
-			return nullSymbol
+			return BuiltinTypes.NullSymbol
 		case "true", "false":
-			return booleanSymbol
+			return BuiltinTypes.BooleanSymbol
 		case "string_literal":
-			return stringSymbol
+			return BuiltinTypes.StringSymbol
 		case "character_literal":
-			return charSymbol
+			return BuiltinTypes.Integral.CharSymbol
 		case "octal_integer_literal",
 			"hex_integer_literal",
 			"binary_integer_literal":
-			return intSymbol
+			return BuiltinTypes.Integral.IntSymbol
 		case "decimal_floating_point_literal",
 			"hex_floating_point_literal":
 			// TODO: value check if float or double
-			return doubleSymbol
+			return BuiltinTypes.FloatingPoint.DoubleSymbol
+		case "array_creation_expression":
+			var gotLen int
+			typeSym := an.Analyze(n.ChildByFieldName("type"))
+			rawLen := n.ChildByFieldName("dimensions").LastNamedChild().Text()
+			fmt.Sscanf(rawLen, "%d", &gotLen)
+			return arrayIfy(typeSym, gotLen)
 		case "object_creation_expression":
-			typeNode := n.ChildByFieldName("type")
-			if sym := an.Find(typeNode.Text()); sym != nil {
-				return sym
+			return an.Analyze(n.ChildByFieldName("type"))
+		case "identifier", "type_identifier":
+			if n.Type() == "type_identifier" && n.Text() == "String" {
+				return BuiltinTypes.StringSymbol
 			}
-		case "identifier":
-			return an.Find(n.Text())
-		case "field_access":
+
+			sym := an.Find(n.Text(), int(n.StartByte()))
+			if sym == nil {
+				return BuiltinTypes.NullSymbol
+			}
+
+			return sym
+		case "array_access":
+			sym := an.Analyze(n.ChildByFieldName("array"))
+			if aSym, ok := sym.(ArraySymbol); ok {
+				return aSym.ValueSymbol
+			} else {
+				return BuiltinTypes.VoidSymbol
+			}
+		case "field_access", "method_invocation":
 			if objNodeSym := an.Analyze(n.ChildByFieldName("object")); objNodeSym != nil {
-				if objNodeSym == nullSymbol {
-					return voidSymbol
+				if objNodeSym == BuiltinTypes.NullSymbol {
+					return objNodeSym
 				}
 
-				fieldNode := n.ChildByFieldName("field")
-				if sym := objNodeSym.Get(fieldNode.Text()); sym != nil {
-					return sym
+				if n.Type() == "field_access" {
+					fieldNode := n.ChildByFieldName("field")
+					if sym := GetFromSymbol(CastChildrenSymbol(objNodeSym), fieldNode.Text()); sym != nil {
+						return sym
+					}
 				}
 			}
 		case "this":
 			// TODO: support this
-			return voidSymbol
+			return BuiltinTypes.VoidSymbol
+		case "block":
+			if parent := n.Parent(); parent.Type() == "method_declaration" {
+				return an.Analyze(parent.ChildByFieldName("type"))
+			}
 		}
-		return voidSymbol
-	},
-	ValueNodeTransformer: func(transform ValueNodeTransformer, node *sitter.Node) *sitter.Node {
-		// if node.Type() == "expression_statement" {
-		// 	return node.Child(0)
-		// }
-		return node
+		return BuiltinTypes.VoidSymbol
 	},
 	SymbolsToCapture: []SymbolCapture{
 		{

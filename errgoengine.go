@@ -7,93 +7,62 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-type Position struct {
-	Line   int
-	Column int
-	Index  int
+type SymbolTree struct {
+	Parent       *SymbolTree
+	StartPos     Position
+	EndPos       Position
+	DocumentPath string
+	Symbols      map[string]Symbol
+	Scopes       []*SymbolTree
 }
 
-type SymbolKind int
-
-const (
-	SymbolKindUnknown  SymbolKind = 0
-	SymbolKindBuiltin  SymbolKind = iota
-	SymbolKindClass    SymbolKind = iota
-	SymbolKindFunction SymbolKind = iota
-	SymbolKindVariable SymbolKind = iota
-)
-
-type Symbol struct {
-	Name         string
-	Kind         SymbolKind
-	ReturnSymbol *Symbol
-	ValueSymbol  *Symbol
-	Children     *SymbolTree
-	Location
+func (tree *SymbolTree) CreateChildFromNode(n Node) *SymbolTree {
+	return &SymbolTree{
+		Parent:       tree,
+		StartPos:     n.StartPosition(),
+		EndPos:       n.EndPosition(),
+		DocumentPath: tree.DocumentPath,
+		Symbols:      map[string]Symbol{},
+	}
 }
 
-func (sym *Symbol) Get(field string) *Symbol {
-	if sym.Children != nil {
-		for symName, sym := range sym.Children.Symbols {
-			if symName == field {
-				return sym
-			}
+func (tree *SymbolTree) Find(name string) Symbol {
+	for _, sym := range tree.Symbols {
+		if sym.Name() == name {
+			return sym
 		}
 	}
 	return nil
 }
 
-func BuiltinSymbol(name string) *Symbol {
-	return &Symbol{
-		Name: name,
-		Kind: SymbolKindBuiltin,
-	}
-}
-
-type SymbolTree struct {
-	StartPos     Position
-	EndPos       Position
-	DocumentPath string
-	Symbols      map[string]*Symbol
-	Scopes       []*SymbolTree
-}
-
-func (tree *SymbolTree) Add(sym *Symbol) {
+func (tree *SymbolTree) Add(sym Symbol) {
 	if tree.Symbols == nil {
-		tree.Symbols = make(map[string]*Symbol)
+		tree.Symbols = make(map[string]Symbol)
 	}
 
-	tree.Symbols[sym.Name] = sym
+	tree.Symbols[sym.Name()] = sym
 	// TODO: create tree both in the parent and in the child symbol
 
-	if sym.Position.Index < tree.StartPos.Index {
-		tree.StartPos = Position{
-			Line:   sym.Line,
-			Column: sym.Column,
-			Index:  sym.Index,
-		}
+	if sym.Location().Position.Index < tree.StartPos.Index {
+		tree.StartPos = sym.Location().Position
 	}
 
-	if sym.Position.Index > tree.EndPos.Index {
-		tree.EndPos = Position{
-			Line:   sym.Line,
-			Column: sym.Column,
-			Index:  sym.Index,
-		}
+	if sym.Location().Index > tree.EndPos.Index {
+		tree.EndPos = sym.Location().Position
+	}
+
+	if cSym := CastChildrenSymbol(sym); cSym != nil {
+		tree.Scopes = append(tree.Scopes, cSym.Children())
+		cSym.Children().Parent = tree
 	}
 }
 
 type Query string
-
-type SymbolCapturer interface {
-	Query() *sitter.Query
-}
 
 func countSuffix(str string, s byte) int {
 	c := 0
@@ -122,13 +91,11 @@ type SymbolCapture struct {
 	Children []*SymbolCapture
 }
 
-func (cap *SymbolCapture) QueryString() string {
-	sb := &strings.Builder{}
-	cap.generateQueryString("sym", "", sb)
-	return sb.String()
+func (cap SymbolCapture) SymKind() SymbolKind {
+	return cap.Kind
 }
 
-func (cap SymbolCapture) generateQueryString(prefix, tag string, sb *strings.Builder) {
+func (cap SymbolCapture) Compile(prefix, tag string, sb *strings.Builder) {
 	isAlternations := strings.HasPrefix(cap.Query, "[") && strings.HasSuffix(cap.Query, "]")
 	isSingle := len(cap.Children) < 2
 	parCount := countSuffix(cap.Query, ')')
@@ -157,7 +124,7 @@ func (cap SymbolCapture) generateQueryString(prefix, tag string, sb *strings.Bui
 
 		for i, c := range cap.Children {
 			sb.WriteByte('\n')
-			c.generateQueryString(
+			c.Compile(
 				fmt.Sprintf(
 					"%s.child.%d",
 					prefix,
@@ -178,27 +145,33 @@ func (cap SymbolCapture) generateQueryString(prefix, tag string, sb *strings.Bui
 	} else {
 		if cap.ReturnTypeNode != nil {
 			sb.WriteRune('\n')
-			cap.ReturnTypeNode.generateQueryString(prefix, "return-type", sb)
+			cap.ReturnTypeNode.Compile(prefix, "return-type", sb)
 		}
 
 		if cap.NameNode != nil {
 			sb.WriteRune('\n')
-			cap.NameNode.generateQueryString(prefix, "name", sb)
+			cap.NameNode.Compile(prefix, "name", sb)
 		}
 
 		if cap.ParameterNodes != nil {
 			sb.WriteRune('\n')
-			cap.ParameterNodes.generateQueryString(prefix, "parameters", sb)
+			cap.ParameterNodes.Compile(prefix, "parameters", sb)
 		}
 
 		if cap.ContentNode != nil {
 			sb.WriteRune('\n')
-			cap.ContentNode.generateQueryString(prefix, "content", sb)
+			cap.ContentNode.Compile(prefix, "content", sb)
 		}
 
 		if cap.BodyNode != nil {
-			sb.WriteRune('\n')
-			cap.BodyNode.generateQueryString(prefix, "body", sb)
+			sb.WriteByte('\n')
+			sb.WriteString("body: (_) @")
+			if len(prefix) != 0 {
+				sb.WriteString(prefix)
+				sb.WriteByte('.')
+			}
+			sb.WriteString("body")
+			// cap.BodyNode.Compile(prefix, "body", sb)
 		}
 	}
 
@@ -226,11 +199,6 @@ func (cap SymbolCapture) generateQueryString(prefix, tag string, sb *strings.Bui
 	}
 }
 
-type Location struct {
-	DocumentPath string
-	Position
-}
-
 type Document struct {
 	Path     string
 	Contents string
@@ -250,39 +218,34 @@ func (err MainError) DocumentPath() string {
 
 // TODO: add import dependency graph for finding third-party symbols
 type ContextData struct {
-	WorkingPath     string
-	Variables       map[string]string
-	StackTraceGraph StackTraceGraph
-	Documents       map[string]*Document
-	Symbols         map[string]*SymbolTree
-	MainError       MainError
+	WorkingPath         string
+	CurrentDocumentPath string
+	Variables           map[string]string
+	StackTraceGraph     StackTraceGraph
+	Documents           map[string]*Document
+	Symbols             map[string]*SymbolTree
+	MainError           MainError
 }
 
-func (data *ContextData) FindSymbol(name string) *Symbol {
+func (data *ContextData) MainDocumentPath() string {
+	if data.MainError.ErrorNode != nil {
+		return data.MainError.DocumentPath()
+	}
+	return data.CurrentDocumentPath
+}
+
+func (data *ContextData) FindSymbol(name string) Symbol {
 	if data.MainError.Document == nil {
 		return nil
 	}
 
-	// builtin symbols are already referenced inside the nodevalueanalyzer
-
 	// TODO: improve this for later
-	symbolsFromDoc := data.Symbols[data.MainError.DocumentPath()]
-	for symName, sym := range symbolsFromDoc.Symbols {
-		if symName == name {
-			return sym
-		}
-	}
-
-	return nil
+	tree := data.Symbols[data.MainDocumentPath()]
+	return tree.Find(name)
 }
 
-func (data *ContextData) AnalyzeValue(n Node) *Symbol {
-	if data.MainError.Document == nil || data.MainError.Document.Language.ValueAnalyzer == nil {
-		return nil
-	}
-
-	return data.MainError.Document.
-		Language.ValueAnalyzer(&NodeValueAnalyzer{data}, n)
+func (data *ContextData) AnalyzeValue(n Node) Symbol {
+	return n.doc.Language.ValueAnalyzer(&NodeValueAnalyzer{data}, n)
 }
 
 func (data *ContextData) AddVariable(name string, value string) {
@@ -309,20 +272,19 @@ func (data *ContextData) AddDocument(path, contents string, lang *Language, tree
 	return doc
 }
 
-func (data *ContextData) AddSymbol(sym *Symbol) *Symbol {
+func (data *ContextData) InitOrGetSymbolTree(docPath string) *SymbolTree {
 	if data.Symbols == nil {
 		data.Symbols = make(map[string]*SymbolTree)
 	}
 
-	if data.Symbols[sym.Location.DocumentPath] == nil {
-		data.Symbols[sym.Location.DocumentPath] = &SymbolTree{
-			DocumentPath: sym.Location.DocumentPath,
-			Symbols:      make(map[string]*Symbol),
+	if data.Symbols[docPath] == nil {
+		data.Symbols[docPath] = &SymbolTree{
+			DocumentPath: docPath,
+			Symbols:      make(map[string]Symbol),
 		}
 	}
 
-	data.Symbols[sym.Location.DocumentPath].Add(sym)
-	return sym
+	return data.Symbols[docPath]
 }
 
 type BugFix struct {
@@ -335,28 +297,60 @@ type Analyzer struct {
 	doc         *Document
 }
 
-var symPrefixRegex = regexp.MustCompile(`^sym.(\d+)`)
+var symPrefix = "%d.sym.%d"
 
-func (an *Analyzer) AnalyzeTree(tree *sitter.Tree) {
-	rootNode := tree.RootNode()
-	queryCursor := sitter.NewQueryCursor()
-	sb := &strings.Builder{}
+// ^\d+.sym.\d+
+var symPrefixRegex = regexp.MustCompile(fmt.Sprintf("^%s", strings.ReplaceAll(symPrefix, "%d", `\d+`)))
 
+type ISymbolCapture interface {
+	Compile(prefix, tag string, sb *strings.Builder)
+	SymKind() SymbolKind
+}
+
+type ISymbolCaptureList []ISymbolCapture
+
+func (list ISymbolCaptureList) Compile(prefix, tag string, sb *strings.Builder) {
 	sb.WriteString("[")
-	for _, sc := range an.doc.Language.SymbolsToCapture {
-		sc.generateQueryString(fmt.Sprintf("sym.%d", sc.Kind), "", sb)
+	for idx, sc := range list {
+		sc.Compile(fmt.Sprintf(symPrefix, idx, sc.SymKind()), "", sb)
 	}
-	sb.WriteString("]+ @sym")
+	sb.WriteString("]+")
+	if len(tag) != 0 {
+		sb.WriteString(" @")
+		if len(prefix) != 0 {
+			sb.WriteString(prefix)
+			sb.WriteByte('.')
+		}
+		sb.WriteString(tag)
+	}
+}
 
-	rawQuery := sb.String()
-	q, err := sitter.NewQuery([]byte(rawQuery), an.doc.Language.SitterLanguage)
+func (list ISymbolCaptureList) SymKind() SymbolKind {
+	return SymbolKindUnknown
+}
+
+func (an *Analyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter.Node, symbolCaptures ...ISymbolCapture) {
+	if len(symbolCaptures) == 0 {
+		return
+	}
+
+	if parent == nil {
+		panic("Parent is null")
+	}
+
+	sb := &strings.Builder{}
+	ISymbolCaptureList(symbolCaptures).Compile("", "sym", sb)
+	q, err := sitter.NewQuery([]byte(sb.String()), an.doc.Language.SitterLanguage)
 	if err != nil {
 		panic(err)
 	}
 
+	queryCursor := sitter.NewQueryCursor()
+	defer queryCursor.Close()
+
 	queryCursor.Exec(q, rootNode)
 
-	for {
+	for i := 0; ; i++ {
 		m, ok := queryCursor.NextMatch()
 		if !ok {
 			break
@@ -370,10 +364,8 @@ func (an *Analyzer) AnalyzeTree(tree *sitter.Tree) {
 		for _, c := range m.Captures {
 			key := q.CaptureNameForId(c.Index)
 			captured[key] = wrapNode(an.doc, c.Node)
-			if len(firstMatchCname) == 0 {
-				if matches := symPrefixRegex.FindStringSubmatch(key); len(matches) != 0 {
-					firstMatchCname = matches[1]
-				}
+			if len(firstMatchCname) == 0 && symPrefixRegex.MatchString(key) {
+				firstMatchCname = key
 			}
 		}
 
@@ -381,13 +373,17 @@ func (an *Analyzer) AnalyzeTree(tree *sitter.Tree) {
 			continue
 		}
 
-		identifiedKind := SymbolKindUnknown
-		convertedKind, _ := strconv.Atoi(firstMatchCname)
-		identifiedKind = SymbolKind(convertedKind)
+		var identifiedKind SymbolKind
+		var captureIdx int
+
+		_, err := fmt.Sscanf(firstMatchCname, symPrefix, &captureIdx, &identifiedKind)
+		if err != nil {
+			panic(err)
+		}
 
 		// rename map entries
 		for k := range captured {
-			renamed := strings.TrimPrefix(k, fmt.Sprintf("sym.%d.", identifiedKind))
+			renamed := strings.TrimPrefix(k, fmt.Sprintf(symPrefix+".", captureIdx, identifiedKind))
 			if renamed == k {
 				continue
 			}
@@ -401,113 +397,122 @@ func (an *Analyzer) AnalyzeTree(tree *sitter.Tree) {
 		// - content
 		// - position
 		// - item name (sym.children.0.name for example)
-		// TODO: children
+		if body, ok := captured["body"]; ok {
+			// returnSym = an.contextData.AnalyzeValue(body)
+			childTree := parent.CreateChildFromNode(body)
 
-		body := captured["body"]
-		an.contextData.AddSymbol(&Symbol{
-			Name: captured["name"].Text(),
-			Kind: identifiedKind,
-			// TODO ValueSymbol: ,
-			// ReturnSymbol: an.parent.Children.Symbols[captured["return-type"].Text()], // TODO
-			Location: captured["sym"].Location(),
-			Children: &SymbolTree{
-				StartPos:     body.StartPosition(),
-				EndPos:       body.EndPosition(),
-				DocumentPath: an.doc.Path,
-				Symbols:      map[string]*Symbol{},
-			},
-		})
+			children := make(ISymbolCaptureList, 0)
+			symCapture := symbolCaptures[captureIdx]
+
+			switch any(symCapture).(type) {
+			case SymbolCapture:
+				children = symCaptureToListPtr(symCapture.(SymbolCapture).BodyNode.Children)
+			case *SymbolCapture:
+				children = symCaptureToListPtr(symCapture.(*SymbolCapture).BodyNode.Children)
+			}
+
+			an.captureAndAnalyze(childTree, body.Node, children...)
+			parent.Add(&TopLevelSymbol{
+				name:     captured["name"].Text(),
+				kind:     identifiedKind,
+				location: captured["sym"].Location(),
+				children: childTree,
+			})
+		} else if content, ok := captured["content"]; ok {
+			returnSym := an.contextData.AnalyzeValue(content)
+			parent.Add(&VariableSymbol{
+				name:       captured["name"].Text(),
+				location:   captured["sym"].Location(),
+				returnType: returnSym,
+			})
+		}
 	}
 }
 
-type Node struct {
-	*sitter.Node
-	doc  *Document
-	text string
-}
-
-func (n Node) Text() string {
-	return n.text
-}
-
-func (n Node) ChildByFieldName(field string) Node {
-	cNode := n.Node.ChildByFieldName(field)
-	return wrapNode(n.doc, cNode)
-}
-
-func (n Node) Child(idx int) Node {
-	cNode := n.Node.Child(idx)
-	return wrapNode(n.doc, cNode)
-}
-
-func (n Node) StartPosition() Position {
-	p := n.Node.StartPoint()
-	return Position{
-		Line:   int(p.Row),
-		Column: int(p.Column),
-		Index:  int(n.Node.StartByte()),
+func symCaptureToListPtr(list []*SymbolCapture) ISymbolCaptureList {
+	captures := make(ISymbolCaptureList, len(list))
+	for i, sc := range list {
+		captures[i] = sc
 	}
+	return captures
 }
 
-func (n Node) EndPosition() Position {
-	p := n.Node.EndPoint()
-	return Position{
-		Line:   int(p.Row),
-		Column: int(p.Column),
-		Index:  int(n.Node.StartByte()),
+func symCaptureToList(list []SymbolCapture) ISymbolCaptureList {
+	captures := make(ISymbolCaptureList, len(list))
+	for i, sc := range list {
+		captures[i] = sc
 	}
+	return captures
 }
 
-func (n Node) Location() Location {
-	return Location{
-		DocumentPath: n.doc.Path,
-		Position:     n.StartPosition(),
-	}
-}
-
-func wrapNode(doc *Document, n *sitter.Node) Node {
-	return Node{
-		text: n.Content([]byte(doc.Contents)),
-		doc:  doc,
-		Node: n,
-	}
+func (an *Analyzer) AnalyzeTree(tree *sitter.Tree) {
+	rootNode := tree.RootNode()
+	captures := symCaptureToList(an.doc.Language.SymbolsToCapture)
+	symTree := an.contextData.InitOrGetSymbolTree(an.doc.Path)
+	an.contextData.CurrentDocumentPath = an.doc.Path
+	an.captureAndAnalyze(symTree, rootNode, captures...)
+	an.contextData.CurrentDocumentPath = ""
 }
 
 type ValueNodeTransformer func(ValueNodeTransformer, *sitter.Node) *sitter.Node
 
-type NodeValueAnalyzerFn func(*NodeValueAnalyzer, Node) *Symbol
+type NodeValueAnalyzerFn func(*NodeValueAnalyzer, Node) Symbol
 
 type NodeValueAnalyzer struct {
 	context *ContextData
 }
 
-func (an *NodeValueAnalyzer) Analyze(node Node) *Symbol {
-	return an.context.AnalyzeValue(node)
+func (an *NodeValueAnalyzer) Analyze(node Node) Symbol {
+	return node.doc.Language.ValueAnalyzer(an, node)
 }
 
-func (an *NodeValueAnalyzer) Find(name string) *Symbol {
+func (an *NodeValueAnalyzer) Find(name string, pos int) Symbol {
 	// Find local symbols first
+	path := an.context.MainDocumentPath()
+	tree := an.context.Symbols[path]
 
-	// TODO: find nearest symbol tree
-	// path := an.context.MainError.DocumentPath()
-	// tree := an.context.Symbols[path]
-	// for symName, sym := range
+	if pos != -1 {
+		// go innerwards first
+		for len(tree.Scopes) != 0 {
+			found := false
+			for _, s := range tree.Scopes {
+				if pos >= s.StartPos.Index && pos <= s.EndPos.Index {
+					found = true
+					tree = s
+					break
+				}
+			}
+			if !found {
+				break
+			}
+		}
+	}
+
+	if tree != nil {
+		parent := tree
+
+		// search innerwards first then outside
+		for parent != nil {
+			if sym := parent.Find(name); sym != nil {
+				return sym
+			} else {
+				parent = tree.Parent
+			}
+		}
+	}
 
 	return an.context.FindSymbol(name)
 }
 
 type Language struct {
-	isCompiled           bool
-	Name                 string
-	FilePatterns         []string
-	SitterLanguage       *sitter.Language
-	StackTracePattern    *regexp.Regexp
-	BuiltinTypes         []string
-	BuiltinSymbols       []*Symbol
-	SymbolsToCapture     []SymbolCapture
-	LocationConverter    func(path, pos string) Location
-	ValueNodeTransformer ValueNodeTransformer
-	ValueAnalyzer        NodeValueAnalyzerFn
+	isCompiled        bool
+	Name              string
+	FilePatterns      []string
+	SitterLanguage    *sitter.Language
+	StackTracePattern *regexp.Regexp
+	SymbolsToCapture  []SymbolCapture
+	LocationConverter func(path, pos string) Location
+	ValueAnalyzer     NodeValueAnalyzerFn
 }
 
 func (lang *Language) MatchPath(path string) bool {
@@ -532,50 +537,6 @@ func (lang *Language) Compile() {
 func (lang *Language) AddTemplate(template ErrorTemplate) *CompiledErrorTemplate {
 	return errorTemplates.Add(lang, template)
 }
-
-type ErrorTemplate struct {
-	Name              string
-	Pattern           string
-	StackTracePattern string
-	OnGenExplainFn    func(*ContextData) string
-	OnGenBugFixFn     func(*ContextData) []BugFix
-}
-
-type CompiledErrorTemplate struct {
-	ErrorTemplate
-	Language *Language
-	Pattern  *regexp.Regexp
-}
-
-type ErrorTemplates []*CompiledErrorTemplate
-
-func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
-	patternForCompile := "(?m)^" + template.Pattern + `(?P<stacktrace>(?:.|\s)*)$`
-	compiledPattern, err := regexp.Compile(patternForCompile)
-	if err != nil {
-		// TODO: should not panic!
-		panic(err)
-	}
-
-	*tmps = append(*tmps, &CompiledErrorTemplate{
-		ErrorTemplate: template,
-		Language:      language,
-		Pattern:       compiledPattern,
-	})
-
-	return (*tmps)[len(*tmps)-1]
-}
-
-func (tmps ErrorTemplates) Find(msg string) *CompiledErrorTemplate {
-	for _, tmp := range tmps {
-		if tmp.Pattern.MatchString(msg) {
-			return tmp
-		}
-	}
-	return nil
-}
-
-var errorTemplates = ErrorTemplates{}
 
 func Analyze(workingPath string, msg string) string {
 	template := errorTemplates.Find(msg)
@@ -704,18 +665,7 @@ func TranslateError(template ErrorTemplate, contextData *ContextData) string {
 			nearest = locateNearestNode(cursor, node.Position)
 		}
 
-		if doc.Language.ValueNodeTransformer != nil {
-			nearest = doc.Language.ValueNodeTransformer(
-				doc.Language.ValueNodeTransformer,
-				nearest,
-			)
-		}
-
-		contextData.MainError = struct {
-			ErrorNode *STGNode
-			Document  *Document
-			Nearest   Node
-		}{
+		contextData.MainError = MainError{
 			ErrorNode: &node,
 			Document:  doc,
 			Nearest:   wrapNode(doc, nearest),
@@ -745,6 +695,10 @@ func main() {
 		}
 
 		errMsg += scanner.Text()
+	}
+
+	if len(errMsg) == 0 {
+		os.Exit(1)
 	}
 
 	fmt.Println(Analyze(wd, errMsg))
