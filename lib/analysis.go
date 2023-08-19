@@ -70,7 +70,7 @@ func TranslateError(template ErrorTemplate, contextData *ContextData) string {
 func Analyze(errorTemplates ErrorTemplates, workingPath string, msg string) string {
 	template := errorTemplates.Find(msg)
 	if template == nil {
-		panic("Template not found!")
+		panic("Template not found! \nMessage: \n" + msg)
 	}
 
 	// initial context data extraction
