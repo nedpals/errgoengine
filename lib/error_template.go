@@ -5,22 +5,21 @@ import (
 )
 
 type ErrorTemplate struct {
-	Name              string
-	Pattern           string
-	StackTracePattern string
-	OnGenExplainFn    GenExplainFn
-	OnGenBugFixFn     GenBugFixFn
+	Name           string
+	Pattern        string
+	OnGenExplainFn GenExplainFn
+	OnGenBugFixFn  GenBugFixFn
 }
 
-type CompiledErrorTemplate struct {
+type compiledErrorTemplate struct {
 	ErrorTemplate
 	Language *Language
 	Pattern  *regexp.Regexp
 }
 
-type ErrorTemplates []*CompiledErrorTemplate
+type ErrorTemplates []*compiledErrorTemplate
 
-func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
+func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *compiledErrorTemplate {
 	patternForCompile := "(?m)^" + template.Pattern + `(?P<stacktrace>(?:.|\s)*)$`
 	compiledPattern, err := regexp.Compile(patternForCompile)
 	if err != nil {
@@ -28,7 +27,7 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *Com
 		panic(err)
 	}
 
-	*tmps = append(*tmps, &CompiledErrorTemplate{
+	*tmps = append(*tmps, &compiledErrorTemplate{
 		ErrorTemplate: template,
 		Language:      language,
 		Pattern:       compiledPattern,
@@ -37,7 +36,7 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *Com
 	return (*tmps)[len(*tmps)-1]
 }
 
-func (tmps ErrorTemplates) Find(msg string) *CompiledErrorTemplate {
+func (tmps ErrorTemplates) Find(msg string) *compiledErrorTemplate {
 	for _, tmp := range tmps {
 		if tmp.Pattern.MatchString(msg) {
 			return tmp
