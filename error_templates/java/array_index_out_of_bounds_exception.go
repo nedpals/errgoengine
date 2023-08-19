@@ -8,7 +8,7 @@ import (
 
 var ArrayIndexOutOfBoundsException = lib.ErrorTemplate{
 	Name:    "ArrayIndexOutOfBoundsException",
-	Pattern: `Exception in thread "(?P<thread>\w+)" java\.lang\.ArrayIndexOutOfBoundsException: Index (?P<index>\d+) out of bounds for length (?P<length>\d+)`,
+	Pattern: runtimeErrorPattern("java.lang.ArrayIndexOutOfBoundsException", `Index (?P<index>\d+) out of bounds for length (?P<length>\d+)`),
 	OnGenExplainFn: func(cd *lib.ContextData) string {
 		// TODO:
 

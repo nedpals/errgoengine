@@ -4,7 +4,7 @@ import "github.com/nedpals/errgoengine/lib"
 
 var ArithmeticException = lib.ErrorTemplate{
 	Name:    "ArithmeticException",
-	Pattern: `Exception in thread "(?P<thread>\w+)" java\.lang\.ArithmeticException: (?P<reason>.+)`,
+	Pattern: runtimeErrorPattern("java.lang.ArithmeticException", "(?P<reason>.+)"),
 	OnGenExplainFn: func(cd *lib.ContextData) string {
 		if cd.Variables["reason"] == "/ by zero" {
 			// TODO:

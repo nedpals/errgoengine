@@ -10,7 +10,7 @@ import (
 // TODO: unit testing
 var NullPointerException = lib.ErrorTemplate{
 	Name:    "NullPointerException",
-	Pattern: `Exception in thread "(?P<thread>\w+)" java\.lang\.NullPointerException`,
+	Pattern: runtimeErrorPattern("java.lang.NullPointerException", ""),
 	OnGenExplainFn: func(cd *lib.ContextData) string {
 		// TODO: create a function that will find the node with a null return type
 		// sb := &strings.Builder{}
