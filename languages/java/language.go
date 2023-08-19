@@ -1,95 +1,29 @@
-package main
+package java
 
 import (
 	"fmt"
 	"regexp"
 
+	"github.com/nedpals/errgoengine/lib"
 	"github.com/smacker/go-tree-sitter/java"
 )
 
-type ArraySymbol struct {
-	ValueSymbol Symbol
-	Length      int
-}
-
-func (sym ArraySymbol) Name() string {
-	return fmt.Sprintf("[%d]%s", sym.Length, sym.ValueSymbol.Name())
-}
-
-func (sym ArraySymbol) Kind() SymbolKind {
-	return SymbolKindArray
-}
-
-func (sym ArraySymbol) Location() Location {
-	return sym.ValueSymbol.Location()
-}
-
-var BuiltinTypes = struct {
-	NullSymbol    Symbol
-	BooleanSymbol Symbol
-	StringSymbol  Symbol
-	Integral      struct {
-		ByteSymbol  Symbol
-		ShortSymbol Symbol
-		IntSymbol   Symbol
-		LongSymbol  Symbol
-		CharSymbol  Symbol
-	}
-	FloatingPoint struct {
-		FloatSymbol  Symbol
-		DoubleSymbol Symbol
-	}
-	VoidSymbol Symbol
-}{
-	NullSymbol:    BuiltinSymbol{"null"},
-	BooleanSymbol: BuiltinSymbol{"boolean"},
-	StringSymbol:  BuiltinSymbol{"string"},
-	Integral: struct {
-		ByteSymbol  Symbol
-		ShortSymbol Symbol
-		IntSymbol   Symbol
-		LongSymbol  Symbol
-		CharSymbol  Symbol
-	}{
-		ByteSymbol:  BuiltinSymbol{"byte"},
-		ShortSymbol: BuiltinSymbol{"short"},
-		IntSymbol:   BuiltinSymbol{"int"},
-		LongSymbol:  BuiltinSymbol{"long"},
-		CharSymbol:  BuiltinSymbol{"char"},
-	},
-	FloatingPoint: struct {
-		FloatSymbol  Symbol
-		DoubleSymbol Symbol
-	}{
-		FloatSymbol:  BuiltinSymbol{"float"},
-		DoubleSymbol: BuiltinSymbol{"double"},
-	},
-	VoidSymbol: BuiltinSymbol{"void"},
-}
-
-func arrayIfy(typ Symbol, len int) Symbol {
-	return ArraySymbol{
-		ValueSymbol: typ,
-		Length:      len,
-	}
-}
-
-var JavaLanguage = &Language{
+var Language = &lib.Language{
 	Name:              "Java",
 	FilePatterns:      []string{".java"},
 	SitterLanguage:    java.GetLanguage(),
 	StackTracePattern: regexp.MustCompile(`\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`),
-	LocationConverter: func(path, pos string) Location {
+	LocationConverter: func(path, pos string) lib.Location {
 		var trueLine int
 		if _, err := fmt.Sscanf(pos, "%d", &trueLine); err != nil {
 			panic(err)
 		}
-		return Location{
+		return lib.Location{
 			DocumentPath: path,
-			Position:     Position{Line: trueLine},
+			Position:     lib.Position{Line: trueLine},
 		}
 	},
-	ValueAnalyzer: func(an *NodeValueAnalyzer, n Node) Symbol {
+	ValueAnalyzer: func(an lib.NodeValueAnalyzer, n lib.Node) lib.Symbol {
 		switch n.Type() {
 		// types first
 		case "array_type":
@@ -118,39 +52,39 @@ var JavaLanguage = &Language{
 			return BuiltinTypes.FloatingPoint.DoubleSymbol
 		case "array_creation_expression":
 			var gotLen int
-			typeSym := an.Analyze(n.ChildByFieldName("type"))
+			typeSym := an.AnalyzeValue(n.ChildByFieldName("type"))
 			rawLen := n.ChildByFieldName("dimensions").LastNamedChild().Text()
 			fmt.Sscanf(rawLen, "%d", &gotLen)
 			return arrayIfy(typeSym, gotLen)
 		case "object_creation_expression":
-			return an.Analyze(n.ChildByFieldName("type"))
+			return an.AnalyzeValue(n.ChildByFieldName("type"))
 		case "identifier", "type_identifier":
 			if n.Type() == "type_identifier" && n.Text() == "String" {
 				return BuiltinTypes.StringSymbol
 			}
 
-			sym := an.Find(n.Text(), int(n.StartByte()))
+			sym := an.FindSymbol(n.Text(), int(n.StartByte()))
 			if sym == nil {
 				return BuiltinTypes.NullSymbol
 			}
 
 			return sym
 		case "array_access":
-			sym := an.Analyze(n.ChildByFieldName("array"))
+			sym := an.AnalyzeValue(n.ChildByFieldName("array"))
 			if aSym, ok := sym.(ArraySymbol); ok {
 				return aSym.ValueSymbol
 			} else {
 				return BuiltinTypes.VoidSymbol
 			}
 		case "field_access", "method_invocation":
-			if objNodeSym := an.Analyze(n.ChildByFieldName("object")); objNodeSym != nil {
+			if objNodeSym := an.AnalyzeValue(n.ChildByFieldName("object")); objNodeSym != nil {
 				if objNodeSym == BuiltinTypes.NullSymbol {
 					return objNodeSym
 				}
 
 				if n.Type() == "field_access" {
 					fieldNode := n.ChildByFieldName("field")
-					if sym := GetFromSymbol(CastChildrenSymbol(objNodeSym), fieldNode.Text()); sym != nil {
+					if sym := lib.GetFromSymbol(lib.CastChildrenSymbol(objNodeSym), fieldNode.Text()); sym != nil {
 						return sym
 					}
 				}
@@ -160,74 +94,74 @@ var JavaLanguage = &Language{
 			return BuiltinTypes.VoidSymbol
 		case "block":
 			if parent := n.Parent(); parent.Type() == "method_declaration" {
-				return an.Analyze(parent.ChildByFieldName("type"))
+				return an.AnalyzeValue(parent.ChildByFieldName("type"))
 			}
 		}
 		return BuiltinTypes.VoidSymbol
 	},
-	SymbolsToCapture: []SymbolCapture{
-		{
+	SymbolsToCapture: lib.ISymbolCaptureList{
+		lib.SymbolCapture{
 			Query: "class_declaration",
-			Kind:  SymbolKindClass,
-			NameNode: &SymbolCapture{
+			Kind:  lib.SymbolKindClass,
+			NameNode: &lib.SymbolCapture{
 				Field: "name",
 				Query: "identifier",
 			},
-			BodyNode: &SymbolCapture{
+			BodyNode: &lib.SymbolCapture{
 				Field: "body",
 				Query: "class_body",
-				Children: []*SymbolCapture{
+				Children: []*lib.SymbolCapture{
 					{
 						Query: "field_declaration (variable_declarator)",
-						Kind:  SymbolKindVariable,
-						NameNode: &SymbolCapture{
+						Kind:  lib.SymbolKindVariable,
+						NameNode: &lib.SymbolCapture{
 							Field: "name",
 							Query: "identifier",
 						},
 					},
 					{
 						Query: "method_declaration",
-						Kind:  SymbolKindFunction,
-						NameNode: &SymbolCapture{
+						Kind:  lib.SymbolKindFunction,
+						NameNode: &lib.SymbolCapture{
 							Field: "name",
 							Query: "identifier",
 						},
 						// TODO: make return type node work
-						ReturnTypeNode: &SymbolCapture{
+						ReturnTypeNode: &lib.SymbolCapture{
 							Field: "type",
 							Query: "_",
 						},
-						ContentNode: &SymbolCapture{
+						ContentNode: &lib.SymbolCapture{
 							Query:    "return_statement (expression)?",
 							Optional: true,
 						},
-						ParameterNodes: &SymbolCapture{
+						ParameterNodes: &lib.SymbolCapture{
 							Field: "parameters",
 							Query: "formal_parameters",
-							Children: []*SymbolCapture{
+							Children: []*lib.SymbolCapture{
 								{
-									Kind:  SymbolKindVariable,
+									Kind:  lib.SymbolKindVariable,
 									Query: "formal_parameter",
-									NameNode: &SymbolCapture{
+									NameNode: &lib.SymbolCapture{
 										Field: "name",
 										Query: "identifier",
 									},
 								},
 							},
 						},
-						BodyNode: &SymbolCapture{
+						BodyNode: &lib.SymbolCapture{
 							Field: "body",
 							Query: "block",
-							Children: []*SymbolCapture{
+							Children: []*lib.SymbolCapture{
 								// FIXME: figure out return type of variables
 								{
 									Query: "local_variable_declaration (variable_declarator)",
-									Kind:  SymbolKindVariable,
-									NameNode: &SymbolCapture{
+									Kind:  lib.SymbolKindVariable,
+									NameNode: &lib.SymbolCapture{
 										Field: "name",
 										Query: "identifier",
 									},
-									ContentNode: &SymbolCapture{
+									ContentNode: &lib.SymbolCapture{
 										Field: "value",
 										Query: "_",
 									},

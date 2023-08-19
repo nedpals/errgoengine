@@ -1,15 +1,15 @@
-package main
+package lib
 
-import "regexp"
-
-var errorTemplates = ErrorTemplates{}
+import (
+	"regexp"
+)
 
 type ErrorTemplate struct {
 	Name              string
 	Pattern           string
 	StackTracePattern string
-	OnGenExplainFn    func(*ContextData) string
-	OnGenBugFixFn     func(*ContextData) []BugFix
+	OnGenExplainFn    GenExplainFn
+	OnGenBugFixFn     GenBugFixFn
 }
 
 type CompiledErrorTemplate struct {

@@ -1,21 +1,12 @@
-package main
+package lib
 
-import sitter "github.com/smacker/go-tree-sitter"
-
-type Position struct {
-	Line   int
-	Column int
-	Index  int
-}
-
-type Location struct {
-	DocumentPath string
-	Position
-}
+import (
+	sitter "github.com/smacker/go-tree-sitter"
+)
 
 type Node struct {
 	*sitter.Node
-	doc  *Document
+	Doc  *Document
 	text string
 }
 
@@ -25,16 +16,16 @@ func (n Node) Text() string {
 
 func (n Node) ChildByFieldName(field string) Node {
 	cNode := n.Node.ChildByFieldName(field)
-	return wrapNode(n.doc, cNode)
+	return WrapNode(n.Doc, cNode)
 }
 
 func (n Node) Parent() Node {
-	return wrapNode(n.doc, n.Node.Parent())
+	return WrapNode(n.Doc, n.Node.Parent())
 }
 
 func (n Node) NamedChild(idx int) Node {
 	cNode := n.Node.NamedChild(idx)
-	return wrapNode(n.doc, cNode)
+	return WrapNode(n.Doc, cNode)
 }
 
 func (n Node) LastNamedChild() Node {
@@ -44,7 +35,7 @@ func (n Node) LastNamedChild() Node {
 
 func (n Node) Child(idx int) Node {
 	cNode := n.Node.Child(idx)
-	return wrapNode(n.doc, cNode)
+	return WrapNode(n.Doc, cNode)
 }
 
 func (n Node) StartPosition() Position {
@@ -67,15 +58,19 @@ func (n Node) EndPosition() Position {
 
 func (n Node) Location() Location {
 	return Location{
-		DocumentPath: n.doc.Path,
+		DocumentPath: n.Doc.Path,
 		Position:     n.StartPosition(),
 	}
 }
 
-func wrapNode(doc *Document, n *sitter.Node) Node {
+func (n Node) RawNode() *sitter.Node {
+	return n.Node
+}
+
+func WrapNode(doc *Document, n *sitter.Node) Node {
 	return Node{
 		text: n.Content([]byte(doc.Contents)),
-		doc:  doc,
+		Doc:  doc,
 		Node: n,
 	}
 }

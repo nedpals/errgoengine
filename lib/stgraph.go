@@ -1,4 +1,4 @@
-package main
+package lib
 
 // TODO: turn into a real graph
 type StackTraceGraph []STGNode

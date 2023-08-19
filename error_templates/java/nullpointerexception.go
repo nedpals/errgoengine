@@ -1,12 +1,17 @@
-package main
+package java
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nedpals/errgoengine/languages/java"
+	"github.com/nedpals/errgoengine/lib"
+)
 
 // TODO: unit testing
-var NullPointerException = ErrorTemplate{
+var NullPointerException = lib.ErrorTemplate{
 	Name:    "NullPointerException",
 	Pattern: `Exception in thread "(?P<thread>\w+)" java\.lang\.NullPointerException`,
-	OnGenExplainFn: func(cd *ContextData) string {
+	OnGenExplainFn: func(cd *lib.ContextData) string {
 		// TODO: create a function that will find the node with a null return type
 		// sb := &strings.Builder{}
 		isSystemOut := false
@@ -25,7 +30,7 @@ var NullPointerException = ErrorTemplate{
 				// check if this is just simple printing
 				if objNode.Text() == "System.out" {
 					isSystemOut = true
-				} else if retType := cd.AnalyzeValue(exprNode); retType == BuiltinTypes.NullSymbol {
+				} else if retType := cd.AnalyzeValue(exprNode); retType == java.BuiltinTypes.NullSymbol {
 					cd.MainError.Nearest = exprNode
 				}
 
@@ -38,7 +43,7 @@ var NullPointerException = ErrorTemplate{
 						argNode := arguments.NamedChild(i)
 						retType := cd.AnalyzeValue(argNode)
 
-						if retType == BuiltinTypes.NullSymbol || argNode.Type() == "array_access" {
+						if retType == java.BuiltinTypes.NullSymbol || argNode.Type() == "array_access" {
 							cd.MainError.Nearest = argNode
 							break
 						}
@@ -74,8 +79,8 @@ var NullPointerException = ErrorTemplate{
 
 		return "Your program try to access or manipulate an object reference that is currently pointing to `null`, meaning it doesn't refer to any actual object in memory. This typically happens when you forget to initialize an object before using it, or when you try to access an object that hasn't been properly assigned a value. "
 	},
-	OnGenBugFixFn: func(cd *ContextData) []BugFix {
+	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
 		// TODO:
-		return []BugFix{}
+		return []lib.BugFix{}
 	},
 }

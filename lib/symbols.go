@@ -1,4 +1,4 @@
-package main
+package lib
 
 type SymbolKind int
 
@@ -53,13 +53,13 @@ func CastChildrenSymbol(sym Symbol) IChildrenSymbol {
 }
 
 type VariableSymbol struct {
-	name       string
-	location   Location
-	returnType Symbol
+	Name_       string
+	Location_   Location
+	ReturnType_ Symbol
 }
 
 func (sym VariableSymbol) Name() string {
-	return sym.name
+	return sym.Name_
 }
 
 func (sym VariableSymbol) Kind() SymbolKind {
@@ -67,42 +67,42 @@ func (sym VariableSymbol) Kind() SymbolKind {
 }
 
 func (sym VariableSymbol) Location() Location {
-	return sym.location
+	return sym.Location_
 }
 
 func (sym VariableSymbol) ReturnType() Symbol {
-	return sym.returnType
+	return sym.ReturnType_
 }
 
 type TopLevelSymbol struct {
-	name     string
-	kind     SymbolKind
-	location Location
-	children *SymbolTree
+	Name_     string
+	Kind_     SymbolKind
+	Location_ Location
+	Children_ *SymbolTree
 }
 
 func (sym TopLevelSymbol) Name() string {
-	return sym.name
+	return sym.Name_
 }
 
 func (sym TopLevelSymbol) Kind() SymbolKind {
-	return sym.kind
+	return sym.Kind_
 }
 
 func (sym TopLevelSymbol) Location() Location {
-	return sym.location
+	return sym.Location_
 }
 
 func (sym TopLevelSymbol) Children() *SymbolTree {
-	return sym.children
+	return sym.Children_
 }
 
 type BuiltinSymbol struct {
-	name string
+	Name_ string
 }
 
 func (sym BuiltinSymbol) Name() string {
-	return sym.name
+	return sym.Name_
 }
 
 func (sym BuiltinSymbol) Kind() SymbolKind {
@@ -111,4 +111,8 @@ func (sym BuiltinSymbol) Kind() SymbolKind {
 
 func (sym BuiltinSymbol) Location() Location {
 	return Location{}
+}
+
+func Builtin(name string) Symbol {
+	return BuiltinSymbol{Name_: name}
 }
