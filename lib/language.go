@@ -9,10 +9,12 @@ import (
 
 type Language struct {
 	isCompiled        bool
+	stackTraceRegex   *regexp.Regexp
 	Name              string
 	FilePatterns      []string
 	SitterLanguage    *sitter.Language
-	StackTracePattern *regexp.Regexp
+	StackTracePattern string
+	ErrorPattern      string
 	SymbolsToCapture  ISymbolCaptureList
 	LocationConverter func(path, pos string) Location
 	ValueAnalyzer     func(NodeValueAnalyzer, Node) Symbol
@@ -32,7 +34,6 @@ func (lang *Language) Compile() {
 		return
 	}
 
-	// TODO: should this be removed or not? hmmmmm
-
+	lang.stackTraceRegex = regexp.MustCompile("(?m)" + lang.StackTracePattern)
 	lang.isCompiled = true
 }

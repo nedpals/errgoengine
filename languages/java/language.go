@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/nedpals/errgoengine/lib"
 	"github.com/smacker/go-tree-sitter/java"
@@ -12,7 +11,7 @@ var Language = &lib.Language{
 	Name:              "Java",
 	FilePatterns:      []string{".java"},
 	SitterLanguage:    java.GetLanguage(),
-	StackTracePattern: regexp.MustCompile(`\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`),
+	StackTracePattern: `\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`,
 	LocationConverter: func(path, pos string) lib.Location {
 		var trueLine int
 		if _, err := fmt.Sscanf(pos, "%d", &trueLine); err != nil {

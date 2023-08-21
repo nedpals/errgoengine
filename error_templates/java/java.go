@@ -35,8 +35,5 @@ func runtimeErrorPattern(errorName string, pattern string) string {
 const comptimeStackTracePattern = `(?P<path>\S+):(?P<position>\d+)`
 
 func comptimeErrorPattern(pattern string) string {
-	return fmt.Sprintf(
-		`(?P<stacktrace>(?:.|\s)*) error: %s.*`,
-		pattern,
-	)
+	return fmt.Sprintf(`$stacktrace error: %s.*`, pattern)
 }

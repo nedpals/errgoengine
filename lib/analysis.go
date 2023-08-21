@@ -88,20 +88,20 @@ func Analyze(errorTemplates ErrorTemplates, workingPath string, msg string) stri
 
 	// extract stack trace
 	rawStackTraces := contextData.Variables["stacktrace"]
-	symbolGroupIdx := template.Language.StackTracePattern.SubexpIndex("symbol")
-	pathGroupIdx := template.Language.StackTracePattern.SubexpIndex("path")
-	posGroupIdx := template.Language.StackTracePattern.SubexpIndex("position")
+	symbolGroupIdx := template.Language.stackTraceRegex.SubexpIndex("symbol")
+	pathGroupIdx := template.Language.stackTraceRegex.SubexpIndex("path")
+	posGroupIdx := template.Language.stackTraceRegex.SubexpIndex("position")
 
-	for _, rawStackTrace := range strings.Split(rawStackTraces, "\n") {
-		submatches := template.Language.StackTracePattern.FindAllStringSubmatch(rawStackTrace, -1)
+	stackTraceMatches := template.Language.stackTraceRegex.FindAllStringSubmatch(rawStackTraces, -1)
+
+	for _, submatches := range stackTraceMatches {
 		if len(submatches) == 0 {
 			continue
 		}
 
-		matches := submatches[0]
-		rawSymbolName := matches[symbolGroupIdx]
-		rawPath := matches[pathGroupIdx]
-		rawPos := matches[posGroupIdx]
+		rawSymbolName := submatches[symbolGroupIdx]
+		rawPath := submatches[pathGroupIdx]
+		rawPos := submatches[posGroupIdx]
 
 		// convert relative paths to absolute for parsing
 		if !filepath.IsAbs(rawPath) {
@@ -131,7 +131,7 @@ func Analyze(errorTemplates ErrorTemplates, workingPath string, msg string) stri
 			panic("No language found for " + node.DocumentPath)
 		}
 
-		// compile builtin types first of a language if not available
+		// compile language first (if not yet)
 		selectedLanguage.Compile()
 
 		// do semantic analysis

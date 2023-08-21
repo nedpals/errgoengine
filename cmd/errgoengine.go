@@ -13,6 +13,7 @@ var errorTemplates = lib.ErrorTemplates{}
 
 func init() {
 	error_templates.LoadErrorTemplates(&errorTemplates)
+	errorTemplates.CompileAll()
 }
 
 func main() {

@@ -2,6 +2,7 @@ package lib
 
 import (
 	"regexp"
+	"strings"
 )
 
 type ErrorTemplate struct {
@@ -21,13 +22,23 @@ type compiledErrorTemplate struct {
 
 type ErrorTemplates []*compiledErrorTemplate
 
+const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
+
 func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *compiledErrorTemplate {
 	var stackTracePattern *regexp.Regexp
 
-	patternForCompile := template.Pattern
-	if len(template.StackTracePattern) == 0 {
-		patternForCompile += `(?P<stacktrace>(?:.|\s)*)`
+	patternForCompile := ""
+	if len(language.ErrorPattern) != 0 {
+		patternForCompile =
+			strings.ReplaceAll(language.ErrorPattern, "$message", template.Pattern)
 	} else {
+		patternForCompile = template.Pattern + "$stacktrace"
+	}
+
+	patternForCompile =
+		strings.ReplaceAll(patternForCompile, "$stacktrace", defaultStackTraceRegex)
+
+	if len(template.StackTracePattern) != 0 {
 		var err error
 		stackTracePattern, err = regexp.Compile(template.StackTracePattern)
 		if err != nil {
@@ -59,4 +70,13 @@ func (tmps ErrorTemplates) Find(msg string) *compiledErrorTemplate {
 		}
 	}
 	return nil
+}
+
+func (tmps ErrorTemplates) CompileAll() {
+	for _, tmp := range tmps {
+		if tmp.Language == nil {
+			continue
+		}
+		tmp.Language.Compile()
+	}
 }
