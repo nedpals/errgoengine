@@ -13,18 +13,18 @@ type ErrorTemplate struct {
 	OnGenBugFixFn     GenBugFixFn
 }
 
-type compiledErrorTemplate struct {
+type CompiledErrorTemplate struct {
 	ErrorTemplate
 	Language          *Language
 	Pattern           *regexp.Regexp
 	StackTracePattern *regexp.Regexp
 }
 
-type ErrorTemplates []*compiledErrorTemplate
+type ErrorTemplates []*CompiledErrorTemplate
 
 const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
 
-func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *compiledErrorTemplate {
+func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
 	var stackTracePattern *regexp.Regexp
 
 	patternForCompile := ""
@@ -53,7 +53,7 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *com
 		panic(err)
 	}
 
-	*tmps = append(*tmps, &compiledErrorTemplate{
+	*tmps = append(*tmps, &CompiledErrorTemplate{
 		ErrorTemplate:     template,
 		Language:          language,
 		Pattern:           compiledPattern,
@@ -63,7 +63,7 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *com
 	return (*tmps)[len(*tmps)-1]
 }
 
-func (tmps ErrorTemplates) Find(msg string) *compiledErrorTemplate {
+func (tmps ErrorTemplates) Find(msg string) *CompiledErrorTemplate {
 	for _, tmp := range tmps {
 		if tmp.Pattern.MatchString(msg) {
 			return tmp

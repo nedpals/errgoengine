@@ -35,5 +35,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(lib.Analyze(errorTemplates, wd, errMsg))
+	engine := lib.New(wd)
+	engine.ErrorTemplates = errorTemplates
+	template, data, err := engine.Analyze(errMsg)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(engine.Translate(template, data))
 }

@@ -74,3 +74,27 @@ func WrapNode(doc *Document, n *sitter.Node) Node {
 		Node: n,
 	}
 }
+
+type NodeValueAnalyzer interface {
+	FindSymbol(name string, pos int) Symbol
+	AnalyzeValue(n Node) Symbol
+}
+
+func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
+	cursor.GoToFirstChild()
+	defer cursor.GoToParent()
+
+	for {
+		currentNode := cursor.CurrentNode()
+		pointA := currentNode.StartPoint()
+		pointB := currentNode.EndPoint()
+
+		if pointA.Row+1 == uint32(pos.Line) {
+			return currentNode
+		} else if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
+			return locateNearestNode(cursor, pos)
+		} else if !cursor.GoToNextSibling() {
+			return nil
+		}
+	}
+}

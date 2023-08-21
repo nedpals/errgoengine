@@ -2,38 +2,117 @@ package lib
 
 import (
 	"context"
-	"os"
+	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-type NodeValueAnalyzer interface {
-	FindSymbol(name string, pos int) Symbol
-	AnalyzeValue(n Node) Symbol
+type ErrgoEngine struct {
+	WorkingPath    string
+	ErrorTemplates ErrorTemplates
+	FS             fs.ReadFileFS
 }
 
-func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
-	cursor.GoToFirstChild()
-	defer cursor.GoToParent()
-
-	for {
-		currentNode := cursor.CurrentNode()
-		pointA := currentNode.StartPoint()
-		pointB := currentNode.EndPoint()
-
-		if pointA.Row+1 == uint32(pos.Line) {
-			return currentNode
-		} else if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
-			return locateNearestNode(cursor, pos)
-		} else if !cursor.GoToNextSibling() {
-			return nil
-		}
+func New(workingPath string) *ErrgoEngine {
+	return &ErrgoEngine{
+		WorkingPath:    workingPath,
+		ErrorTemplates: ErrorTemplates{},
+		FS:             &RootFS{},
 	}
 }
 
-func TranslateError(template ErrorTemplate, contextData *ContextData) string {
+func (e *ErrgoEngine) Analyze(msg string) (*CompiledErrorTemplate, *ContextData, error) {
+	template := e.ErrorTemplates.Find(msg)
+	if template == nil {
+		return nil, nil, fmt.Errorf("template not found. \nMessage: %s", msg)
+	}
+
+	// initial context data extraction
+	contextData := &ContextData{WorkingPath: e.WorkingPath}
+	groupNames := template.Pattern.SubexpNames()
+	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
+		for idx, matchedContent := range submatches {
+			if len(groupNames[idx]) == 0 {
+				continue
+			}
+
+			contextData.AddVariable(groupNames[idx], matchedContent)
+		}
+	}
+
+	// extract stack trace
+	rawStackTraces := contextData.Variables["stacktrace"]
+	symbolGroupIdx := template.Language.stackTraceRegex.SubexpIndex("symbol")
+	pathGroupIdx := template.Language.stackTraceRegex.SubexpIndex("path")
+	posGroupIdx := template.Language.stackTraceRegex.SubexpIndex("position")
+
+	stackTraceMatches := template.Language.stackTraceRegex.FindAllStringSubmatch(rawStackTraces, -1)
+
+	for _, submatches := range stackTraceMatches {
+		if len(submatches) == 0 {
+			continue
+		}
+
+		rawSymbolName := submatches[symbolGroupIdx]
+		rawPath := submatches[pathGroupIdx]
+		rawPos := submatches[posGroupIdx]
+
+		// convert relative paths to absolute for parsing
+		if len(e.WorkingPath) != 0 && !filepath.IsAbs(rawPath) {
+			rawPath = filepath.Clean(filepath.Join(e.WorkingPath, rawPath))
+		}
+
+		stLoc := template.Language.LocationConverter(rawPath, rawPos)
+		if contextData.StackTraceGraph == nil {
+			contextData.StackTraceGraph = StackTraceGraph{}
+		}
+
+		contextData.StackTraceGraph.Add(rawSymbolName, stLoc)
+	}
+
+	// open contents of the extracted stack file locations
+	parser := sitter.NewParser()
+
+	for _, node := range contextData.StackTraceGraph {
+		contents, err := e.FS.ReadFile(node.DocumentPath)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// check matched languages
+		selectedLanguage := template.Language
+		if !selectedLanguage.MatchPath(node.DocumentPath) {
+			return nil, nil, fmt.Errorf("no language found for %s", node.DocumentPath)
+		}
+
+		// compile language first (if not yet)
+		selectedLanguage.Compile()
+
+		// do semantic analysis
+		parser.SetLanguage(selectedLanguage.SitterLanguage)
+		tree, err := parser.ParseCtx(context.Background(), nil, contents)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		doc := contextData.AddDocument(node.DocumentPath, string(contents), selectedLanguage, tree)
+		parser.Reset()
+
+		analyzer := &SymbolAnalyzer{
+			contextData: contextData,
+			doc:         doc,
+		}
+
+		analyzer.AnalyzeTree(tree)
+	}
+
+	return template, contextData, nil
+}
+
+func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) string {
 	// locate main error
 	for _, node := range contextData.StackTraceGraph {
 		if !strings.HasPrefix(node.DocumentPath, contextData.WorkingPath) {
@@ -65,93 +144,4 @@ func TranslateError(template ErrorTemplate, contextData *ContextData) string {
 	explanation := template.OnGenExplainFn(contextData)
 
 	return explanation
-}
-
-func Analyze(errorTemplates ErrorTemplates, workingPath string, msg string) string {
-	template := errorTemplates.Find(msg)
-	if template == nil {
-		panic("Template not found! \nMessage: \n" + msg)
-	}
-
-	// initial context data extraction
-	contextData := &ContextData{WorkingPath: workingPath}
-	groupNames := template.Pattern.SubexpNames()
-	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
-		for idx, matchedContent := range submatches {
-			if len(groupNames[idx]) == 0 {
-				continue
-			}
-
-			contextData.AddVariable(groupNames[idx], matchedContent)
-		}
-	}
-
-	// extract stack trace
-	rawStackTraces := contextData.Variables["stacktrace"]
-	symbolGroupIdx := template.Language.stackTraceRegex.SubexpIndex("symbol")
-	pathGroupIdx := template.Language.stackTraceRegex.SubexpIndex("path")
-	posGroupIdx := template.Language.stackTraceRegex.SubexpIndex("position")
-
-	stackTraceMatches := template.Language.stackTraceRegex.FindAllStringSubmatch(rawStackTraces, -1)
-
-	for _, submatches := range stackTraceMatches {
-		if len(submatches) == 0 {
-			continue
-		}
-
-		rawSymbolName := submatches[symbolGroupIdx]
-		rawPath := submatches[pathGroupIdx]
-		rawPos := submatches[posGroupIdx]
-
-		// convert relative paths to absolute for parsing
-		if !filepath.IsAbs(rawPath) {
-			rawPath = filepath.Clean(filepath.Join(workingPath, rawPath))
-		}
-
-		stLoc := template.Language.LocationConverter(rawPath, rawPos)
-		if contextData.StackTraceGraph == nil {
-			contextData.StackTraceGraph = StackTraceGraph{}
-		}
-
-		contextData.StackTraceGraph.Add(rawSymbolName, stLoc)
-	}
-
-	// open contents of the extracted stack file locations
-	parser := sitter.NewParser()
-
-	for _, node := range contextData.StackTraceGraph {
-		contents, err := os.ReadFile(node.DocumentPath)
-		if err != nil {
-			panic(err)
-		}
-
-		// check matched languages
-		selectedLanguage := template.Language
-		if !selectedLanguage.MatchPath(node.DocumentPath) {
-			panic("No language found for " + node.DocumentPath)
-		}
-
-		// compile language first (if not yet)
-		selectedLanguage.Compile()
-
-		// do semantic analysis
-		parser.SetLanguage(selectedLanguage.SitterLanguage)
-		tree, err := parser.ParseCtx(context.Background(), nil, contents)
-		if err != nil {
-			panic(err)
-		}
-
-		doc := contextData.AddDocument(node.DocumentPath, string(contents), selectedLanguage, tree)
-		parser.Reset()
-
-		analyzer := &SymbolAnalyzer{
-			contextData: contextData,
-			doc:         doc,
-		}
-
-		analyzer.AnalyzeTree(tree)
-	}
-
-	// error translation
-	return TranslateError(template.ErrorTemplate, contextData)
 }
