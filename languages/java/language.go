@@ -12,16 +12,6 @@ var Language = &lib.Language{
 	FilePatterns:      []string{".java"},
 	SitterLanguage:    java.GetLanguage(),
 	StackTracePattern: `\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`,
-	LocationConverter: func(path, pos string) lib.Location {
-		var trueLine int
-		if _, err := fmt.Sscanf(pos, "%d", &trueLine); err != nil {
-			panic(err)
-		}
-		return lib.Location{
-			DocumentPath: path,
-			Position:     lib.Position{Line: trueLine},
-		}
-	},
 	ValueAnalyzer: func(an lib.NodeValueAnalyzer, n lib.Node) lib.Symbol {
 		switch n.Type() {
 		// types first

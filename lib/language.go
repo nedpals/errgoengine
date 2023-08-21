@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -34,6 +35,21 @@ func (lang *Language) Compile() {
 		return
 	}
 
+	if lang.LocationConverter == nil {
+		lang.LocationConverter = DefaultLocationConverter
+	}
+
 	lang.stackTraceRegex = regexp.MustCompile("(?m)" + lang.StackTracePattern)
 	lang.isCompiled = true
+}
+
+func DefaultLocationConverter(path, pos string) Location {
+	var trueLine int
+	if _, err := fmt.Sscanf(pos, "%d", &trueLine); err != nil {
+		panic(err)
+	}
+	return Location{
+		DocumentPath: path,
+		Position:     Position{Line: trueLine},
+	}
 }
