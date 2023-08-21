@@ -1,4 +1,4 @@
-name: Test error templates
+name: Test engine
 
 on: [push]
 
