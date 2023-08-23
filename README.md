@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> What you are seeing here is an in-progress implementation of our thesis paper. This is not usable as of the moment and it remains unanswered if this is effective while no testing has been conducted yet as of the moment.
+> What you are seeing here is an in-progress implementation of our thesis paper. This is not usable as of the moment and it remains unanswered if this is effective while no testing has been conducted yet.
 
 # ErrgoEngine
 A contextualized programming error analysis translation engine.
