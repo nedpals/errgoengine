@@ -3,7 +3,7 @@ package java
 import (
 	"fmt"
 
-	"github.com/nedpals/errgoengine/lib"
+	lib "github.com/nedpals/errgoengine"
 )
 
 var ArrayIndexOutOfBoundsException = lib.ErrorTemplate{

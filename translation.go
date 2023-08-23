@@ -1,4 +1,4 @@
-package lib
+package errgoengine
 
 type GenExplainFn func(*ContextData) string
 type GenBugFixFn func(*ContextData) []BugFix

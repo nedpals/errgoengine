@@ -1,4 +1,4 @@
-package lib
+package errgoengine
 
 import (
 	sitter "github.com/smacker/go-tree-sitter"

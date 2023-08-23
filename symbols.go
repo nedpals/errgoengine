@@ -1,4 +1,4 @@
-package lib
+package errgoengine
 
 type SymbolKind int
 

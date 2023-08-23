@@ -3,8 +3,8 @@ package java
 import (
 	"fmt"
 
+	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/languages/java"
-	"github.com/nedpals/errgoengine/lib"
 )
 
 // TODO: unit testing

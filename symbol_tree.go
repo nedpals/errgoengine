@@ -1,4 +1,4 @@
-package lib
+package errgoengine
 
 type SymbolTree struct {
 	Parent       *SymbolTree

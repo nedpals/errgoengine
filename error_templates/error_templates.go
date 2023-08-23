@@ -1,9 +1,9 @@
 package error_templates
 
 import (
+	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/error_templates/java"
 	"github.com/nedpals/errgoengine/error_templates/python"
-	"github.com/nedpals/errgoengine/lib"
 )
 
 func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {

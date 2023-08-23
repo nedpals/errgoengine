@@ -9,7 +9,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/nedpals/errgoengine/lib"
+	lib "github.com/nedpals/errgoengine"
 )
 
 type TestCase struct {

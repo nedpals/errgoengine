@@ -3,7 +3,7 @@ package python
 import (
 	"fmt"
 
-	"github.com/nedpals/errgoengine/lib"
+	lib "github.com/nedpals/errgoengine"
 )
 
 var NameError = lib.ErrorTemplate{

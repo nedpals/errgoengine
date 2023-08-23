@@ -1,8 +1,8 @@
 package python
 
 import (
+	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/languages/python"
-	"github.com/nedpals/errgoengine/lib"
 )
 
 func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {

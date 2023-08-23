@@ -1,4 +1,4 @@
-package lib
+package errgoengine
 
 // TODO: turn into a real graph
 type StackTraceGraph []STGNode

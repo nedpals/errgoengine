@@ -1,6 +1,6 @@
 package java
 
-import "github.com/nedpals/errgoengine/lib"
+import lib "github.com/nedpals/errgoengine"
 
 var UnreachableStatementError = lib.ErrorTemplate{
 	Name:              "UnreachableStatementError",

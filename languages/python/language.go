@@ -1,7 +1,7 @@
 package python
 
 import (
-	"github.com/nedpals/errgoengine/lib"
+	lib "github.com/nedpals/errgoengine"
 	"github.com/smacker/go-tree-sitter/python"
 )
 

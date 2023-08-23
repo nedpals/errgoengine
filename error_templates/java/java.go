@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/languages/java"
-	"github.com/nedpals/errgoengine/lib"
 )
 
 func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {

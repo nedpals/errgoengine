@@ -1,6 +1,6 @@
 package python
 
-import "github.com/nedpals/errgoengine/lib"
+import lib "github.com/nedpals/errgoengine"
 
 var ZeroDivisionError = lib.ErrorTemplate{
 	Name:    "ZeroDivisionError",

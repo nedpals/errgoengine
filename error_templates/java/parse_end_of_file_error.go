@@ -1,7 +1,7 @@
 package java
 
 import (
-	"github.com/nedpals/errgoengine/lib"
+	lib "github.com/nedpals/errgoengine"
 )
 
 var ParseEndOfFileError = lib.ErrorTemplate{
