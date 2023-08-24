@@ -11,27 +11,25 @@ import (
 )
 
 type ErrgoEngine struct {
-	WorkingPath    string
 	ErrorTemplates ErrorTemplates
 	FS             fs.ReadFileFS
 }
 
-func New(workingPath string) *ErrgoEngine {
+func New() *ErrgoEngine {
 	return &ErrgoEngine{
-		WorkingPath:    workingPath,
 		ErrorTemplates: ErrorTemplates{},
 		FS:             &RootFS{},
 	}
 }
 
-func (e *ErrgoEngine) Analyze(msg string) (*CompiledErrorTemplate, *ContextData, error) {
+func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, *ContextData, error) {
 	template := e.ErrorTemplates.Find(msg)
 	if template == nil {
 		return nil, nil, fmt.Errorf("template not found. \nMessage: %s", msg)
 	}
 
 	// initial context data extraction
-	contextData := &ContextData{WorkingPath: e.WorkingPath}
+	contextData := &ContextData{WorkingPath: workingPath}
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
 		for idx, matchedContent := range submatches {
@@ -61,8 +59,8 @@ func (e *ErrgoEngine) Analyze(msg string) (*CompiledErrorTemplate, *ContextData,
 		rawPos := submatches[posGroupIdx]
 
 		// convert relative paths to absolute for parsing
-		if len(e.WorkingPath) != 0 && !filepath.IsAbs(rawPath) {
-			rawPath = filepath.Clean(filepath.Join(e.WorkingPath, rawPath))
+		if len(workingPath) != 0 && !filepath.IsAbs(rawPath) {
+			rawPath = filepath.Clean(filepath.Join(workingPath, rawPath))
 		}
 
 		stLoc := template.Language.LocationConverter(rawPath, rawPos)

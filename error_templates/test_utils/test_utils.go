@@ -31,7 +31,7 @@ func (cases TestCases) Execute(t *testing.T, loadTemplate func(*lib.ErrorTemplat
 		t.Fatal(err)
 	}
 
-	engine := lib.New("")
+	engine := lib.New()
 	loadTemplate(&engine.ErrorTemplates)
 	engine.ErrorTemplates.CompileAll()
 
@@ -49,7 +49,7 @@ func (cases TestCases) Execute(t *testing.T, loadTemplate func(*lib.ErrorTemplat
 
 			engine.FS = tCase.Files
 			trimmedInput := strings.TrimSpace(tCase.Input)
-			template, data, err := engine.Analyze(trimmedInput)
+			template, data, err := engine.Analyze("", trimmedInput)
 			if err != nil {
 				t.Fatal(err)
 			} else if template.Name != tCase.ExpectedTemplate || template.Language.Name != tCase.ExpectedLanguage {
