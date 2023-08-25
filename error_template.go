@@ -20,38 +20,43 @@ type CompiledErrorTemplate struct {
 	StackTracePattern *regexp.Regexp
 }
 
+func (tmp *CompiledErrorTemplate) StackTraceRegex() *regexp.Regexp {
+	if tmp.StackTracePattern != nil {
+		return tmp.StackTracePattern
+	} else if len(tmp.Language.StackTracePattern) != 0 && tmp.Language.stackTraceRegex == nil {
+		panic("expected stacktrace pattern got compiled, got nil regex instead")
+	}
+	return tmp.Language.stackTraceRegex
+}
+
 type ErrorTemplates []*CompiledErrorTemplate
 
 const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
 
 func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
+	if !language.isCompiled {
+		language.Compile()
+	}
+
 	var stackTracePattern *regexp.Regexp
 
 	patternForCompile := ""
 	if len(language.ErrorPattern) != 0 {
-		patternForCompile =
-			strings.ReplaceAll(language.ErrorPattern, "$message", template.Pattern)
-	} else {
+		patternForCompile = strings.ReplaceAll(language.ErrorPattern, "$message", template.Pattern)
+	} else if len(language.StackTracePattern) != 0 {
 		patternForCompile = template.Pattern + "$stacktrace"
 	}
 
-	patternForCompile =
-		strings.ReplaceAll(patternForCompile, "$stacktrace", defaultStackTraceRegex)
+	if strings.Contains(patternForCompile, "$stacktrace") {
+		patternForCompile =
+			strings.ReplaceAll(patternForCompile, "$stacktrace", defaultStackTraceRegex)
 
-	if len(template.StackTracePattern) != 0 {
-		var err error
-		stackTracePattern, err = regexp.Compile(template.StackTracePattern)
-		if err != nil {
-			// TODO: should not panic!
-			panic(err)
+		if len(template.StackTracePattern) != 0 {
+			stackTracePattern = regexp.MustCompile(template.StackTracePattern)
 		}
 	}
 
-	compiledPattern, err := regexp.Compile("(?m)^" + patternForCompile + "$")
-	if err != nil {
-		// TODO: should not panic!
-		panic(err)
-	}
+	compiledPattern := regexp.MustCompile("(?m)^" + patternForCompile + "$")
 
 	*tmps = append(*tmps, &CompiledErrorTemplate{
 		ErrorTemplate:     template,
@@ -70,13 +75,4 @@ func (tmps ErrorTemplates) Find(msg string) *CompiledErrorTemplate {
 		}
 	}
 	return nil
-}
-
-func (tmps ErrorTemplates) CompileAll() {
-	for _, tmp := range tmps {
-		if tmp.Language == nil {
-			continue
-		}
-		tmp.Language.Compile()
-	}
 }

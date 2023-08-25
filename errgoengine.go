@@ -43,11 +43,10 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 	// extract stack trace
 	rawStackTraces := contextData.Variables["stacktrace"]
-	symbolGroupIdx := template.Language.stackTraceRegex.SubexpIndex("symbol")
-	pathGroupIdx := template.Language.stackTraceRegex.SubexpIndex("path")
-	posGroupIdx := template.Language.stackTraceRegex.SubexpIndex("position")
-
-	stackTraceMatches := template.Language.stackTraceRegex.FindAllStringSubmatch(rawStackTraces, -1)
+	symbolGroupIdx := template.StackTraceRegex().SubexpIndex("symbol")
+	pathGroupIdx := template.StackTraceRegex().SubexpIndex("path")
+	posGroupIdx := template.StackTraceRegex().SubexpIndex("position")
+	stackTraceMatches := template.StackTraceRegex().FindAllStringSubmatch(rawStackTraces, -1)
 
 	for _, submatches := range stackTraceMatches {
 		if len(submatches) == 0 {

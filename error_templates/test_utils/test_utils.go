@@ -33,7 +33,6 @@ func (cases TestCases) Execute(t *testing.T, loadTemplate func(*lib.ErrorTemplat
 
 	engine := lib.New()
 	loadTemplate(&engine.ErrorTemplates)
-	engine.ErrorTemplates.CompileAll()
 
 	for _, templatePath := range implTemplates {
 		if strings.HasSuffix(fmt.Sprintf("%s.go", name), templatePath) || strings.HasSuffix(fmt.Sprintf("%s_test.go", name), templatePath) {
