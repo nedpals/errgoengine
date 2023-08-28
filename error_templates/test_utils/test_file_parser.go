@@ -3,12 +3,13 @@ package testutils
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"text/scanner"
 )
 
-var importantKeys = []string{"language", "template", "output"}
+var importantKeys = []string{"template", "output"}
 
 type TestOutput struct {
 	Name     string
@@ -132,14 +133,14 @@ func (p *Parser) expectNextTo(exp string) error {
 	return nil
 }
 
-func (p *Parser) Parse(text string) (*TestOutput, error) {
+func (p *Parser) Parse(r io.Reader) (*TestOutput, error) {
 	// reset tok states first
 	p.prevTok = token{}
 	p.tok = token{}
 	p.nextTok = token{}
 
 	// resetting scanner instance with new text
-	p.sc.Init(strings.NewReader(text))
+	p.sc.Init(r)
 
 	kv := map[string]string{
 		"name":     "",
@@ -206,10 +207,12 @@ func (p *Parser) Parse(text string) (*TestOutput, error) {
 		}
 	}
 
+	language, template, _ := strings.Cut(kv["template"], ".")
+
 	return &TestOutput{
 		Name:     kv["name"],
-		Language: kv["language"],
-		Template: kv["template"],
+		Language: language,
+		Template: template,
 		Output:   kv["output"],
 	}, nil
 }
@@ -221,12 +224,12 @@ func (p *Parser) ParseInputExpected(filename string, input string) (*TestOutput,
 	}
 
 	p.sc.Filename = filename
-	inputOut, err := p.Parse(rawOutputs[0])
+	inputOut, err := p.Parse(strings.NewReader(rawOutputs[0]))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	expOut, err := p.Parse(rawOutputs[1])
+	expOut, err := p.Parse(strings.NewReader(rawOutputs[1]))
 	if err != nil {
 		return nil, nil, err
 	}

@@ -1,0 +1,8 @@
+template: "Java.NullPointerException"
+---
+Exception in thread "main" java.lang.NullPointerException
+    at ShouldBeNull.main(ShouldBeNull.java:4)
+===
+template: "Java.NullPointerException"
+---
+Your program tried to print the value of "toUpperCase" method from "test" which is a null.

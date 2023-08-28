@@ -23,7 +23,7 @@ func New() *ErrgoEngine {
 }
 
 func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, *ContextData, error) {
-	template := e.ErrorTemplates.Find(msg)
+	template := e.ErrorTemplates.Match(msg)
 	if template == nil {
 		return nil, nil, fmt.Errorf("template not found. \nMessage: %s", msg)
 	}

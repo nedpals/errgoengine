@@ -1,0 +1,11 @@
+template: "Python.NameError"
+---
+Traceback (most recent call last):
+  File "name_error.py", line 1, in <module>
+    print(test)
+          ^^^^
+NameError: name 'test' is not defined
+===
+template: "Python.NameError"
+---
+Your program tried to access the 'test' variable which was not found on your program.

@@ -8,13 +8,12 @@ import (
 func TestParserScan(t *testing.T) {
 	p := NewParser()
 	input := strings.TrimSpace(`
-template: "test"
-language: "abc"
+template: "abc.test"
 ---
 function helloWorld() {}
 	`)
 
-	out, err := p.Parse(input)
+	out, err := p.Parse(strings.NewReader(input))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,8 +27,7 @@ func TestParserInputExpected(t *testing.T) {
 	p := NewParser()
 
 	errInput := strings.TrimSpace(`
-template: "test"
-language: "abc"
+template: "abc.test"
 ---
 function helloWorld() {}
 	`)
@@ -43,13 +41,11 @@ language: "abc"
 ---
 function helloWorld() {}
 ===
-template: "test"
-language: "def"
+template: "def.test"
 ---
 eqweqwe
 ===
-template: "test"
-language: "ghi"
+template: "ghi.test"
 ---
 test2
 	`)
@@ -61,13 +57,11 @@ test2
 	ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 0")
 
 	input := strings.TrimSpace(`
-template: "test"
-language: "abc"
+template: "abc.test"
 ---
 function helloWorld() {}
 ===
-template: "test2"
-language: "def"
+template: "def.test2"
 ---
 Error text goes here!
 	`)

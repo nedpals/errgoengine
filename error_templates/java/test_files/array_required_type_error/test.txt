@@ -1,0 +1,10 @@
+template: "Java.ArrayRequiredTypeError"
+---
+NotArray.java:4: error: array required, but int found
+        int value = number[0];
+                            ^
+1 error
+===
+template: "Java.ArrayRequiredTypeError"
+---
+Your program attempted to access an element in index 5 on an array that has only 4 items
