@@ -12,6 +12,16 @@ import (
 	lib "github.com/nedpals/errgoengine"
 )
 
+// func init() {
+// 	testing.Init()
+// 	flag.Parse()
+// }
+
+func IsTestRun() bool {
+	// return flag.Lookup("test.v").Value.(flag.Getter).Get().(bool)
+	return true
+}
+
 type TestCase struct {
 	Input            string
 	ExpectedLanguage string
