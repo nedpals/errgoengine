@@ -213,3 +213,23 @@ func (p *Parser) Parse(text string) (*TestOutput, error) {
 		Output:   kv["output"],
 	}, nil
 }
+
+func (p *Parser) ParseInputExpected(filename string, input string) (*TestOutput, *TestOutput, error) {
+	rawOutputs := strings.Split(input, "\n===\n")
+	if len(rawOutputs) != 2 {
+		return nil, nil, fmt.Errorf("expected 2 raw outputs (1 for input, 1 for expected), got %d", len(rawOutputs))
+	}
+
+	p.sc.Filename = filename
+	inputOut, err := p.Parse(rawOutputs[0])
+	if err != nil {
+		return nil, nil, err
+	}
+
+	expOut, err := p.Parse(rawOutputs[1])
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return inputOut, expOut, nil
+}
