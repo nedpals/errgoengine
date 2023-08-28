@@ -1,6 +1,7 @@
 package errgoengine
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -29,12 +30,17 @@ func (tmp *CompiledErrorTemplate) StackTraceRegex() *regexp.Regexp {
 	return tmp.Language.stackTraceRegex
 }
 
-type ErrorTemplates []*CompiledErrorTemplate
+type ErrorTemplates map[string]*CompiledErrorTemplate
 
 const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
 
-func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
-	if !language.isCompiled {
+func (tmps ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
+	key := fmt.Sprintf("%s_%s", language.Name, template.Name)
+	if key == "_" {
+		panic("Invalid template registration.")
+	} else if tmp, templateExists := tmps[key]; templateExists {
+		return tmp
+	} else if !language.isCompiled {
 		language.Compile()
 	}
 
@@ -57,15 +63,13 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *Com
 	}
 
 	compiledPattern := regexp.MustCompile("(?m)^" + patternForCompile + "$")
-
-	*tmps = append(*tmps, &CompiledErrorTemplate{
+	tmps[key] = &CompiledErrorTemplate{
 		ErrorTemplate:     template,
 		Language:          language,
 		Pattern:           compiledPattern,
 		StackTracePattern: stackTracePattern,
-	})
-
-	return (*tmps)[len(*tmps)-1]
+	}
+	return tmps[key]
 }
 
 func (tmps ErrorTemplates) Find(msg string) *CompiledErrorTemplate {
