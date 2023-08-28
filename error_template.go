@@ -34,11 +34,11 @@ type ErrorTemplates map[string]*CompiledErrorTemplate
 
 const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
 
-func (tmps ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
+func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
 	key := fmt.Sprintf("%s_%s", language.Name, template.Name)
 	if key == "_" {
 		panic("Invalid template registration.")
-	} else if tmp, templateExists := tmps[key]; templateExists {
+	} else if tmp, templateExists := (*tmps)[key]; templateExists {
 		return tmp
 	} else if !language.isCompiled {
 		language.Compile()
@@ -63,13 +63,13 @@ func (tmps ErrorTemplates) Add(language *Language, template ErrorTemplate) *Comp
 	}
 
 	compiledPattern := regexp.MustCompile("(?m)^" + patternForCompile + "$")
-	tmps[key] = &CompiledErrorTemplate{
+	(*tmps)[key] = &CompiledErrorTemplate{
 		ErrorTemplate:     template,
 		Language:          language,
 		Pattern:           compiledPattern,
 		StackTracePattern: stackTracePattern,
 	}
-	return tmps[key]
+	return (*tmps)[key]
 }
 
 func (tmps ErrorTemplates) Find(msg string) *CompiledErrorTemplate {
