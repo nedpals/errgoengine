@@ -77,3 +77,17 @@ func (cases TestCases) Execute(t *testing.T, loadTemplate func(*lib.ErrorTemplat
 		})
 	}
 }
+
+func Equals[V comparable](tb testing.TB, exp V, got V) {
+	if got != exp {
+		tb.Fatalf("\nexp: %v\ngot: %v", exp, got)
+	}
+}
+
+func ExpectError(tb testing.TB, err error, exp string) {
+	if err == nil {
+		tb.Fatalf("expected error, got nil")
+	}
+
+	Equals(tb, err.Error(), exp)
+}
