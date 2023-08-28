@@ -168,15 +168,15 @@ func (p *Parser) Parse(text string) (*TestOutput, error) {
 			}
 
 			kv[key] = value
-		} else if kind == "=" {
+		} else if kind == "-" {
 			firstSepCol := p.tok.pos.Column
-			if err := p.expectNextTo("="); err != nil {
+			if err := p.expectNextTo("-"); err != nil {
 				return nil, err
 			}
 
-			// ===
+			// ---
 			if p.tok.text != p.nextTok.text {
-				return nil, expectError(p.tok, "=")
+				return nil, expectError(p.tok, "-")
 			}
 
 			if firstSepCol != 1 || p.sc.Peek() != '\n' {

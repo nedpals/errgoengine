@@ -10,7 +10,7 @@ func TestParserScan(t *testing.T) {
 	input := strings.TrimSpace(`
 template: "test"
 language: "abc"
-===
+---
 function helloWorld() {}
 	`)
 
