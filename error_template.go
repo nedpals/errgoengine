@@ -14,6 +14,10 @@ type ErrorTemplate struct {
 	OnGenBugFixFn     GenBugFixFn
 }
 
+func CustomErrorPattern(pattern string) string {
+	return "\"\"\"" + pattern
+}
+
 type CompiledErrorTemplate struct {
 	ErrorTemplate
 	Language          *Language
@@ -54,10 +58,16 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *Com
 
 	// TODO: add test
 	patternForCompile := template.Pattern
-	if len(language.ErrorPattern) != 0 {
-		patternForCompile = strings.ReplaceAll(language.ErrorPattern, "$message", template.Pattern)
-	} else if !strings.Contains(patternForCompile, "$stacktrace") {
-		patternForCompile = patternForCompile + "$stacktrace"
+	if strings.HasPrefix(patternForCompile, "\"\"\"") {
+		// If it is a custom template error pattern which starts at triple quotes (""")
+		patternForCompile = strings.TrimPrefix(patternForCompile, "\"\"\"")
+	} else {
+		// If not revert to language level error pattern if present
+		if len(language.ErrorPattern) != 0 {
+			patternForCompile = strings.ReplaceAll(language.ErrorPattern, "$message", template.Pattern)
+		} else if !strings.Contains(patternForCompile, "$stacktrace") {
+			patternForCompile = patternForCompile + "$stacktrace"
+		}
 	}
 
 	if strings.Contains(patternForCompile, "$stacktrace") {
