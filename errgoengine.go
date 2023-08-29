@@ -53,7 +53,10 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 			continue
 		}
 
-		rawSymbolName := submatches[symbolGroupIdx]
+		rawSymbolName := ""
+		if symbolGroupIdx != -1 {
+			rawSymbolName = submatches[symbolGroupIdx]
+		}
 		rawPath := submatches[pathGroupIdx]
 		rawPos := submatches[posGroupIdx]
 
