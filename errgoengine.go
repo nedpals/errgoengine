@@ -90,7 +90,13 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 		// do semantic analysis
 		parser.SetLanguage(selectedLanguage.SitterLanguage)
-		tree, err := parser.ParseCtx(context.Background(), nil, contents)
+
+		var existingTree *sitter.Tree
+		if doc, ok := contextData.Documents[node.DocumentPath]; ok {
+			existingTree = doc.Tree
+		}
+
+		tree, err := parser.ParseCtx(context.Background(), existingTree, contents)
 		if err != nil {
 			return nil, nil, err
 		}
