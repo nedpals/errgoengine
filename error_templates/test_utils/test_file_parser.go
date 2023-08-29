@@ -9,6 +9,8 @@ import (
 	"text/scanner"
 )
 
+// TODO: add ability to parse positions
+
 var importantKeys = []string{"template", "output"}
 
 type TestOutput struct {
