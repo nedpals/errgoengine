@@ -145,6 +145,7 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 
 	// execute error generator function
 	explanation := template.OnGenExplainFn(contextData)
-
+	// TODO: execute bug fix generator function
+	_ = template.OnGenBugFixFn(contextData)
 	return explanation
 }
