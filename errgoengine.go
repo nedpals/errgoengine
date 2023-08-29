@@ -112,10 +112,6 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 		analyzer.AnalyzeTree(tree)
 	}
 
-	return template, contextData, nil
-}
-
-func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) string {
 	// locate main error
 	for _, node := range contextData.StackTraceGraph {
 		if !strings.HasPrefix(node.DocumentPath, contextData.WorkingPath) {
@@ -143,6 +139,10 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 		break
 	}
 
+	return template, contextData, nil
+}
+
+func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) string {
 	// execute error generator function
 	explanation := template.OnGenExplainFn(contextData)
 	// TODO: execute bug fix generator function
