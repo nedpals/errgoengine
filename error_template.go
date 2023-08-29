@@ -46,11 +46,12 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *Com
 
 	var stackTracePattern *regexp.Regexp
 
-	patternForCompile := ""
+	// TODO: add test
+	patternForCompile := template.Pattern
 	if len(language.ErrorPattern) != 0 {
 		patternForCompile = strings.ReplaceAll(language.ErrorPattern, "$message", template.Pattern)
-	} else if len(language.StackTracePattern) != 0 {
-		patternForCompile = template.Pattern + "$stacktrace"
+	} else if !strings.Contains(patternForCompile, "$stacktrace") {
+		patternForCompile = patternForCompile + "$stacktrace"
 	}
 
 	if strings.Contains(patternForCompile, "$stacktrace") {
