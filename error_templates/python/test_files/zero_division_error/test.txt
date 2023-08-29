@@ -7,4 +7,5 @@ Traceback (most recent call last):
 ZeroDivisionError: division by zero
 ===
 template: "Python.ZeroDivisionError"
-TODO
+---
+The number has been divided by zero

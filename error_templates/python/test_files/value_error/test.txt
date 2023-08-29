@@ -1,0 +1,10 @@
+template: "Python.ValueError"
+---
+Traceback (most recent call last):
+  File "value_error.py", line 1, in <module>
+    value = int("abc")
+ValueError: invalid literal for int() with base 10: 'abc'
+===
+template: "Python.ValueError"
+---
+The input provided is an alphabetical string which cannot be converted into an int

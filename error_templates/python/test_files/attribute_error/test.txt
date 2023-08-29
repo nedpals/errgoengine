@@ -1,0 +1,10 @@
+template: "Python.AttributeError"
+---
+Traceback (most recent call last):
+  File "attribute_error.py", line 3, in <module>
+    x.append(3)
+AttributeError: 'int' object has no attribute 'append'
+===
+template: "Python.AttributeError"
+---
+Method "append" does not exist in "int" type

@@ -2,12 +2,11 @@ package python
 
 import lib "github.com/nedpals/errgoengine"
 
-var ZeroDivisionError = lib.ErrorTemplate{
-	Name:    "ZeroDivisionError",
-	Pattern: "ZeroDivisionError: division by zero",
+var IndentationError = lib.ErrorTemplate{
+	Name:    "IndentationError",
+	Pattern: compileTimeError("IndentationError: unindent does not match any outer indentation level"),
 	OnGenExplainFn: func(cd *lib.ContextData) string {
-		// TODO:
-		return "The number has been divided by zero"
+		return "The code is not indented properly"
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
 		// TODO:

@@ -1,0 +1,11 @@
+name: "EOL"
+template: "Python.SyntaxError"
+---
+  File "syntax_error_eol.py", line 1
+    print("Hello, world!"
+         ^
+SyntaxError: '(' was never closed
+===
+template: "Python.SyntaxError"
+---
+Your program did not close a parenthesis properly

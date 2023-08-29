@@ -1,0 +1,10 @@
+template: "Python.IndentationError"
+---
+  File "indentation_error.py", line 3
+    print("This line is indented with two spaces instead of four.")
+                                                                  ^
+IndentationError: unindent does not match any outer indentation level
+===
+template: "Python.IndentationError"
+---
+The code is not indented properly
