@@ -7,4 +7,4 @@ NotArray.java:4: error: array required, but int found
 ===
 template: "Java.ArrayRequiredTypeError"
 ---
-Your program attempted to access an element in index 5 on an array that has only 4 items
+You are calling an index notation on a variable with type int

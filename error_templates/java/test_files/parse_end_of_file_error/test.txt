@@ -7,4 +7,4 @@ EOF.java:4: error: reached end of file while parsing
 ===
 template: "Java.ParseEndOfFileError"
 ---
-Your program attempted to access an element in index 5 on an array that has only 4 items
+The compiler was not able to compile your program because of an incomplete syntax

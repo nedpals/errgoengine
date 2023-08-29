@@ -12,6 +12,10 @@ var ArithmeticException = lib.ErrorTemplate{
 		}
 
 		// TODO:
-		panic("arithmeticexception todo!")
+		return "arithmeticexception todo!"
+	},
+	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
+		// TODO:
+		return make([]lib.BugFix, 0)
 	},
 }

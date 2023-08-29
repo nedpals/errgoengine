@@ -5,4 +5,4 @@ Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 5 out
 ===
 template: "Java.ArrayIndexOutOfBoundsException"
 ---
-Your program attempted to access an element in index 5 on an array that has only 4 items
+Your program attempted to access an element in index 5 on an array that only has 4 items

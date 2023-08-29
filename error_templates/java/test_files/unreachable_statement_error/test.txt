@@ -7,4 +7,4 @@ Unreachable.java:5: error: unreachable statement
 ===
 template: "Java.UnreachableStatementError"
 ---
-Your program attempted to access an element in index 5 on an array that has only 4 items
+You have code below after you returned a value

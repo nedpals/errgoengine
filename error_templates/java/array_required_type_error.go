@@ -1,6 +1,10 @@
 package java
 
-import lib "github.com/nedpals/errgoengine"
+import (
+	"fmt"
+
+	lib "github.com/nedpals/errgoengine"
+)
 
 var ArrayRequiredTypeError = lib.ErrorTemplate{
 	Name:              "ArrayRequiredTypeError",
@@ -8,7 +12,7 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 	StackTracePattern: comptimeStackTracePattern,
 	OnGenExplainFn: func(cd *lib.ContextData) string {
 		// TODO:
-		panic("array required type error TODO")
+		return fmt.Sprintf("You are calling an index notation on a variable with type %s", cd.Variables["foundType"])
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
 		return make([]lib.BugFix, 0)

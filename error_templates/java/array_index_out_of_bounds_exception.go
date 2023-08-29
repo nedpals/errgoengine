@@ -12,7 +12,7 @@ var ArrayIndexOutOfBoundsException = lib.ErrorTemplate{
 	OnGenExplainFn: func(cd *lib.ContextData) string {
 		// TODO:
 
-		return fmt.Sprintf("Your program attempted to access an element in index %s on an array that has only %s items", cd.Variables["index"], cd.Variables["length"])
+		return fmt.Sprintf("Your program attempted to access an element in index %s on an array that only has %s items", cd.Variables["index"], cd.Variables["length"])
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
 		return []lib.BugFix{}

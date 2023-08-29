@@ -7,4 +7,4 @@ Wrong.java:1: error: class Right is public, should be declared in a file named R
 ===
 template: "Java.PublicClassFilenameMismatchError"
 ---
-Your program attempted to access an element in index 5 on an array that has only 4 items
+Public class "Right" does not match the name of the file which is "Wrong.java". Rename it to "Right.java"

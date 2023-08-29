@@ -9,8 +9,8 @@ var ParseEndOfFileError = lib.ErrorTemplate{
 	Pattern:           comptimeErrorPattern("reached end of file while parsing"),
 	StackTracePattern: comptimeStackTracePattern,
 	OnGenExplainFn: func(cd *lib.ContextData) string {
-		// TODO:
-		panic("TODO!")
+		// TODO: not yet done
+		return "The compiler was not able to compile your program because of an incomplete syntax"
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
 		// TODO:

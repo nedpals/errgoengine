@@ -19,6 +19,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.Add(java.Language, ParseEndOfFileError)
 	errorTemplates.Add(java.Language, UnreachableStatementError)
 	errorTemplates.Add(java.Language, ArrayRequiredTypeError)
+	errorTemplates.Add(java.Language, UnknownVariableError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {
