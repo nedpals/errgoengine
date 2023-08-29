@@ -221,8 +221,13 @@ func (p *Parser) Parse(r io.Reader) (*TestOutput, error) {
 
 func (p *Parser) ParseInputExpected(filename string, input string) (*TestOutput, *TestOutput, error) {
 	rawOutputs := strings.Split(input, "\n===\n")
-	if len(rawOutputs) != 2 {
-		return nil, nil, fmt.Errorf("expected 2 raw outputs (1 for input, 1 for expected), got %d", len(rawOutputs))
+	outputsLen := len(rawOutputs)
+	if len(strings.TrimSpace(input)) == 0 {
+		outputsLen = 0
+	}
+
+	if outputsLen != 2 {
+		return nil, nil, fmt.Errorf("expected 2 raw outputs (1 for input, 1 for expected), got %d", outputsLen)
 	}
 
 	p.sc.Filename = filename
