@@ -36,6 +36,12 @@ const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
 
 func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
 	key := TemplateKey(language.Name, template.Name)
+	if template.OnGenExplainFn == nil {
+		panic(fmt.Sprintf("[*ErrorTemplates.add] (%s) OnGenExplainFn is required", key))
+	} else if template.OnGenBugFixFn == nil {
+		panic(fmt.Sprintf("[*ErrorTemplates.add] (%s) OnGenBugFixFn is required", key))
+	}
+
 	if key == "." {
 		panic("Invalid template registration.")
 	} else if tmp, templateExists := (*tmps)[key]; templateExists {
