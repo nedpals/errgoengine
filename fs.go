@@ -6,13 +6,13 @@ import (
 	"os"
 )
 
-type RootFS struct{}
+type RawFS struct{}
 
-func (*RootFS) Open(name string) (fs.File, error) {
+func (*RawFS) Open(name string) (fs.File, error) {
 	return os.Open(name)
 }
 
-func (rfs *RootFS) ReadFile(name string) ([]byte, error) {
+func (rfs *RawFS) ReadFile(name string) ([]byte, error) {
 	file, err := rfs.Open(name)
 	if err != nil {
 		return nil, err

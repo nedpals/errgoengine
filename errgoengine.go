@@ -18,7 +18,7 @@ type ErrgoEngine struct {
 func New() *ErrgoEngine {
 	return &ErrgoEngine{
 		ErrorTemplates: ErrorTemplates{},
-		FS:             &RootFS{},
+		FS:             &RawFS{},
 	}
 }
 
