@@ -10,16 +10,16 @@ import (
 
 func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	// Runtime
-	errorTemplates.Add(java.Language, NullPointerException)
-	errorTemplates.Add(java.Language, ArrayIndexOutOfBoundsException)
-	errorTemplates.Add(java.Language, ArithmeticException)
+	errorTemplates.MustAdd(java.Language, NullPointerException)
+	errorTemplates.MustAdd(java.Language, ArrayIndexOutOfBoundsException)
+	errorTemplates.MustAdd(java.Language, ArithmeticException)
 
 	// Compile time
-	errorTemplates.Add(java.Language, PublicClassFilenameMismatchError)
-	errorTemplates.Add(java.Language, ParseEndOfFileError)
-	errorTemplates.Add(java.Language, UnreachableStatementError)
-	errorTemplates.Add(java.Language, ArrayRequiredTypeError)
-	errorTemplates.Add(java.Language, UnknownVariableError)
+	errorTemplates.MustAdd(java.Language, PublicClassFilenameMismatchError)
+	errorTemplates.MustAdd(java.Language, ParseEndOfFileError)
+	errorTemplates.MustAdd(java.Language, UnreachableStatementError)
+	errorTemplates.MustAdd(java.Language, ArrayRequiredTypeError)
+	errorTemplates.MustAdd(java.Language, UnknownVariableError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

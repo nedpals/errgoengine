@@ -7,14 +7,14 @@ import (
 
 func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	// Runtime error
-	errorTemplates.Add(python.Language, ZeroDivisionError)
-	errorTemplates.Add(python.Language, NameError)
-	errorTemplates.Add(python.Language, ValueError)
-	errorTemplates.Add(python.Language, AttributeError)
+	errorTemplates.MustAdd(python.Language, ZeroDivisionError)
+	errorTemplates.MustAdd(python.Language, NameError)
+	errorTemplates.MustAdd(python.Language, ValueError)
+	errorTemplates.MustAdd(python.Language, AttributeError)
 
 	// Compile time error
-	errorTemplates.Add(python.Language, SyntaxError)
-	errorTemplates.Add(python.Language, IndentationError)
+	errorTemplates.MustAdd(python.Language, SyntaxError)
+	errorTemplates.MustAdd(python.Language, IndentationError)
 }
 
 func compileTimeError(pattern string) string {

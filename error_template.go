@@ -38,18 +38,18 @@ type ErrorTemplates map[string]*CompiledErrorTemplate
 
 const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
 
-func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
+func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) (*CompiledErrorTemplate, error) {
 	key := TemplateKey(language.Name, template.Name)
 	if template.OnGenExplainFn == nil {
-		panic(fmt.Sprintf("[*ErrorTemplates.add] (%s) OnGenExplainFn is required", key))
+		return nil, fmt.Errorf("(%s) OnGenExplainFn is required", key)
 	} else if template.OnGenBugFixFn == nil {
-		panic(fmt.Sprintf("[*ErrorTemplates.add] (%s) OnGenBugFixFn is required", key))
+		return nil, fmt.Errorf("(%s) OnGenBugFixFn is required", key)
 	}
 
 	if key == "." {
-		panic("Invalid template registration.")
+		return nil, fmt.Errorf("language name and/or template name are empty")
 	} else if tmp, templateExists := (*tmps)[key]; templateExists {
-		return tmp
+		return tmp, nil
 	} else if !language.isCompiled {
 		language.Compile()
 	}
@@ -75,18 +75,34 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) *Com
 			strings.ReplaceAll(patternForCompile, "$stacktrace", defaultStackTraceRegex)
 
 		if len(template.StackTracePattern) != 0 {
-			stackTracePattern = regexp.MustCompile(template.StackTracePattern)
+			var err error
+			stackTracePattern, err = regexp.Compile(template.StackTracePattern)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	compiledPattern := regexp.MustCompile("(?m)^" + patternForCompile + "$")
+	compiledPattern, err := regexp.Compile("(?m)^" + patternForCompile + "$")
+	if err != nil {
+		return nil, err
+	}
+
 	(*tmps)[key] = &CompiledErrorTemplate{
 		ErrorTemplate:     template,
 		Language:          language,
 		Pattern:           compiledPattern,
 		StackTracePattern: stackTracePattern,
 	}
-	return (*tmps)[key]
+	return (*tmps)[key], nil
+}
+
+func (tmps ErrorTemplates) MustAdd(language *Language, template ErrorTemplate) *CompiledErrorTemplate {
+	tmp, err := tmps.Add(language, template)
+	if err != nil {
+		panic(fmt.Sprintf("ErrorTemplates.MustAdd: %s", err.Error()))
+	}
+	return tmp
 }
 
 func (tmps ErrorTemplates) Match(msg string) *CompiledErrorTemplate {
