@@ -39,8 +39,16 @@ func (lang *Language) Compile() {
 		lang.LocationConverter = DefaultLocationConverter
 	}
 
-	lang.stackTraceRegex = regexp.MustCompile("(?m)" + lang.StackTracePattern)
+	if len(lang.StackTracePattern) != 0 {
+		lang.stackTraceRegex = regexp.MustCompile("(?m)" + lang.StackTracePattern)
+	}
+
 	lang.isCompiled = true
+}
+
+// SetTemplateStackTraceRegex sets the language's regex pattern directly. for testing purposes only
+func SetTemplateStackTraceRegex(lang *Language, pattern *regexp.Regexp) {
+	lang.stackTraceRegex = pattern
 }
 
 func DefaultLocationConverter(path, pos string) Location {
