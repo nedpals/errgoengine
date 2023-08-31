@@ -4,11 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	tu "github.com/nedpals/errgoengine/error_templates/test_utils"
+	etu "github.com/nedpals/errgoengine/error_templates/test_utils"
+	testutils "github.com/nedpals/errgoengine/test_utils"
 )
 
 func TestParserScan(t *testing.T) {
-	p := tu.NewParser()
+	p := etu.NewParser()
 	input := strings.TrimSpace(`
 template: "abc.test"
 ---
@@ -20,13 +21,13 @@ function helloWorld() {}
 		t.Fatal(err)
 	}
 
-	tu.Equals(t, out.Template, "test")
-	tu.Equals(t, out.Language, "abc")
-	tu.Equals(t, out.Output, strings.TrimSpace(`function helloWorld() {}`))
+	testutils.Equals(t, out.Template, "test")
+	testutils.Equals(t, out.Language, "abc")
+	testutils.Equals(t, out.Output, strings.TrimSpace(`function helloWorld() {}`))
 }
 
 func TestParserInputExpected(t *testing.T) {
-	p := tu.NewParser()
+	p := etu.NewParser()
 
 	errInput := strings.TrimSpace(`
 template: "abc.test"
@@ -35,7 +36,7 @@ function helloWorld() {}
 	`)
 
 	_, _, err := p.ParseInputExpected("", errInput)
-	tu.ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 1")
+	testutils.ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 1")
 
 	errInput = strings.TrimSpace(`
 template: "test"
@@ -53,10 +54,10 @@ test2
 	`)
 
 	_, _, err = p.ParseInputExpected("", errInput)
-	tu.ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 3")
+	testutils.ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 3")
 
 	_, _, err = p.ParseInputExpected("", "")
-	tu.ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 0")
+	testutils.ExpectError(t, err, "expected 2 raw outputs (1 for input, 1 for expected), got 0")
 
 	input := strings.TrimSpace(`
 template: "abc.test"
@@ -74,12 +75,12 @@ Error text goes here!
 	}
 
 	// Input
-	tu.Equals(t, inp.Template, "test")
-	tu.Equals(t, inp.Language, "abc")
-	tu.Equals(t, inp.Output, strings.TrimSpace(`function helloWorld() {}`))
+	testutils.Equals(t, inp.Template, "test")
+	testutils.Equals(t, inp.Language, "abc")
+	testutils.Equals(t, inp.Output, strings.TrimSpace(`function helloWorld() {}`))
 
 	// Expected
-	tu.Equals(t, exp.Template, "test2")
-	tu.Equals(t, exp.Language, "def")
-	tu.Equals(t, exp.Output, strings.TrimSpace(`Error text goes here!`))
+	testutils.Equals(t, exp.Template, "test2")
+	testutils.Equals(t, exp.Language, "def")
+	testutils.Equals(t, exp.Output, strings.TrimSpace(`Error text goes here!`))
 }
