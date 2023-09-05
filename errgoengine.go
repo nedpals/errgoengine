@@ -11,12 +11,17 @@ import (
 )
 
 type ErrgoEngine struct {
+	SharedStore    *Store
 	ErrorTemplates ErrorTemplates
 	FS             fs.ReadFileFS
 }
 
 func New() *ErrgoEngine {
 	return &ErrgoEngine{
+		SharedStore: &Store{
+			Documents: map[string]*Document{},
+			Symbols:   map[string]*SymbolTree{},
+		},
 		ErrorTemplates: ErrorTemplates{},
 		FS:             &RawFS{},
 	}
@@ -29,7 +34,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	}
 
 	// initial context data extraction
-	contextData := &ContextData{WorkingPath: workingPath}
+	contextData := &ContextData{Store: e.SharedStore, WorkingPath: workingPath}
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
 		for idx, matchedContent := range submatches {
