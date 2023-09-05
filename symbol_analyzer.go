@@ -80,7 +80,35 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 		// - content
 		// - position
 		// - item name (sym.children.0.name for example)
-		if body, ok := captured["body"]; ok {
+		if identifiedKind == SymbolKindImport {
+			name, ok := captured["name"]
+			if !ok {
+				// TODO: error
+				continue
+			}
+
+			resolvedImport := an.doc.Language.ImportResolver(an.contextData, ImportParams{
+				Node:       name,
+				CurrentDir: an.contextData.WorkingPath,
+			})
+
+			if len(resolvedImport.Path) == 0 {
+				// TODO: error
+				continue
+			}
+
+			an.contextData.DepGraph.Add(
+				an.contextData.CurrentDocumentPath,
+				map[string]string{
+					resolvedImport.Name: resolvedImport.Path,
+				})
+
+			parent.Add(&ImportSymbol{
+				Alias:           resolvedImport.Name,
+				Node:            an.contextData.DepGraph[resolvedImport.Path],
+				ImportedSymbols: resolvedImport.Symbols,
+			})
+		} else if body, ok := captured["body"]; ok {
 			// returnSym = an.contextData.AnalyzeValue(body)
 			childTree := parent.CreateChildFromNode(body)
 

@@ -19,6 +19,7 @@ type ErrgoEngine struct {
 func New() *ErrgoEngine {
 	return &ErrgoEngine{
 		SharedStore: &Store{
+			DepGraph:  DepGraph{},
 			Documents: map[string]*Document{},
 			Symbols:   map[string]*SymbolTree{},
 		},

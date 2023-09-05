@@ -9,6 +9,7 @@ const (
 	SymbolKindFunction SymbolKind = iota
 	SymbolKindVariable SymbolKind = iota
 	SymbolKindArray    SymbolKind = iota
+	SymbolKindImport   SymbolKind = iota
 )
 
 type Symbol interface {
@@ -116,3 +117,34 @@ func (sym BuiltinSymbol) Location() Location {
 func Builtin(name string) Symbol {
 	return BuiltinSymbol{Name_: name}
 }
+
+type ImportSymbol struct {
+	Alias           string
+	Node            *DepNode
+	ImportedSymbols []string
+}
+
+func (sym ImportSymbol) Name() string {
+	return sym.Alias
+}
+
+func (sym ImportSymbol) Kind() SymbolKind {
+	return SymbolKindImport
+}
+
+func (sym ImportSymbol) Location() Location {
+	return Location{
+		DocumentPath: sym.Node.Path,
+		Position: Position{
+			Line:   0,
+			Column: 0,
+			Index:  0,
+		},
+	}
+}
+
+// TODO:
+// func (sym ImportSymbol) Children() *SymbolTree {
+// 	// TODO:
+// 	return nil
+// }

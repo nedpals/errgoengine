@@ -3,6 +3,7 @@ package errgoengine
 import sitter "github.com/smacker/go-tree-sitter"
 
 type Store struct {
+	DepGraph  DepGraph
 	Documents map[string]*Document
 	Symbols   map[string]*SymbolTree
 }

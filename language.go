@@ -19,6 +19,7 @@ type Language struct {
 	SymbolsToCapture  ISymbolCaptureList
 	LocationConverter func(path, pos string) Location
 	ValueAnalyzer     func(NodeValueAnalyzer, Node) Symbol
+	ImportResolver    func(NodeValueAnalyzer, ImportParams) ResolvedImport
 }
 
 func (lang *Language) MatchPath(path string) bool {
@@ -41,6 +42,10 @@ func (lang *Language) Compile() {
 
 	if len(lang.StackTracePattern) != 0 {
 		lang.stackTraceRegex = regexp.MustCompile("(?m)" + lang.StackTracePattern)
+	}
+
+	if lang.ImportResolver == nil {
+		panic(fmt.Sprintf("[Language -> %s] ImportResolver must not be nil", lang.Name))
 	}
 
 	lang.isCompiled = true
