@@ -8,7 +8,7 @@ import (
 )
 
 type SymbolAnalyzer struct {
-	contextData *ContextData
+	ContextData *ContextData
 	doc         *Document
 }
 
@@ -87,9 +87,9 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 				continue
 			}
 
-			resolvedImport := an.doc.Language.ImportResolver(an.contextData, ImportParams{
+			resolvedImport := an.doc.Language.ImportResolver(an.ContextData, ImportParams{
 				Node:       name,
-				CurrentDir: an.contextData.WorkingPath,
+				CurrentDir: an.ContextData.WorkingPath,
 			})
 
 			if len(resolvedImport.Path) == 0 {
@@ -97,19 +97,19 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 				continue
 			}
 
-			an.contextData.DepGraph.Add(
-				an.contextData.CurrentDocumentPath,
+			an.ContextData.DepGraph.Add(
+				an.ContextData.CurrentDocumentPath,
 				map[string]string{
 					resolvedImport.Name: resolvedImport.Path,
 				})
 
 			parent.Add(&ImportSymbol{
 				Alias:           resolvedImport.Name,
-				Node:            an.contextData.DepGraph[resolvedImport.Path],
+				Node:            an.ContextData.DepGraph[resolvedImport.Path],
 				ImportedSymbols: resolvedImport.Symbols,
 			})
 		} else if body, ok := captured["body"]; ok {
-			// returnSym = an.contextData.AnalyzeValue(body)
+			// returnSym = an.ContextData.AnalyzeValue(body)
 			childTree := parent.CreateChildFromNode(body)
 
 			children := make(ISymbolCaptureList, 0)
@@ -130,7 +130,7 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 				Children_: childTree,
 			})
 		} else if content, ok := captured["content"]; ok {
-			returnSym := an.contextData.AnalyzeValue(content)
+			returnSym := an.ContextData.AnalyzeValue(content)
 			parent.Add(&VariableSymbol{
 				Name_:       captured["name"].Text(),
 				Location_:   captured["sym"].Location(),
@@ -140,10 +140,11 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 	}
 }
 
-func (an *SymbolAnalyzer) AnalyzeTree(tree *sitter.Tree) {
-	rootNode := tree.RootNode()
-	symTree := an.contextData.InitOrGetSymbolTree(an.doc.Path)
-	an.contextData.CurrentDocumentPath = an.doc.Path
+func (an *SymbolAnalyzer) Analyze(doc *Document) {
+	an.doc = doc
+	rootNode := doc.Tree.RootNode()
+	symTree := an.ContextData.InitOrGetSymbolTree(an.doc.Path)
+	an.ContextData.CurrentDocumentPath = an.doc.Path
 	an.captureAndAnalyze(symTree, rootNode, an.doc.Language.SymbolsToCapture...)
-	an.contextData.CurrentDocumentPath = ""
+	an.ContextData.CurrentDocumentPath = ""
 }

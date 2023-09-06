@@ -1,7 +1,7 @@
 package errgoengine
 
 import (
-	"context"
+	"bytes"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -18,11 +18,7 @@ type ErrgoEngine struct {
 
 func New() *ErrgoEngine {
 	return &ErrgoEngine{
-		SharedStore: &Store{
-			DepGraph:  DepGraph{},
-			Documents: map[string]*Document{},
-			Symbols:   map[string]*SymbolTree{},
-		},
+		SharedStore:    NewEmptyStore(),
 		ErrorTemplates: ErrorTemplates{},
 		FS:             &RawFS{},
 	}
@@ -81,6 +77,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 	// open contents of the extracted stack file locations
 	parser := sitter.NewParser()
+	analyzer := &SymbolAnalyzer{ContextData: contextData}
 
 	for _, node := range contextData.StackTraceGraph {
 		contents, err := e.FS.ReadFile(node.DocumentPath)
@@ -88,37 +85,34 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 			return nil, nil, err
 		}
 
-		// check matched languages
-		selectedLanguage := template.Language
-		if !selectedLanguage.MatchPath(node.DocumentPath) {
-			return nil, nil, fmt.Errorf("no language found for %s", node.DocumentPath)
-		}
+		var selectedLanguage *Language
+		existingDoc, docExists := contextData.Documents[node.DocumentPath]
 
-		// compile language first (if not yet)
-		selectedLanguage.Compile()
+		// check matched languages
+		if docExists {
+			selectedLanguage = existingDoc.Language
+		} else {
+			selectedLanguage = template.Language
+			if !selectedLanguage.MatchPath(node.DocumentPath) {
+				return nil, nil, fmt.Errorf("no language found for %s", node.DocumentPath)
+			}
+
+			// compile language first (if not yet)
+			selectedLanguage.Compile()
+		}
 
 		// do semantic analysis
-		parser.SetLanguage(selectedLanguage.SitterLanguage)
-
-		var existingTree *sitter.Tree
-		if doc, ok := contextData.Documents[node.DocumentPath]; ok {
-			existingTree = doc.Tree
-		}
-
-		tree, err := parser.ParseCtx(context.Background(), existingTree, contents)
+		doc, err := ParseDocument(node.DocumentPath, bytes.NewReader(contents), parser, selectedLanguage, existingDoc)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		doc := contextData.AddDocument(node.DocumentPath, string(contents), selectedLanguage, tree)
-		parser.Reset()
-
-		analyzer := &SymbolAnalyzer{
-			contextData: contextData,
-			doc:         doc,
+		// add doc if it does not already exist
+		if doc != existingDoc {
+			doc = contextData.AddDocument(doc)
 		}
 
-		analyzer.AnalyzeTree(tree)
+		analyzer.Analyze(doc)
 	}
 
 	// locate main error

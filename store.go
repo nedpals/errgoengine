@@ -1,11 +1,17 @@
 package errgoengine
 
-import sitter "github.com/smacker/go-tree-sitter"
-
 type Store struct {
 	DepGraph  DepGraph
 	Documents map[string]*Document
 	Symbols   map[string]*SymbolTree
+}
+
+func NewEmptyStore() *Store {
+	return &Store{
+		DepGraph:  DepGraph{},
+		Documents: map[string]*Document{},
+		Symbols:   map[string]*SymbolTree{},
+	}
 }
 
 func (store *Store) FindSymbol(docPath string, name string, pos int) Symbol {
@@ -45,19 +51,12 @@ func (store *Store) FindSymbol(docPath string, name string, pos int) Symbol {
 	return nil
 }
 
-func (store *ContextData) AddDocument(path, contents string, lang *Language, tree *sitter.Tree) *Document {
+func (store *ContextData) AddDocument(doc *Document) *Document {
 	if store.Documents == nil {
 		store.Documents = make(map[string]*Document)
 	}
 
-	doc := &Document{
-		Path:     path,
-		Language: lang,
-		Contents: contents,
-		Tree:     tree,
-	}
-
-	store.Documents[path] = doc
+	store.Documents[doc.Path] = doc
 	return doc
 }
 
