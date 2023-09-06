@@ -1,6 +1,27 @@
 package errgoengine
 
+import "fmt"
+
 type SymbolKind int
+
+func (kind SymbolKind) String() string {
+	switch kind {
+	case SymbolKindBuiltin:
+		return "builtin"
+	case SymbolKindClass:
+		return "class"
+	case SymbolKindFunction:
+		return "function"
+	case SymbolKindVariable:
+		return "variable"
+	case SymbolKindArray:
+		return "array"
+	case SymbolKindImport:
+		return "import"
+	default:
+		return fmt.Sprintf("unknown(%d)", kind)
+	}
+}
 
 const (
 	SymbolKindUnknown  SymbolKind = 0
