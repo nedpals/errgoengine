@@ -48,6 +48,10 @@ func (lang *Language) Compile() {
 		panic(fmt.Sprintf("[Language -> %s] ImportResolver must not be nil", lang.Name))
 	}
 
+	if lang.SymbolsToCapture != nil && lang.ValueAnalyzer == nil {
+		panic(fmt.Sprintf("[Language -> %s] ValueAnalyzer must not be nil", lang.Name))
+	}
+
 	lang.isCompiled = true
 }
 
