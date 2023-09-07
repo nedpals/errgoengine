@@ -15,7 +15,31 @@ var Language = &lib.Language{
 		// TODO:
 		return lib.Builtin("void")
 	},
+	ImportResolver: func(an lib.NodeValueAnalyzer, params lib.ImportParams) lib.ResolvedImport {
+		// TODO:
+
+		return lib.ResolvedImport{
+			Path: "",
+		}
+	},
 	SymbolsToCapture: lib.ISymbolCaptureList{
+		lib.SymbolCapture{
+			Query: "import_statement",
+			Kind:  lib.SymbolKindImport,
+			NameNode: &lib.SymbolCapture{
+				Query: "_",
+				Field: "name",
+			},
+		},
+		lib.SymbolCapture{
+			Query: "import_from_statement",
+			Kind:  lib.SymbolKindImport,
+			NameNode: &lib.SymbolCapture{
+				Query: "_",
+				Field: "module_name",
+			},
+			// TODO: include symbol names?
+		},
 		lib.SymbolCapture{
 			Query: "function_definition",
 			Kind:  lib.SymbolKindFunction,

@@ -88,7 +88,21 @@ var Language = &lib.Language{
 		}
 		return BuiltinTypes.VoidSymbol
 	},
+	ImportResolver: func(an lib.NodeValueAnalyzer, params lib.ImportParams) lib.ResolvedImport {
+		// TODO:
+
+		return lib.ResolvedImport{
+			Path: "",
+		}
+	},
 	SymbolsToCapture: lib.ISymbolCaptureList{
+		lib.SymbolCapture{
+			Query: "import_declaration",
+			Kind:  lib.SymbolKindImport,
+			NameNode: &lib.SymbolCapture{
+				Query: `(_) ("." (asterisk))*`,
+			},
+		},
 		lib.SymbolCapture{
 			Query: "class_declaration",
 			Kind:  lib.SymbolKindClass,
