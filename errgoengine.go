@@ -128,7 +128,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 	if nearest.StartPoint().Row != uint32(mainTraceNode.Line) {
 		cursor := sitter.NewTreeCursor(nearest)
-		nearest = locateNearestNode(cursor, mainTraceNode.Position)
+		nearest = nearestNodeFromPos(cursor, mainTraceNode.Position)
 	}
 
 	contextData.MainError = MainError{

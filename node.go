@@ -77,7 +77,7 @@ func WrapNode(doc *Document, n *sitter.Node) SyntaxNode {
 	}
 }
 
-func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
+func nearestNodeFromPos(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 	cursor.GoToFirstChild()
 	defer cursor.GoToParent()
 
@@ -89,7 +89,7 @@ func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 		if pointA.Row+1 == uint32(pos.Line) {
 			return currentNode
 		} else if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
-			return locateNearestNode(cursor, pos)
+			return nearestNodeFromPos(cursor, pos)
 		} else if !cursor.GoToNextSibling() {
 			return nil
 		}
