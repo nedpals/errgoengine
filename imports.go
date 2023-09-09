@@ -1,7 +1,7 @@
 package errgoengine
 
 type ImportParams struct {
-	Node       Node
+	Node       SyntaxNode
 	CurrentDir string
 }
 

@@ -18,7 +18,7 @@ type Language struct {
 	ErrorPattern      string
 	SymbolsToCapture  ISymbolCaptureList
 	LocationConverter func(path, pos string) Location
-	ValueAnalyzer     func(NodeValueAnalyzer, Node) Symbol
+	ValueAnalyzer     func(NodeValueAnalyzer, SyntaxNode) Symbol
 	ImportResolver    func(NodeValueAnalyzer, ImportParams) ResolvedImport
 }
 

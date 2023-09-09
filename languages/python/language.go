@@ -11,7 +11,7 @@ var Language = &lib.Language{
 	SitterLanguage:    python.GetLanguage(),
 	StackTracePattern: `\s+File "(?P<path>\S+)", line (?P<position>\d+), in (?P<symbol>\S+)`,
 	ErrorPattern:      `Traceback \(most recent call last\):$stacktrace$message`,
-	ValueAnalyzer: func(nva lib.NodeValueAnalyzer, n lib.Node) lib.Symbol {
+	ValueAnalyzer: func(nva lib.NodeValueAnalyzer, n lib.SyntaxNode) lib.Symbol {
 		// TODO:
 		return lib.Builtin("void")
 	},

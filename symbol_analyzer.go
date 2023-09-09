@@ -42,7 +42,7 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 		}
 
 		// group first the information
-		captured := map[string]Node{}
+		captured := map[string]SyntaxNode{}
 		firstMatchCname := ""
 		for _, c := range m.Captures {
 			key := q.CaptureNameForId(c.Index)

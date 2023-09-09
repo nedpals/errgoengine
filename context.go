@@ -3,7 +3,7 @@ package errgoengine
 type MainError struct {
 	ErrorNode *StackTraceEntry
 	Document  *Document
-	Nearest   Node
+	Nearest   SyntaxNode
 }
 
 func (err MainError) DocumentPath() string {
@@ -40,7 +40,7 @@ func (data *ContextData) FindSymbol(name string, pos int) Symbol {
 	return data.Store.FindSymbol(path, name, pos)
 }
 
-func (data *ContextData) AnalyzeValue(n Node) Symbol {
+func (data *ContextData) AnalyzeValue(n SyntaxNode) Symbol {
 	return n.Doc.Language.ValueAnalyzer(data, n)
 }
 

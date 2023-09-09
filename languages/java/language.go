@@ -12,7 +12,7 @@ var Language = &lib.Language{
 	FilePatterns:      []string{".java"},
 	SitterLanguage:    java.GetLanguage(),
 	StackTracePattern: `\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`,
-	ValueAnalyzer: func(an lib.NodeValueAnalyzer, n lib.Node) lib.Symbol {
+	ValueAnalyzer: func(an lib.NodeValueAnalyzer, n lib.SyntaxNode) lib.Symbol {
 		switch n.Type() {
 		// types first
 		case "array_type":

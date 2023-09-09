@@ -4,41 +4,41 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-type Node struct {
+type SyntaxNode struct {
 	*sitter.Node
 	Doc  *Document
 	text string
 }
 
-func (n Node) Text() string {
+func (n SyntaxNode) Text() string {
 	return n.text
 }
 
-func (n Node) ChildByFieldName(field string) Node {
+func (n SyntaxNode) ChildByFieldName(field string) SyntaxNode {
 	cNode := n.Node.ChildByFieldName(field)
 	return WrapNode(n.Doc, cNode)
 }
 
-func (n Node) Parent() Node {
+func (n SyntaxNode) Parent() SyntaxNode {
 	return WrapNode(n.Doc, n.Node.Parent())
 }
 
-func (n Node) NamedChild(idx int) Node {
+func (n SyntaxNode) NamedChild(idx int) SyntaxNode {
 	cNode := n.Node.NamedChild(idx)
 	return WrapNode(n.Doc, cNode)
 }
 
-func (n Node) LastNamedChild() Node {
+func (n SyntaxNode) LastNamedChild() SyntaxNode {
 	len := n.Node.NamedChildCount()
 	return n.NamedChild(int(len) - 1)
 }
 
-func (n Node) Child(idx int) Node {
+func (n SyntaxNode) Child(idx int) SyntaxNode {
 	cNode := n.Node.Child(idx)
 	return WrapNode(n.Doc, cNode)
 }
 
-func (n Node) StartPosition() Position {
+func (n SyntaxNode) StartPosition() Position {
 	p := n.Node.StartPoint()
 	return Position{
 		Line:   int(p.Row),
@@ -47,7 +47,7 @@ func (n Node) StartPosition() Position {
 	}
 }
 
-func (n Node) EndPosition() Position {
+func (n SyntaxNode) EndPosition() Position {
 	p := n.Node.EndPoint()
 	return Position{
 		Line:   int(p.Row),
@@ -56,19 +56,19 @@ func (n Node) EndPosition() Position {
 	}
 }
 
-func (n Node) Location() Location {
+func (n SyntaxNode) Location() Location {
 	return Location{
 		DocumentPath: n.Doc.Path,
 		Position:     n.StartPosition(),
 	}
 }
 
-func (n Node) RawNode() *sitter.Node {
+func (n SyntaxNode) RawNode() *sitter.Node {
 	return n.Node
 }
 
-func WrapNode(doc *Document, n *sitter.Node) Node {
-	return Node{
+func WrapNode(doc *Document, n *sitter.Node) SyntaxNode {
+	return SyntaxNode{
 		text: n.Content([]byte(doc.Contents)),
 		Doc:  doc,
 		Node: n,
@@ -77,7 +77,7 @@ func WrapNode(doc *Document, n *sitter.Node) Node {
 
 type NodeValueAnalyzer interface {
 	FindSymbol(name string, pos int) Symbol
-	AnalyzeValue(n Node) Symbol
+	AnalyzeValue(n SyntaxNode) Symbol
 }
 
 func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {

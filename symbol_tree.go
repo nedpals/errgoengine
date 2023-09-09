@@ -9,7 +9,7 @@ type SymbolTree struct {
 	Scopes       []*SymbolTree
 }
 
-func (tree *SymbolTree) CreateChildFromNode(n Node) *SymbolTree {
+func (tree *SymbolTree) CreateChildFromNode(n SyntaxNode) *SymbolTree {
 	return &SymbolTree{
 		Parent:       tree,
 		StartPos:     n.StartPosition(),
