@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
-	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -68,18 +67,18 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 		}
 
 		stLoc := template.Language.LocationConverter(rawPath, rawPos)
-		if contextData.StackTraceGraph == nil {
-			contextData.StackTraceGraph = StackTraceGraph{}
+		if contextData.TraceStack == nil {
+			contextData.TraceStack = TraceStack{}
 		}
 
-		contextData.StackTraceGraph.Add(rawSymbolName, stLoc)
+		contextData.TraceStack.Add(rawSymbolName, stLoc)
 	}
 
 	// open contents of the extracted stack file locations
 	parser := sitter.NewParser()
 	analyzer := &SymbolAnalyzer{ContextData: contextData}
 
-	for _, node := range contextData.StackTraceGraph {
+	for _, node := range contextData.TraceStack {
 		contents, err := e.FS.ReadFile(node.DocumentPath)
 		if err != nil {
 			return nil, nil, err
@@ -116,30 +115,24 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	}
 
 	// locate main error
-	for _, node := range contextData.StackTraceGraph {
-		if !strings.HasPrefix(node.DocumentPath, contextData.WorkingPath) {
-			continue
-		}
+	mainTraceNode := contextData.TraceStack.NearestTo(contextData.WorkingPath)
 
-		// get nearest node
-		doc := contextData.Documents[node.DocumentPath]
-		nearest := doc.Tree.RootNode().NamedDescendantForPointRange(
-			sitter.Point{Row: uint32(node.Line)},
-			sitter.Point{Row: uint32(node.Line)},
-		)
+	// get nearest node
+	doc := contextData.Documents[mainTraceNode.DocumentPath]
+	nearest := doc.Tree.RootNode().NamedDescendantForPointRange(
+		sitter.Point{Row: uint32(mainTraceNode.Line)},
+		sitter.Point{Row: uint32(mainTraceNode.Line)},
+	)
 
-		if nearest.StartPoint().Row != uint32(node.Line) {
-			cursor := sitter.NewTreeCursor(nearest)
-			nearest = locateNearestNode(cursor, node.Position)
-		}
+	if nearest.StartPoint().Row != uint32(mainTraceNode.Line) {
+		cursor := sitter.NewTreeCursor(nearest)
+		nearest = locateNearestNode(cursor, mainTraceNode.Position)
+	}
 
-		contextData.MainError = MainError{
-			ErrorNode: &node,
-			Document:  doc,
-			Nearest:   WrapNode(doc, nearest),
-		}
-
-		break
+	contextData.MainError = MainError{
+		ErrorNode: &mainTraceNode,
+		Document:  doc,
+		Nearest:   WrapNode(doc, nearest),
 	}
 
 	return template, contextData, nil

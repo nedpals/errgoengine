@@ -1,7 +1,7 @@
 package errgoengine
 
 type MainError struct {
-	ErrorNode *STGNode
+	ErrorNode *StackTraceEntry
 	Document  *Document
 	Nearest   Node
 }
@@ -15,7 +15,7 @@ type ContextData struct {
 	WorkingPath         string
 	CurrentDocumentPath string
 	Variables           map[string]string
-	StackTraceGraph     StackTraceGraph
+	TraceStack          TraceStack
 	MainError           MainError
 }
 
