@@ -1,6 +1,7 @@
 package errgoengine
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,13 +10,13 @@ import (
 var SymPrefix = "%d.sym.%d"
 
 type ISymbolCapture interface {
-	Compile(prefix, tag string, sb *strings.Builder)
+	Compile(prefix, tag string, sb *bytes.Buffer)
 	SymKind() SymbolKind
 }
 
 type ISymbolCaptureList []ISymbolCapture
 
-func (list ISymbolCaptureList) Compile(prefix, tag string, sb *strings.Builder) {
+func (list ISymbolCaptureList) Compile(prefix, tag string, sb *bytes.Buffer) {
 	sb.WriteString("[")
 	for idx, sc := range list {
 		sc.Compile(fmt.Sprintf(SymPrefix, idx, sc.SymKind()), "", sb)
@@ -57,7 +58,7 @@ func (cap SymbolCapture) SymKind() SymbolKind {
 	return cap.Kind
 }
 
-func (cap SymbolCapture) Compile(prefix, tag string, sb *strings.Builder) {
+func (cap SymbolCapture) Compile(prefix, tag string, sb *bytes.Buffer) {
 	isAlternations := strings.HasPrefix(cap.Query, "[") && strings.HasSuffix(cap.Query, "]")
 	isSingle := len(cap.Children) < 2
 	parCount := countSuffix(cap.Query, ')')

@@ -1,6 +1,8 @@
 package errgoengine
 
 import (
+	"io"
+
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -90,6 +92,36 @@ func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 			return locateNearestNode(cursor, pos)
 		} else if !cursor.GoToNextSibling() {
 			return nil
+		}
+	}
+}
+
+func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(*sitter.QueryMatch, *sitter.Query) bool) {
+	query, err := io.ReadAll(queryR)
+	if err != nil {
+		panic(err)
+	}
+
+	q, err := sitter.NewQuery([]byte(query), rootNode.Doc.Language.SitterLanguage)
+	if err != nil {
+		panic(err)
+	}
+
+	queryCursor := sitter.NewQueryCursor()
+	defer queryCursor.Close()
+
+	queryCursor.Exec(q, rootNode.Node)
+
+	for i := 0; ; i++ {
+		m, ok := queryCursor.NextMatch()
+		if !ok {
+			break
+		} else if len(m.Captures) == 0 {
+			continue
+		}
+
+		if !callback(m, q) {
+			break
 		}
 	}
 }
