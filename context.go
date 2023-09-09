@@ -19,6 +19,15 @@ type ContextData struct {
 	MainError           MainError
 }
 
+func NewContextData(store *Store, workingPath string) *ContextData {
+	return &ContextData{
+		Store:       store,
+		WorkingPath: workingPath,
+		Variables:   make(map[string]string),
+		TraceStack:  TraceStack{},
+	}
+}
+
 func (data *ContextData) MainDocumentPath() string {
 	if data.MainError.ErrorNode != nil {
 		return data.MainError.DocumentPath()

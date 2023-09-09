@@ -24,10 +24,7 @@ func (cases TestCases) Execute(t *testing.T, lang *lib.Language) {
 
 	parser := sitter.NewParser()
 	analyzer := &lib.SymbolAnalyzer{
-		ContextData: &lib.ContextData{
-			WorkingPath: "",
-			Store:       lib.NewEmptyStore(),
-		},
+		ContextData: lib.NewContextData(lib.NewEmptyStore(), ""),
 	}
 
 	sb := &strings.Builder{}

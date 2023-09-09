@@ -30,7 +30,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	}
 
 	// initial context data extraction
-	contextData := &ContextData{Store: e.SharedStore, WorkingPath: workingPath}
+	contextData := NewContextData(e.SharedStore, workingPath)
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
 		for idx, matchedContent := range submatches {
