@@ -8,6 +8,16 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+type NodeValueAnalyzer interface {
+	FindSymbol(name string, pos int) Symbol
+	AnalyzeValue(n SyntaxNode) Symbol
+}
+
+type LanguageAnalyzer interface {
+	AnalyzeNode(SyntaxNode) Symbol
+	AnalyzeImport(ImportParams) ResolvedImport
+}
+
 type Language struct {
 	isCompiled        bool
 	stackTraceRegex   *regexp.Regexp
@@ -18,8 +28,7 @@ type Language struct {
 	ErrorPattern      string
 	SymbolsToCapture  ISymbolCaptureList
 	LocationConverter func(path, pos string) Location
-	ValueAnalyzer     func(NodeValueAnalyzer, SyntaxNode) Symbol
-	ImportResolver    func(NodeValueAnalyzer, ImportParams) ResolvedImport
+	AnalyzerFactory   func(cd *ContextData) LanguageAnalyzer
 }
 
 func (lang *Language) MatchPath(path string) bool {
@@ -44,12 +53,8 @@ func (lang *Language) Compile() {
 		lang.stackTraceRegex = regexp.MustCompile("(?m)" + lang.StackTracePattern)
 	}
 
-	if lang.ImportResolver == nil {
-		panic(fmt.Sprintf("[Language -> %s] ImportResolver must not be nil", lang.Name))
-	}
-
-	if lang.SymbolsToCapture != nil && lang.ValueAnalyzer == nil {
-		panic(fmt.Sprintf("[Language -> %s] ValueAnalyzer must not be nil", lang.Name))
+	if lang.AnalyzerFactory == nil {
+		panic(fmt.Sprintf("[Language -> %s] AnalyzerFactory must not be nil", lang.Name))
 	}
 
 	lang.isCompiled = true

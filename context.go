@@ -12,6 +12,7 @@ func (err MainError) DocumentPath() string {
 
 type ContextData struct {
 	*Store
+	Analyzer            LanguageAnalyzer
 	WorkingPath         string
 	CurrentDocumentPath string
 	Variables           map[string]string
@@ -38,10 +39,6 @@ func (data *ContextData) MainDocumentPath() string {
 func (data *ContextData) FindSymbol(name string, pos int) Symbol {
 	path := data.MainDocumentPath()
 	return data.Store.FindSymbol(path, name, pos)
-}
-
-func (data *ContextData) AnalyzeValue(n SyntaxNode) Symbol {
-	return n.Doc.Language.ValueAnalyzer(data, n)
 }
 
 func (data *ContextData) AddVariable(name string, value string) {

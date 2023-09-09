@@ -87,7 +87,7 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 				continue
 			}
 
-			resolvedImport := an.doc.Language.ImportResolver(an.ContextData, ImportParams{
+			resolvedImport := an.ContextData.Analyzer.AnalyzeImport(ImportParams{
 				Node:       name,
 				CurrentDir: an.ContextData.WorkingPath,
 			})
@@ -130,11 +130,11 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode *sitter
 				Children_: childTree,
 			})
 		} else if content, ok := captured["content"]; ok {
-			returnSym := an.ContextData.AnalyzeValue(content)
+			returnType := an.ContextData.Analyzer.AnalyzeNode(content)
 			parent.Add(&VariableSymbol{
 				Name_:       captured["name"].Text(),
 				Location_:   captured["sym"].Location(),
-				ReturnType_: returnSym,
+				ReturnType_: returnType,
 			})
 		}
 	}

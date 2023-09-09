@@ -11,16 +11,8 @@ var Language = &lib.Language{
 	SitterLanguage:    python.GetLanguage(),
 	StackTracePattern: `\s+File "(?P<path>\S+)", line (?P<position>\d+), in (?P<symbol>\S+)`,
 	ErrorPattern:      `Traceback \(most recent call last\):$stacktrace$message`,
-	ValueAnalyzer: func(nva lib.NodeValueAnalyzer, n lib.SyntaxNode) lib.Symbol {
-		// TODO:
-		return lib.Builtin("void")
-	},
-	ImportResolver: func(an lib.NodeValueAnalyzer, params lib.ImportParams) lib.ResolvedImport {
-		// TODO:
-
-		return lib.ResolvedImport{
-			Path: "",
-		}
+	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
+		return &pyAnalyzer{cd}
 	},
 	SymbolsToCapture: lib.ISymbolCaptureList{
 		lib.SymbolCapture{
@@ -89,4 +81,21 @@ var Language = &lib.Language{
 			},
 		},
 	},
+}
+
+type pyAnalyzer struct {
+	*lib.ContextData
+}
+
+func (an *pyAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
+	// TODO:
+	return lib.Builtin("void")
+}
+
+func (an *pyAnalyzer) AnalyzeImport(params lib.ImportParams) lib.ResolvedImport {
+	// TODO:
+
+	return lib.ResolvedImport{
+		Path: "",
+	}
 }

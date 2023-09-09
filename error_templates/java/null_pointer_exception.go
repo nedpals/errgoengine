@@ -30,7 +30,7 @@ var NullPointerException = lib.ErrorTemplate{
 				// check if this is just simple printing
 				if objNode.Text() == "System.out" {
 					isSystemOut = true
-				} else if retType := cd.AnalyzeValue(exprNode); retType == java.BuiltinTypes.NullSymbol {
+				} else if retType := cd.Analyzer.AnalyzeNode(exprNode); retType == java.BuiltinTypes.NullSymbol {
 					cd.MainError.Nearest = exprNode
 				}
 
@@ -41,7 +41,7 @@ var NullPointerException = lib.ErrorTemplate{
 					arguments := exprNode.ChildByFieldName("arguments")
 					for i := 0; i < int(arguments.NamedChildCount()); i++ {
 						argNode := arguments.NamedChild(i)
-						retType := cd.AnalyzeValue(argNode)
+						retType := cd.Analyzer.AnalyzeNode(argNode)
 
 						if retType == java.BuiltinTypes.NullSymbol || argNode.Type() == "array_access" {
 							cd.MainError.Nearest = argNode

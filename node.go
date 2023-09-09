@@ -75,11 +75,6 @@ func WrapNode(doc *Document, n *sitter.Node) SyntaxNode {
 	}
 }
 
-type NodeValueAnalyzer interface {
-	FindSymbol(name string, pos int) Symbol
-	AnalyzeValue(n SyntaxNode) Symbol
-}
-
 func locateNearestNode(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 	cursor.GoToFirstChild()
 	defer cursor.GoToParent()
