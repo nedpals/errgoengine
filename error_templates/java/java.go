@@ -20,6 +20,8 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, UnreachableStatementError)
 	errorTemplates.MustAdd(java.Language, ArrayRequiredTypeError)
 	errorTemplates.MustAdd(java.Language, UnknownVariableError)
+	errorTemplates.MustAdd(java.Language, NonStaticMethodAccessError)
+	errorTemplates.MustAdd(java.Language, UnclosedCharacterLiteralError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

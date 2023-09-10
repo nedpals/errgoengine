@@ -6,13 +6,15 @@ var ArithmeticException = lib.ErrorTemplate{
 	Name:    "ArithmeticException",
 	Pattern: runtimeErrorPattern("java.lang.ArithmeticException", "(?P<reason>.+)"),
 	OnGenExplainFn: func(cd *lib.ContextData) string {
-		if cd.Variables["reason"] == "/ by zero" {
-			// TODO:
+		reason := cd.Variables["reason"]
+		switch reason {
+		case "/ by zero":
 			return "One of your variables initialized a double value by dividing a number to zero"
+		case "Non-terminating decimal expansion; no exact representable decimal result.":
+			return "TODO"
+		default:
+			return "Unknown ArithmeticException"
 		}
-
-		// TODO:
-		return "arithmeticexception todo!"
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
 		// TODO:

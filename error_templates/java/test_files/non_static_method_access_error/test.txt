@@ -1,0 +1,10 @@
+template: "Java.NonStaticMethodAccessError"
+---
+Main.java:9: error: non-static method printMessage() cannot be referenced from a static context
+        printMessage(); // This will result in an error
+        ^
+1 error
+===
+template: "Java.NonStaticMethodAccessError"
+---
+aa

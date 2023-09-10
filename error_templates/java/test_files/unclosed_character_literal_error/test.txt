@@ -1,0 +1,13 @@
+template: "Java.UnclosedCharacterLiteralError"
+---
+UnclosedCharacterLiteralError.java:4: error: unclosed character literal
+        char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
+                  ^
+UnclosedCharacterLiteralError.java:4: error: unclosed character literal
+        char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
+                              ^
+2 errors
+===
+template: "Java.UnclosedCharacterLiteralError"
+---
+aa
