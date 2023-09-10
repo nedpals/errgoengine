@@ -7,6 +7,16 @@ import (
 	testutils "github.com/nedpals/errgoengine/test_utils"
 )
 
+type TestAnalyzer struct{}
+
+func (TestAnalyzer) AnalyzeNode(lib.SyntaxNode) lib.Symbol {
+	return nil
+}
+
+func (TestAnalyzer) AnalyzeImport(lib.ImportParams) lib.ResolvedImport {
+	return lib.ResolvedImport{}
+}
+
 var testLanguage = &lib.Language{
 	Name:              "TestLang",
 	FilePatterns:      []string{".test"},
@@ -16,6 +26,9 @@ var testLanguage = &lib.Language{
 			DocumentPath: path,
 			Position:     lib.Position{0, 0, 0},
 		}
+	},
+	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
+		return TestAnalyzer{}
 	},
 }
 
