@@ -1,5 +1,7 @@
 package errgoengine
 
+import sitter "github.com/smacker/go-tree-sitter"
+
 type MainError struct {
 	ErrorNode *StackTraceEntry
 	Document  *Document
@@ -47,4 +49,35 @@ func (data *ContextData) AddVariable(name string, value string) {
 	}
 
 	data.Variables[name] = value
+}
+
+func getNearestNodeWithSymbol(data *ContextData, rootNode SyntaxNode, sym Symbol) SyntaxNode {
+	cursor := sitter.NewTreeCursor(rootNode.Node)
+	cursor.GoToFirstChild()
+
+	defer cursor.Close()
+
+	for {
+		if n := cursor.CurrentNode(); n.IsNamed() {
+			wrappedNode := WrapNode(rootNode.Doc, n)
+			gotSym := data.Analyzer.AnalyzeNode(wrappedNode)
+			if gotSym == sym {
+				return wrappedNode
+			} else if n.NamedChildCount() != 0 {
+				gotNode := getNearestNodeWithSymbol(data, wrappedNode, sym)
+				if gotNode == nil {
+					// TODO:
+				}
+			}
+		}
+
+		if !cursor.GoToNextSibling() {
+			break
+		}
+	}
+}
+
+func NearestNodeWithSymbol(data *ContextData, rootNode SyntaxNode, sym Symbol, callback func(*sitter.QueryMatch, *sitter.Query) bool) {
+
+	queryStr := ""
 }
