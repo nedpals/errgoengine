@@ -6,10 +6,13 @@ import (
 	"strings"
 )
 
+type GenAnalyzeErrorFn func(cd *ContextData, m *MainError)
+
 type ErrorTemplate struct {
 	Name              string
 	Pattern           string
 	StackTracePattern string
+	OnAnalyzeErrorFn  GenAnalyzeErrorFn
 	OnGenExplainFn    GenExplainFn
 	OnGenBugFixFn     GenBugFixFn
 }

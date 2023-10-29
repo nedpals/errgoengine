@@ -6,11 +6,10 @@ var UnclosedCharacterLiteralError = lib.ErrorTemplate{
 	Name:              "UnclosedCharacterLiteralError",
 	Pattern:           comptimeErrorPattern(`unclosed character literal`),
 	StackTracePattern: comptimeStackTracePattern,
-	OnGenExplainFn: func(cd *lib.ContextData) string {
-		return "Unclosed character literal"
+	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
+		gen.Add("Unclosed character literal")
 	},
-	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
+	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		// TODO:
-		return make([]lib.BugFix, 0)
 	},
 }

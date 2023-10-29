@@ -13,6 +13,7 @@ type ErrgoEngine struct {
 	SharedStore    *Store
 	ErrorTemplates ErrorTemplates
 	FS             fs.ReadFileFS
+	OutputGen      OutputGenerator
 }
 
 func New() *ErrgoEngine {
@@ -20,6 +21,7 @@ func New() *ErrgoEngine {
 		SharedStore:    NewEmptyStore(),
 		ErrorTemplates: ErrorTemplates{},
 		FS:             &RawFS{},
+		OutputGen:      &MarkdownOutputGenerator{},
 	}
 }
 
@@ -131,19 +133,28 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 		nearest = nearestNodeFromPos(cursor, mainTraceNode.Position)
 	}
 
-	contextData.MainError = MainError{
+	// further analyze main error
+	contextData.MainError = &MainError{
 		ErrorNode: &mainTraceNode,
 		Document:  doc,
 		Nearest:   WrapNode(doc, nearest),
+	}
+
+	if contextData.MainError != nil && template.OnAnalyzeErrorFn != nil {
+		template.OnAnalyzeErrorFn(contextData, contextData.MainError)
 	}
 
 	return template, contextData, nil
 }
 
 func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) string {
+	expGen := &ExplainGenerator{}
+	fixGen := &BugFixGenerator{}
+
 	// execute error generator function
-	explanation := template.OnGenExplainFn(contextData)
-	// TODO: execute bug fix generator function
-	_ = template.OnGenBugFixFn(contextData)
-	return explanation
+	template.OnGenExplainFn(contextData, expGen)
+	template.OnGenBugFixFn(contextData, fixGen)
+
+	output := e.OutputGen.Generate(contextData, expGen, fixGen)
+	return output
 }

@@ -1,19 +1,16 @@
 package python
 
 import (
-	"fmt"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
 var NameError = lib.ErrorTemplate{
 	Name:    "NameError",
 	Pattern: `NameError: name '(?P<variable>\S+)' is not defined`,
-	OnGenExplainFn: func(cd *lib.ContextData) string {
-		return fmt.Sprintf("Your program tried to access the '%s' variable which was not found on your program.", cd.Variables["variable"])
+	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
+		gen.Add("Your program tried to access the '%s' variable which was not found on your program.", cd.Variables["variable"])
 	},
-	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
+	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		// TODO:
-		return make([]lib.BugFix, 0)
 	},
 }

@@ -1,8 +1,6 @@
 package java
 
 import (
-	"fmt"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -10,11 +8,10 @@ var UnknownVariableError = lib.ErrorTemplate{
 	Name:              "UnknownVariableError",
 	Pattern:           comptimeErrorPattern("cannot find symbol", `symbol:\s+variable (?P<variable>\S+)`),
 	StackTracePattern: comptimeStackTracePattern,
-	OnGenExplainFn: func(cd *lib.ContextData) string {
-		return fmt.Sprintf(`The program cannot find variable "%s"`, cd.Variables["variable"])
+	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
+		gen.Add(`The program cannot find variable "%s"`, cd.Variables["variable"])
 	},
-	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
+	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		// TODO:
-		return make([]lib.BugFix, 0)
 	},
 }

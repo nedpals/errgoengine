@@ -32,8 +32,8 @@ var testLanguage = &lib.Language{
 	},
 }
 
-func emptyExplainFn(cd *lib.ContextData) string      { return "" }
-func emptyBugFixFn(cd *lib.ContextData) []lib.BugFix { return make([]lib.BugFix, 0) }
+func emptyExplainFn(cd *lib.ContextData, gen *lib.ExplainGenerator) {}
+func emptyBugFixFn(cd *lib.ContextData, gen *lib.BugFixGenerator)   {}
 
 func setupTemplate(template lib.ErrorTemplate) (*lib.CompiledErrorTemplate, error) {
 	errorTemplates := lib.ErrorTemplates{}
