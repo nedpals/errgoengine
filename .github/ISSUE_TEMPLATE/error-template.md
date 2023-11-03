@@ -7,9 +7,9 @@ assignees: nedpals
 
 ---
 
-| Name | Code | Language |
-|--|--|--|
-|Error name|ErrorName|Language|
+| Name | Type | Code | Language |
+|--|--|--|--|
+|Error name| Runtime | ErrorName|Language|
 
 ## Description
 Description of the error goes here
