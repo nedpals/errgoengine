@@ -9,4 +9,15 @@ Program.java:3: error: cannot find symbol
 ===
 template: "Java.UnknownVariableError"
 ---
+# UnknownVariableError
 The program cannot find variable "a"
+```
+    public static void main(String[] args) {
+        System.out.println(a);
+                           ^
+    }
+}
+
+```
+## Steps to fix
+Nothing to fix

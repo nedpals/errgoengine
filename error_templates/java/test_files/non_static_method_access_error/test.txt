@@ -7,4 +7,16 @@ Main.java:9: error: non-static method printMessage() cannot be referenced from a
 ===
 template: "Java.NonStaticMethodAccessError"
 ---
-aa
+# NonStaticMethodAccessError
+In the `Main` class, you have invoked the `printMessage` method inside the `main` static method. 
+                
+```
+        // Attempt to call the non-static method without creating an object
+        printMessage(); // This will result in an error
+        ^^^^^^^^^^^^
+    }
+}
+
+```
+## Steps to fix
+1. Fix 1

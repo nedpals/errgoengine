@@ -5,59 +5,30 @@ import (
 	"github.com/nedpals/errgoengine/languages/java"
 )
 
-// const ()
+type exceptionLocationKind int
 
-// type nullPointerExceptionCtx struct {
-// 	isSystemOut bool
-// }
+const (
+	fromUnknown          exceptionLocationKind = 0
+	fromFunctionArgument exceptionLocationKind = iota
+	fromSystemOut        exceptionLocationKind = iota
+	fromArrayAccess      exceptionLocationKind = iota
+	fromExpression       exceptionLocationKind = iota
+	fromMethodInvocation exceptionLocationKind = iota
+)
+
+type nullPointerExceptionCtx struct {
+	kind exceptionLocationKind
+	// symbolInvolved lib.SyntaxNode
+	methodName string
+	origin     string
+}
 
 // TODO: unit testing
 var NullPointerException = lib.ErrorTemplate{
 	Name:    "NullPointerException",
 	Pattern: runtimeErrorPattern("java.lang.NullPointerException", ""),
-	// OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
-	// 	ctx := nullPointerExceptionCtx{}
-
-	// 	// if the offending line is an offending method call, get the argument that triggered the null error
-	// 	if cd.MainError.Nearest.Type() == "expression_statement" {
-	// 		exprNode := cd.MainError.Nearest.NamedChild(0)
-
-	// 		// NOTE: i hope we will be able to parse the entire
-	// 		// java system library without hardcoding the definitions lol
-	// 		if exprNode.Type() == "method_invocation" {
-	// 			objNode := exprNode.ChildByFieldName("object")
-	// 			// check if this is just simple printing
-	// 			if objNode.Text() == "System.out" {
-	// 				isSystemOut = true
-	// 			} else if retType := cd.Analyzer.AnalyzeNode(exprNode); retType == java.BuiltinTypes.NullSymbol {
-	// 				cd.MainError.Nearest = exprNode
-	// 			}
-
-	// 			if objNode.Type() == "array_access" {
-	// 				// inArray = true
-	// 				cd.MainError.Nearest = exprNode
-	// 			} else {
-	// 				arguments := exprNode.ChildByFieldName("arguments")
-	// 				for i := 0; i < int(arguments.NamedChildCount()); i++ {
-	// 					argNode := arguments.NamedChild(i)
-	// 					retType := cd.Analyzer.AnalyzeNode(argNode)
-
-	// 					if retType == java.BuiltinTypes.NullSymbol || argNode.Type() == "array_access" {
-	// 						cd.MainError.Nearest = argNode
-	// 						break
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// },
-	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
-		// TODO: create a function that will find the node with a null return type
-		// sb := &strings.Builder{}
-		isSystemOut := false
-		// inArray := false
-		methodName := ""
-		origin := ""
+	OnAnalyzeErrorFn: func(cd *lib.ContextData, err *lib.MainError) {
+		ctx := nullPointerExceptionCtx{}
 
 		// if the offending line is an offending method call, get the argument that triggered the null error
 		if cd.MainError.Nearest.Type() == "expression_statement" {
@@ -69,14 +40,16 @@ var NullPointerException = lib.ErrorTemplate{
 				objNode := exprNode.ChildByFieldName("object")
 				// check if this is just simple printing
 				if objNode.Text() == "System.out" {
-					isSystemOut = true
+					ctx.kind = fromSystemOut
 				} else if retType := cd.Analyzer.AnalyzeNode(exprNode); retType == java.BuiltinTypes.NullSymbol {
 					cd.MainError.Nearest = exprNode
+					ctx.kind = fromMethodInvocation
 				}
 
 				if objNode.Type() == "array_access" {
 					// inArray = true
 					cd.MainError.Nearest = exprNode
+					ctx.kind = fromArrayAccess
 				} else {
 					arguments := exprNode.ChildByFieldName("arguments")
 					for i := 0; i < int(arguments.NamedChildCount()); i++ {
@@ -85,42 +58,53 @@ var NullPointerException = lib.ErrorTemplate{
 
 						if retType == java.BuiltinTypes.NullSymbol || argNode.Type() == "array_access" {
 							cd.MainError.Nearest = argNode
+							ctx.kind = fromFunctionArgument
 							break
 						}
 					}
 				}
+			} else if exprNode.Type() == "assignment_expression" {
+				// right := exprNode.ChildByFieldName("right")
+				//
 			}
-		}
 
-		// identify the *MAIN* culprit
-		mainNode := cd.MainError.Nearest
-		switch mainNode.Type() {
-		case "method_invocation":
-			nameNode := mainNode.ChildByFieldName("name")
-			methodName = nameNode.Text()
-			origin = mainNode.ChildByFieldName("object").Text()
-		default:
-			origin = mainNode.Text()
-		}
-
-		if isSystemOut {
-			if len(methodName) != 0 {
-				gen.Add("Your program tried to print the value of \"%s\" method from \"%s\" which is a null.", methodName, origin)
-			} else {
-				gen.Add("Your program tried to print the value of \"%s\" which is a null", origin)
+			// identify the *MAIN* culprit
+			mainNode := cd.MainError.Nearest
+			switch mainNode.Type() {
+			case "method_invocation":
+				nameNode := mainNode.ChildByFieldName("name")
+				ctx.methodName = nameNode.Text()
+				ctx.origin = mainNode.ChildByFieldName("object").Text()
+			default:
+				ctx.origin = mainNode.Text()
 			}
-		} else if len(methodName) != 0 {
+
+			err.Context = ctx
+		}
+	},
+	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
+		// TODO: create a function that will find the node with a null return type
+		ctx := cd.MainError.Context.(nullPointerExceptionCtx)
+
+		if ctx.kind == fromSystemOut {
+			gen.Add("Your program tried to print the value of ")
+			if len(ctx.methodName) != 0 {
+				gen.Add("\"%s\" method from ", ctx.methodName)
+			}
+			gen.Add("\"%s\" which is a null.", ctx.origin)
+			return
+		} else if len(ctx.methodName) != 0 {
 			// if inArray {
 			// 	gen.Add("Your program tried to execute the \"%s\" method from \"%s\" which is a null.", )
 			// } else {
-			gen.Add("Your program tried to execute the \"%s\" method from \"%s\" which is a null.", methodName, origin)
+			gen.Add("Your program tried to execute the \"%s\" method from \"%s\" which is a null.", ctx.methodName, ctx.origin)
 			// }
+			return
 		}
 
 		gen.Add("Your program try to access or manipulate an object reference that is currently pointing to `null`, meaning it doesn't refer to any actual object in memory. This typically happens when you forget to initialize an object before using it, or when you try to access an object that hasn't been properly assigned a value. ")
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
-		// TODO:
 
 	},
 }

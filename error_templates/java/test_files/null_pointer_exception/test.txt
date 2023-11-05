@@ -5,4 +5,7 @@ Exception in thread "main" java.lang.NullPointerException
 ===
 template: "Java.NullPointerException"
 ---
+# NullPointerException
 Your program tried to print the value of "toUpperCase" method from "test" which is a null.
+## Steps to fix
+1. Go to blabla
