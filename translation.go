@@ -8,8 +8,9 @@ import (
 type GenExplainFn func(*ContextData, *ExplainGenerator)
 
 type ExplainGenerator struct {
-	mainExp  *strings.Builder
-	sections map[string]*ExplainGenerator
+	errorName string
+	mainExp   *strings.Builder
+	sections  map[string]*ExplainGenerator
 }
 
 func (gen *ExplainGenerator) Add(text string, data ...any) {
@@ -38,15 +39,19 @@ func (gen *ExplainGenerator) CreateSection(name string) *ExplainGenerator {
 type GenBugFixFn func(*ContextData, *BugFixGenerator)
 
 type BugFixGenerator struct {
-	Fixes []BugFix
+	Steps []*BugFixStep
 }
 
-// TODO:
-func (gen *BugFixGenerator) AddStep() {
-	if gen.Fixes == nil {
-		gen.Fixes = []BugFix{}
+func (gen *BugFixGenerator) AddStep(exp string, d ...any) *BugFixStep {
+	if gen.Steps == nil {
+		gen.Steps = []*BugFixStep{}
 	}
 
+	gen.Steps = append(gen.Steps, &BugFixStep{
+		Explanation: fmt.Sprintf(exp, d...),
+	})
+
+	return gen.Steps[len(gen.Steps)-1]
 }
 
 // TODO:
@@ -54,14 +59,27 @@ func (gen *BugFixGenerator) LookFor(nodeType string) {
 
 }
 
-type BugFix struct {
-	Position    Position
-	Node        SyntaxNode
+type BugFixStep struct {
 	Explanation string
 	Fixes       []SuggestedFix
 }
 
+func (step *BugFixStep) AddFix(newText string, pos Position, replace bool) *BugFixStep {
+	if step.Fixes == nil {
+		step.Fixes = []SuggestedFix{}
+	}
+
+	step.Fixes = append(step.Fixes, SuggestedFix{
+		Position: pos,
+		Replace:  replace,
+		NewText:  newText,
+	})
+
+	return step
+}
+
 type SuggestedFix struct {
 	Position Position
+	Replace  bool
 	NewText  string
 }

@@ -31,7 +31,7 @@ func NewContextData(store *Store, workingPath string) *ContextData {
 }
 
 func (data *ContextData) MainDocumentPath() string {
-	if data.MainError.ErrorNode != nil {
+	if data.MainError != nil && data.MainError.ErrorNode != nil {
 		return data.MainError.DocumentPath()
 	}
 	return data.CurrentDocumentPath

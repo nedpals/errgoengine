@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
-	sitter "github.com/smacker/go-tree-sitter"
 )
 
 type SymbolAnalyzer struct {
@@ -25,12 +23,12 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode SyntaxN
 	sb := &bytes.Buffer{}
 	ISymbolCaptureList(symbolCaptures).Compile("", "sym", sb)
 
-	QueryNode(rootNode, sb, func(m *sitter.QueryMatch, q *sitter.Query) bool {
+	QueryNode(rootNode, sb, func(ctx QueryNodeCtx) bool {
 		// group first the information
 		captured := map[string]SyntaxNode{}
 		firstMatchCname := ""
-		for _, c := range m.Captures {
-			key := q.CaptureNameForId(c.Index)
+		for _, c := range ctx.Match.Captures {
+			key := ctx.Query.CaptureNameForId(c.Index)
 			captured[key] = WrapNode(an.doc, c.Node)
 			if len(firstMatchCname) == 0 && SymPrefixRegex.MatchString(key) {
 				firstMatchCname = key

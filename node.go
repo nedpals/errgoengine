@@ -96,7 +96,13 @@ func nearestNodeFromPos(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 	}
 }
 
-func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(*sitter.QueryMatch, *sitter.Query) bool) {
+type QueryNodeCtx struct {
+	Match  *sitter.QueryMatch
+	Query  *sitter.Query
+	Cursor *sitter.QueryCursor
+}
+
+func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(QueryNodeCtx) bool) {
 	query, err := io.ReadAll(queryR)
 	if err != nil {
 		panic(err)
@@ -120,7 +126,7 @@ func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(*sitter.Quer
 			continue
 		}
 
-		if !callback(m, q) {
+		if !callback(QueryNodeCtx{m, q, queryCursor}) {
 			break
 		}
 	}

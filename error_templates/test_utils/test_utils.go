@@ -53,6 +53,10 @@ func SetupTest(tb testing.TB, cfg SetupTestConfig) TestCases {
 
 	// load error templates
 	engine := lib.New()
+	if out, ok := engine.OutputGen.(*lib.MarkdownOutputGenerator); ok {
+		out.IsTesting = true
+	}
+
 	cfg.TemplateLoader(&engine.ErrorTemplates)
 
 	// load tests
