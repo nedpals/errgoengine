@@ -38,48 +38,61 @@ func (gen *ExplainGenerator) CreateSection(name string) *ExplainGenerator {
 
 type GenBugFixFn func(*ContextData, *BugFixGenerator)
 
-type BugFixGenerator struct {
-	Steps []*BugFixStep
+type BugFixSuggestion struct {
+	Title       string
+	Description string
+	Steps       []*BugFixStep
 }
 
-func (gen *BugFixGenerator) AddStep(exp string, d ...any) *BugFixStep {
+func (gen *BugFixSuggestion) AddStep(content string, d ...any) *BugFixStep {
 	if gen.Steps == nil {
 		gen.Steps = []*BugFixStep{}
 	}
 
 	gen.Steps = append(gen.Steps, &BugFixStep{
-		Explanation: fmt.Sprintf(exp, d...),
+		Content: fmt.Sprintf(content, d...),
 	})
 
 	return gen.Steps[len(gen.Steps)-1]
 }
 
-// TODO:
-func (gen *BugFixGenerator) LookFor(nodeType string) {
-
+func (gen *BugFixSuggestion) AddDescription(exp string, d ...any) {
+	gen.Description = fmt.Sprintf(exp, d...)
 }
 
 type BugFixStep struct {
-	Explanation string
-	Fixes       []SuggestedFix
+	Content string
+	Fixes   []SuggestedFix
 }
 
-func (step *BugFixStep) AddFix(newText string, pos Position, replace bool) *BugFixStep {
+func (step *BugFixStep) AddFix(fix SuggestedFix) *BugFixStep {
 	if step.Fixes == nil {
 		step.Fixes = []SuggestedFix{}
 	}
 
-	step.Fixes = append(step.Fixes, SuggestedFix{
-		Position: pos,
-		Replace:  replace,
-		NewText:  newText,
-	})
-
+	step.Fixes = append(step.Fixes, fix)
 	return step
 }
 
 type SuggestedFix struct {
-	Position Position
-	Replace  bool
-	NewText  string
+	StartPosition Position
+	EndPosition   Position
+	Replace       bool
+	NewText       string
+	Description   string
+}
+
+type BugFixGenerator struct {
+	Suggestions []*BugFixSuggestion
+}
+
+func (gen *BugFixGenerator) Add(title string, makerFn func(s *BugFixSuggestion)) {
+	if gen.Suggestions == nil {
+		gen.Suggestions = []*BugFixSuggestion{}
+	}
+
+	suggestion := &BugFixSuggestion{Title: title}
+	makerFn(suggestion)
+
+	gen.Suggestions = append(gen.Suggestions, suggestion)
 }

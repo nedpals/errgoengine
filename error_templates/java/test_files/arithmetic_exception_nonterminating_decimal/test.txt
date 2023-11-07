@@ -1,0 +1,39 @@
+name: "NonterminatingDecimal"
+template: "Java.ArithmeticException"
+---
+Exception in thread "main" java.lang.ArithmeticException: Non-terminating decimal expansion; no exact representable decimal result.
+        at java.base/java.math.BigDecimal.divide(BigDecimal.java:1722)
+        at ArithEx.main(ArithEx.java:7)
+===
+template: "Java.ArithmeticException"
+---
+# ArithmeticException
+This error is raised when dividing two `BigDecimal` numbers, and the division operation results in a non-terminating decimal expansion, meaning the division produces a non-repeating and non-terminating decimal.
+
+## Steps to fix
+### 1. Ensure precise division
+Adjust the division operation to ensure precision by specifying the scale and rounding mode for the `BigDecimal` division.
+
+```diff
+BigDecimal a = new BigDecimal(5);
+BigDecimal b = new BigDecimal(3);
+- BigDecimal result = a.divide(b);
++ BigDecimal result = a.divide(b, 10, RoundingMode.HALF_UP);
+System.out.println(result);
+```
+
+### 2. Catch ArithmeticException
+Handle the ArithmeticException by wrapping the division operation in a try-catch block to manage the potential exception and inform the user about the non-terminating result.
+
+```diff
++ try {
+    BigDecimal a = new BigDecimal(5);
+    BigDecimal b = new BigDecimal(3);
+    BigDecimal result = a.divide(b);
+    System.out.println(result);
++ } catch (ArithmeticException e) {
++     System.out.println("Non-terminating result: " + e.getMessage());
++ }
+```
+
+This change introduces a try block to execute the division operation and catches any ArithmeticException that might occur, allowing you to manage the exception and inform the user about the non-terminating result.

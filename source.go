@@ -3,6 +3,7 @@ package errgoengine
 import (
 	"context"
 	"io"
+	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -19,10 +20,48 @@ type Location struct {
 }
 
 type Document struct {
-	Path     string
-	Contents string
-	Language *Language
-	Tree     *sitter.Tree
+	Path        string
+	Contents    string
+	cachedLines []string
+	Language    *Language
+	Tree        *sitter.Tree
+}
+
+func (doc *Document) LineAt(idx int) string {
+	if doc.cachedLines == nil {
+		doc.cachedLines = strings.Split(doc.Contents, "\n")
+	}
+	if idx < 0 || idx >= len(doc.cachedLines) {
+		return ""
+	}
+	return doc.cachedLines[idx]
+}
+
+func (doc *Document) LinesAt(from int, to int) []string {
+	if doc.cachedLines == nil {
+		doc.cachedLines = strings.Split(doc.Contents, "\n")
+	}
+	if from > to {
+		from, to = to, from
+	}
+	from = max(from, 0)
+	to = min(to, len(doc.cachedLines))
+	if from == 0 && to == len(doc.cachedLines) {
+		return doc.cachedLines
+	} else if from > 0 && to == len(doc.cachedLines) {
+		return doc.cachedLines[from:]
+	} else if from == 0 && to < len(doc.cachedLines) {
+		return doc.cachedLines[:to]
+	}
+	return doc.cachedLines[from:to]
+}
+
+func (doc *Document) Lines() []string {
+	return doc.LinesAt(0, len(doc.cachedLines)-1)
+}
+
+func (doc *Document) TotalLines() int {
+	return len(doc.cachedLines)
 }
 
 func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *Language, existingDoc *Document) (*Document, error) {

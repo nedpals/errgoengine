@@ -7,3 +7,6 @@ Test.java:4: error: cannot find symbol
     location: class Test
 1 error
 ===
+template: "Java.MethodNotFoundError"
+---
+a

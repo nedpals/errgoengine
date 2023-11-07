@@ -30,6 +30,10 @@ func (n SyntaxNode) NamedChild(idx int) SyntaxNode {
 	return WrapNode(n.Doc, cNode)
 }
 
+func (n SyntaxNode) FirstNamedChild() SyntaxNode {
+	return n.NamedChild(0)
+}
+
 func (n SyntaxNode) LastNamedChild() SyntaxNode {
 	len := n.Node.NamedChildCount()
 	return n.NamedChild(int(len) - 1)

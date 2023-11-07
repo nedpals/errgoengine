@@ -5,3 +5,6 @@ BracketMismatch.java:7: error: '}' expected
         ^
 1 error
 ===
+template: "Java.BracketMismatchError"
+---
+aaa

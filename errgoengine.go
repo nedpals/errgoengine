@@ -13,7 +13,7 @@ type ErrgoEngine struct {
 	SharedStore    *Store
 	ErrorTemplates ErrorTemplates
 	FS             fs.ReadFileFS
-	OutputGen      OutputGenerator
+	OutputGen      *OutputGenerator
 }
 
 func New() *ErrgoEngine {
@@ -21,7 +21,7 @@ func New() *ErrgoEngine {
 		SharedStore:    NewEmptyStore(),
 		ErrorTemplates: ErrorTemplates{},
 		FS:             &RawFS{},
-		OutputGen:      &MarkdownOutputGenerator{},
+		OutputGen:      &OutputGenerator{},
 	}
 }
 

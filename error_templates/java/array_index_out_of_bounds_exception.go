@@ -1,17 +1,46 @@
 package java
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
+
 	lib "github.com/nedpals/errgoengine"
 )
 
 var ArrayIndexOutOfBoundsException = lib.ErrorTemplate{
 	Name:    "ArrayIndexOutOfBoundsException",
 	Pattern: runtimeErrorPattern("java.lang.ArrayIndexOutOfBoundsException", `Index (?P<index>\d+) out of bounds for length (?P<length>\d+)`),
+	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
+		lib.QueryNode(m.Nearest, strings.NewReader("(array_access index: (_) @index)"), func(ctx lib.QueryNodeCtx) bool {
+			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
+			for _, c := range match.Captures {
+				node := lib.WrapNode(m.Nearest.Doc, c.Node)
+				m.Nearest = node
+				return false
+			}
+			return true
+		})
+	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
-		// TODO:
-		gen.Add("Your program attempted to access an element in index %s on an array that only has %s items", cd.Variables["index"], cd.Variables["length"])
+		gen.Add("This error occurs because the code is trying to access index %s that is beyond the bounds of the array which only has %s items.", cd.Variables["index"], cd.Variables["length"])
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
-		// TODO:
+		arrayLen, _ := strconv.Atoi(cd.Variables["length"])
+
+		// TODO: add a suggestion to add an if statement if the array length is 0
+
+		gen.Add("Accessing Array Index Within Bounds", func(s *lib.BugFixSuggestion) {
+			sampleIndex := max(0, arrayLen-2)
+
+			s.AddStep("The error is caused by trying to access an index that does not exist within the array. Instead of accessing index %s, which is beyond the array's length, change it to a valid index within the array bounds, for example, `nums[%d]`.", cd.Variables["index"], sampleIndex).
+				AddFix(lib.SuggestedFix{
+					NewText:       fmt.Sprintf("%d", sampleIndex),
+					StartPosition: cd.MainError.Nearest.StartPosition(),
+					EndPosition:   cd.MainError.Nearest.EndPosition(),
+					Replace:       true,
+					Description:   "This adjustment ensures that you're accessing an index that exists within the array bounds, preventing the `ArrayIndexOutOfBoundsException`.",
+				})
+		})
 	},
 }

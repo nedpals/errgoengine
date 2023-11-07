@@ -12,3 +12,6 @@ MyClass.java:5: error: cannot find symbol
   location: class MyClass
 2 errors
 ===
+template: "Java.NoClassDefError"
+---
+a

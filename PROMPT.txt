@@ -64,6 +64,8 @@ example error message:
 
 The target audience of this would be students from the Philippines who don't know how to read the error messages or does not know how to do debugging. They also have a short attention span so longer explanations do not work for them. This is learning by doing so make them understand and gradually do not rely on this tool.
 
+---
+
 The expected output should be a unit test case which consists of a sample test program and test template. The format should be like this (STICK TO THIS!):
 
 Source code:

@@ -37,8 +37,16 @@ var UnknownVariableError = lib.ErrorTemplate{
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		ctx := cd.MainError.Context.(unknownVarErrorCtx)
 		variable := cd.Variables["variable"]
-		gen.AddStep("(%s) Create a variable named \"%s\". For example: ", ctx.parentNode.Type(), variable).
-			// TODO: use variable type from the inferred parameter
-			AddFix(fmt.Sprintf("String %s = \"\";", variable), ctx.rootNode.StartPosition(), false)
+
+		gen.Add("Create a variable.", func(s *lib.BugFixSuggestion) {
+			s.AddStep("(%s) Create a variable named \"%s\". For example: ", ctx.parentNode.Type(), variable).
+				// TODO: use variable type from the inferred parameter
+				AddFix(lib.SuggestedFix{
+					NewText:       fmt.Sprintf("String %s = \"\";", variable),
+					StartPosition: ctx.rootNode.StartPosition(),
+					EndPosition:   ctx.rootNode.StartPosition(),
+					Replace:       false,
+				})
+		})
 	},
 }
