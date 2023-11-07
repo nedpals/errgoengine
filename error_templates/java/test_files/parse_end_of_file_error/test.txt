@@ -7,4 +7,23 @@ EOF.java:4: error: reached end of file while parsing
 ===
 template: "Java.ParseEndOfFileError"
 ---
-The compiler was not able to compile your program because of an incomplete syntax
+# ParseEndOfFileError
+This error indicates that the compiler reached the end of the file unexpectedly while it was expecting something more in the code.
+
+## Explanation local to the file
+The error occurred due to an incomplete block of code in the `EOF.java` file. The compiler was expecting more code or the completion of a block but encountered the end of the file prematurely.
+
+## Steps to fix
+1. Ensure that all opening braces `{` have their corresponding closing braces `}` to complete the code blocks.
+
+```diff
+   public class EOF {
+       public static void main(String[] args) {
+           System.out.println("This is a sample program.");
++      }
+   }
+```
+
+This fix completes the `main` method by adding the closing curly brace `}`.
+
+2. If the error persists, check the entire file for missing or misplaced braces, ensuring they are correctly matched and closed. Double-check that each opening brace has a corresponding closing brace to resolve this issue.

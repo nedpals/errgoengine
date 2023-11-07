@@ -8,8 +8,8 @@ Main.java:9: error: non-static method printMessage() cannot be referenced from a
 template: "Java.NonStaticMethodAccessError"
 ---
 # NonStaticMethodAccessError
-In the `Main` class, you have invoked the `printMessage` method inside the `main` static method. 
-                
+This error occurs when trying to access a non-static method from a static context. In Java, a non-static method belongs to an instance of the class and needs an object to be called upon.
+
 ```
         // Attempt to call the non-static method without creating an object
         printMessage(); // This will result in an error
@@ -19,4 +19,12 @@ In the `Main` class, you have invoked the `printMessage` method inside the `main
 
 ```
 ## Steps to fix
-1. Fix 1
+1. **Create an instance of the class to access the non-static method**
+```java
+Main obj = new Main();
+obj.printMessage(); // This will properly call the non-static method
+```
+
+The issue arises because the `printMessage()` method is non-static, meaning it belongs to an instance of the class. To use this method within the `main` method, you must create an object of the `Main` class and then call the `printMessage()` method using that object.
+
+This correction instantiates an object (`obj`) of the `Main` class and then calls the `printMessage()` method using this object, resolving the error.

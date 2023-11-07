@@ -7,4 +7,25 @@ Wrong.java:1: error: class Right is public, should be declared in a file named R
 ===
 template: "Java.PublicClassFilenameMismatchError"
 ---
-Public class "Right" does not match the name of the file which is "Wrong.java". Rename it to "Right.java"
+# PublicClassFilenameMismatchError
+This error occurs because the name of the Java file does not match the name of the public class within it.
+
+## Steps to fix
+1. **File and Class Name Mismatch**: In Java, the filename should match the name of the public class in the file.
+
+```diff
+- public class Right {
++ public class Wrong {
+```
+
+The error is due to the mismatch between the filename (`Wrong.java`) and the class name (`Right`). To resolve this, change the class name to match the filename:
+
+```java
+public class Wrong {
+    public static void main(String[] args) {
+
+    }
+}
+```
+
+This modification renames the class to match the file name, resolving the error.

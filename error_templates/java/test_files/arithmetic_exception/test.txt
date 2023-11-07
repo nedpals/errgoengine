@@ -5,4 +5,15 @@ Exception in thread "main" java.lang.ArithmeticException: / by zero
 ===
 template: "Java.ArithmeticException"
 ---
-One of your variables initialized a double value by dividing a number to zero
+# ArithmeticException
+This error occurs when you try to divide by zero, which is not allowed in mathematics.
+
+## Steps to fix
+1. To fix this issue, you should avoid dividing by zero. In this case, you can change the division operation to something meaningful.
+
+```diff
+- double out = 3 / 0;
++ double out = 3 / 1; // Change the division to something valid
+```
+
+By changing the division from 3 / 0 to 3 / 1, you will avoid the ArithmeticException, and your code will run without errors.

@@ -7,4 +7,32 @@ NotArray.java:4: error: array required, but int found
 ===
 template: "Java.ArrayRequiredTypeError"
 ---
-You are calling an index notation on a variable with type int
+# ArrayRequiredTypeError
+This error occurs because you're trying to access an index of an integer variable `number` as if it were an array, but `number` is just an integer, not an array.
+
+## Steps to fix
+1. **Understand the issue:** In Java, you can only use square brackets to access elements in an array, not on an individual integer variable.
+
+```diff
+public class NotArray {
+    public static void main(String[] args) {
+-       int number = 5;
++       int[] number = {5}; // Define 'number' as an array with a single element.
+-       int value = number[0]; // Access the first (and only) element of the 'number' array.
++       int value = number[0];
+    }
+}
+```
+
+2. **Fix the code:** Change the `number` variable to an array by using square brackets and assign the value you wish to access in the array. Then, you can access the first element using square brackets as intended for arrays. This allows you to access the first element of the array correctly.
+
+```diff
+public class NotArray {
+    public static void main(String[] args) {
+-       int number = 5;
++       int[] number = {5}; // Define 'number' as an array with a single element.
+-       int value = number[0]; // Access the first (and only) element of the 'number' array.
++       int value = number[0];
+    }
+}
+```

@@ -5,4 +5,26 @@ Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 5 out
 ===
 template: "Java.ArrayIndexOutOfBoundsException"
 ---
-Your program attempted to access an element in index 5 on an array that only has 4 items
+# ArrayIndexOutOfBoundsException
+This error occurs because the program is attempting to access an element in an array at an index that does not exist.
+
+## Steps to fix
+1. **Understanding the issue:** The error is due to the attempt to access the element at index 5 in an array that has a length of 4. Array indices start from 0, so in an array of length 4, the valid indices are from 0 to 3.
+
+```diff
+- System.out.println(nums[5]);
++ // Accessing an index beyond the array length causes the ArrayIndexOutOfBoundsException.
+```
+
+## Steps to fix (Alternative)
+1. **Avoid accessing out-of-bounds index:** To fix this, ensure that the index used to access the array elements is within the bounds of the array (0 to array length - 1).
+
+```diff
+  public static void main(String[] args) {
+    int nums[] = {1,2,3,4};
+-   System.out.println(nums[5]);
++   // Ensure the index is within the array bounds.
+  }
+```
+
+Remember, in Java arrays, indices start from 0, and the last index is always length - 1. Accessing an index beyond the array's length leads to an `ArrayIndexOutOfBoundsException`.
