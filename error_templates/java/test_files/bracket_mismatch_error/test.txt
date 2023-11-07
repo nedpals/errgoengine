@@ -1,0 +1,7 @@
+template: "Java.BracketMismatchError"
+---
+BracketMismatch.java:7: error: '}' expected
+        System.out.println("x is greater than 5.");
+        ^
+1 error
+===

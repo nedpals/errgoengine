@@ -1,0 +1,14 @@
+template: "Java.NoClassDefError"
+---
+MyClass.java:5: error: cannot find symbol
+        NonExistingClass obj = new NonExistingClass();
+        ^
+  symbol:   class NonExistingClass
+  location: class MyClass
+MyClass.java:5: error: cannot find symbol
+        NonExistingClass obj = new NonExistingClass();
+                                   ^
+  symbol:   class NonExistingClass
+  location: class MyClass
+2 errors
+===

@@ -19,6 +19,6 @@ var PublicClassFilenameMismatchError = lib.ErrorTemplate{
 		)
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
-		// TODO:
+
 	},
 }
