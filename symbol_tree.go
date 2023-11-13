@@ -6,6 +6,7 @@ type SymbolTree struct {
 	EndPos       Position
 	DocumentPath string
 	Symbols      map[string]Symbol
+	scopeIdxs    map[*SymbolTree]int
 	Scopes       []*SymbolTree
 }
 
@@ -25,7 +26,29 @@ func (tree *SymbolTree) Find(name string) Symbol {
 			return sym
 		}
 	}
+
+	if tree.Parent != nil {
+		return tree.Parent.Find(name)
+	}
+
 	return nil
+}
+
+func (tree *SymbolTree) GetNearestScopedTree(index int) *SymbolTree {
+	if tree.Scopes != nil {
+		for _, scopedTree := range tree.Scopes {
+			if index >= scopedTree.StartPos.Index && index <= scopedTree.EndPos.Index {
+				return scopedTree.GetNearestScopedTree(index)
+			}
+		}
+	}
+	return tree
+}
+
+func (tree *SymbolTree) GetSymbolByNode(node SyntaxNode) Symbol {
+	// Get nearest tree
+	nearestTree := tree.GetNearestScopedTree(node.StartPosition().Index)
+	return nearestTree.Find(node.Text())
 }
 
 func (tree *SymbolTree) Add(sym Symbol) {
@@ -34,18 +57,38 @@ func (tree *SymbolTree) Add(sym Symbol) {
 	}
 
 	tree.Symbols[sym.Name()] = sym
-	// TODO: create tree both in the parent and in the child symbol
-
-	if sym.Location().Position.Index < tree.StartPos.Index {
-		tree.StartPos = sym.Location().Position
+	loc := sym.Location()
+	if loc.StartPos.Index < tree.StartPos.Index {
+		tree.StartPos = loc.StartPos
 	}
 
-	if sym.Location().Index > tree.EndPos.Index {
-		tree.EndPos = sym.Location().Position
+	if loc.EndPos.Index > tree.EndPos.Index {
+		tree.EndPos = loc.EndPos
 	}
 
 	if cSym := CastChildrenSymbol(sym); cSym != nil {
+		if tree.Scopes == nil {
+			tree.Scopes = []*SymbolTree{}
+		}
+
+		if tree.scopeIdxs == nil {
+			tree.scopeIdxs = make(map[*SymbolTree]int)
+		}
+
+		if _, ok := tree.scopeIdxs[cSym.Children()]; ok {
+			return
+		}
+
 		tree.Scopes = append(tree.Scopes, cSym.Children())
+		tree.scopeIdxs[cSym.Children()] = len(tree.Scopes) - 1
 		cSym.Children().Parent = tree
+
+		if cSym.Children().StartPos.Index < tree.StartPos.Index {
+			tree.StartPos = cSym.Children().StartPos
+		}
+
+		if cSym.Children().EndPos.Index > tree.EndPos.Index {
+			tree.EndPos = cSym.Children().EndPos
+		}
 	}
 }

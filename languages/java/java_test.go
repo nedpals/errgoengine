@@ -20,12 +20,12 @@ public class Test {
 }
 			`,
 			Expected: `
-(tree [0,0]-[0,0]
-	(class Test [0,0]
-		(tree [0,18]-[1,1]
-			(function main [1,1]
-				(tree [1,40]-[2,2]
-					(variable a [2,2]))))))
+(tree [0,0 | 0]-[4,1 | 79]
+	(class Test [0,0 | 0]-[4,1 | 79]
+		(tree [0,18 | 18]-[4,1 | 79]
+			(function main [1,1 | 21]-[3,2 | 77]
+				(tree [1,1 | 21]-[3,2 | 77]
+					(variable a [2,6 | 68]-[2,11 | 73]))))))
 			`,
 		},
 	}

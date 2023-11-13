@@ -14,6 +14,7 @@ type NodeValueAnalyzer interface {
 }
 
 type LanguageAnalyzer interface {
+	FallbackSymbol() Symbol
 	AnalyzeNode(SyntaxNode) Symbol
 	AnalyzeImport(ImportParams) ResolvedImport
 }
@@ -26,7 +27,7 @@ type Language struct {
 	SitterLanguage    *sitter.Language
 	StackTracePattern string
 	ErrorPattern      string
-	SymbolsToCapture  ISymbolCaptureList
+	SymbolsToCapture  string
 	LocationConverter func(path, pos string) Location
 	AnalyzerFactory   func(cd *ContextData) LanguageAnalyzer
 }
@@ -72,6 +73,7 @@ func DefaultLocationConverter(path, pos string) Location {
 	}
 	return Location{
 		DocumentPath: path,
-		Position:     Position{Line: trueLine},
+		StartPos:     Position{Line: trueLine},
+		EndPos:       Position{Line: trueLine},
 	}
 }

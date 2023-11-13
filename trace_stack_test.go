@@ -10,18 +10,15 @@ func TestTraceStack(t *testing.T) {
 	stack := TraceStack{}
 	stack.Add("a", Location{
 		DocumentPath: "a",
-		Position: Position{
-			Line:   1,
-			Column: 1,
-			Index:  0,
-		},
+		StartPos:     Position{1, 1, 0},
+		EndPos:       Position{1, 1, 0},
 	})
 
 	testutils.Equals(t, stack.Top(), StackTraceEntry{
 		SymbolName: "a",
 		Location: Location{
 			DocumentPath: "a",
-			Position: Position{
+			StartPos: Position{
 				Line:   1,
 				Column: 1,
 				Index:  0,
@@ -31,18 +28,15 @@ func TestTraceStack(t *testing.T) {
 
 	stack.Add("bbb", Location{
 		DocumentPath: "ab/aa",
-		Position: Position{
-			Line:   1,
-			Column: 1,
-			Index:  0,
-		},
+		StartPos:     Position{1, 1, 0},
+		EndPos:       Position{1, 1, 0},
 	})
 
 	testutils.Equals(t, stack.Top(), StackTraceEntry{
 		SymbolName: "bbb",
 		Location: Location{
 			DocumentPath: "ab/aa",
-			Position: Position{
+			StartPos: Position{
 				Line:   1,
 				Column: 1,
 				Index:  0,
@@ -52,22 +46,16 @@ func TestTraceStack(t *testing.T) {
 
 	stack.Add("cc", Location{
 		DocumentPath: "ab/cc",
-		Position: Position{
-			Line:   1,
-			Column: 1,
-			Index:  0,
-		},
+		StartPos:     Position{1, 1, 0},
+		EndPos:       Position{1, 1, 0},
 	})
 
 	testutils.Equals(t, stack.NearestTo("ab/aa"), StackTraceEntry{
 		SymbolName: "bbb",
 		Location: Location{
 			DocumentPath: "ab/aa",
-			Position: Position{
-				Line:   1,
-				Column: 1,
-				Index:  0,
-			},
+			StartPos:     Position{1, 1, 0},
+			EndPos:       Position{1, 1, 0},
 		},
 	})
 }

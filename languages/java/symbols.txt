@@ -1,0 +1,43 @@
+(import_declaration
+  (scoped_identifier) @import.path
+  .
+  (asterisk) @import.symbol) @import
+    
+(import_declaration
+	(scoped_identifier
+    scope: (scoped_identifier) @import.path
+    name: (identifier) @import.symbol)
+    .) @import
+
+(class_declaration
+  name: (identifier) @class.name
+  body: (class_body
+  [
+  	(field_declaration 
+    	type: (_) @variable.return-type
+        declarator: (variable_declarator
+        	name: (identifier) @variable.name
+          value: (_)? @variable.content) @variable.declaration) @variable
+    (method_declaration
+        type: (void_type) @method.return-type
+        name: (identifier) @method.name
+        parameters: (formal_parameters
+        	(formal_parameter
+            type: (_) @parameter.return-type
+            name: (identifier) @parameter.name)* @parameter) @parameters) @method
+  ]) @class.body) @class
+  
+(block
+  [
+    (local_variable_declaration
+      type: (_) @variable.return-type
+      declarator: (variable_declarator
+      name: (identifier) @variable.name
+    	value: (_)? @variable.content)) @variable
+    (expression_statement
+      (assignment_expression
+        left: (identifier) @assignment.name
+        right: (_) @assignment.content)) @assignment
+  ]?
+  (return_statement 
+  	(_) @block.content)?) @block

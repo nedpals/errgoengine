@@ -27,6 +27,7 @@ func (cases TestCases) Execute(t *testing.T, lang *lib.Language) {
 		ContextData: lib.NewContextData(lib.NewEmptyStore(), ""),
 	}
 
+	analyzer.ContextData.Analyzer = lang.AnalyzerFactory(analyzer.ContextData)
 	sb := &strings.Builder{}
 
 	for _, tCase := range cases {
@@ -48,13 +49,13 @@ func (cases TestCases) Execute(t *testing.T, lang *lib.Language) {
 func treeSexprBuilder(tree *lib.SymbolTree, sb *strings.Builder, level int) {
 	sb.WriteString(strings.Repeat("\t", level))
 	sb.WriteByte('(')
-	sb.WriteString(fmt.Sprintf("tree [%d,%d]-[%d,%d]", tree.StartPos.Line, tree.StartPos.Column, tree.EndPos.Line, tree.EndPos.Column))
+	sb.WriteString(fmt.Sprintf("tree %s-%s", tree.StartPos, tree.EndPos))
 	if len(tree.Symbols) > 0 {
 		sb.WriteByte('\n')
 		for _, sym := range tree.Symbols {
 			sb.WriteString(strings.Repeat("\t", level+1))
 			sb.WriteByte('(')
-			sb.WriteString(fmt.Sprintf("%s %s [%d,%d]", sym.Kind().String(), sym.Name(), sym.Location().Line, sym.Location().Column))
+			sb.WriteString(fmt.Sprintf("%s %s %s-%s", sym.Kind().String(), sym.Name(), sym.Location().StartPos, sym.Location().EndPos))
 
 			if childSym, ok := sym.(lib.IChildrenSymbol); ok && childSym.Children() != nil {
 				sb.WriteByte('\n')

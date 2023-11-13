@@ -124,13 +124,13 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// get nearest node
 	doc := contextData.Documents[mainTraceNode.DocumentPath]
 	nearest := doc.Tree.RootNode().NamedDescendantForPointRange(
-		sitter.Point{Row: uint32(mainTraceNode.Line)},
-		sitter.Point{Row: uint32(mainTraceNode.Line)},
+		sitter.Point{Row: uint32(mainTraceNode.StartPos.Line)},
+		sitter.Point{Row: uint32(mainTraceNode.EndPos.Line)},
 	)
 
-	if nearest.StartPoint().Row != uint32(mainTraceNode.Line) {
+	if nearest.StartPoint().Row != uint32(mainTraceNode.StartPos.Line) {
 		cursor := sitter.NewTreeCursor(nearest)
-		nearest = nearestNodeFromPos(cursor, mainTraceNode.Position)
+		nearest = nearestNodeFromPos(cursor, mainTraceNode.StartPos)
 	}
 
 	// further analyze main error

@@ -82,7 +82,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	if gen.IsTesting {
 		startRow := cd.MainError.Nearest.StartPoint().Row
 		if startRow-1 == math.MaxUint32 {
-			startRow = uint32(cd.MainError.ErrorNode.Line)
+			startRow = uint32(cd.MainError.ErrorNode.StartPos.Line)
 		}
 
 		startLines := doc.LinesAt(int(startRow)-1, int(startRow)+1)

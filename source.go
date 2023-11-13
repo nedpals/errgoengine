@@ -2,6 +2,7 @@ package errgoengine
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
@@ -14,9 +15,35 @@ type Position struct {
 	Index  int
 }
 
+func (pos Position) String() string {
+	return fmt.Sprintf("[%d,%d | %d]", pos.Line, pos.Column, pos.Index)
+}
+
 type Location struct {
 	DocumentPath string
-	Position
+	// Position
+	StartPos Position
+	EndPos   Position
+}
+
+func (loc Location) Point() sitter.Point {
+	return sitter.Point{
+		Row:    uint32(loc.StartPos.Line),
+		Column: uint32(loc.StartPos.Column),
+	}
+}
+
+func (loc Location) Range() sitter.Range {
+	return sitter.Range{
+		StartPoint: sitter.Point{
+			Row:    uint32(loc.StartPos.Line),
+			Column: uint32(loc.StartPos.Column),
+		},
+		EndPoint: sitter.Point{
+			Row:    uint32(loc.EndPos.Line),
+			Column: uint32(loc.EndPos.Column),
+		},
+	}
 }
 
 type Document struct {

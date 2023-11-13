@@ -58,14 +58,15 @@ func (n SyntaxNode) EndPosition() Position {
 	return Position{
 		Line:   int(p.Row),
 		Column: int(p.Column),
-		Index:  int(n.Node.StartByte()),
+		Index:  int(n.Node.EndByte()),
 	}
 }
 
 func (n SyntaxNode) Location() Location {
 	return Location{
 		DocumentPath: n.Doc.Path,
-		Position:     n.StartPosition(),
+		StartPos:     n.StartPosition(),
+		EndPos:       n.EndPosition(),
 	}
 }
 
