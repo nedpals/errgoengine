@@ -8,31 +8,33 @@ NotArray.java:4: error: array required, but int found
 template: "Java.ArrayRequiredTypeError"
 ---
 # ArrayRequiredTypeError
-This error occurs because you're trying to access an index of an integer variable `number` as if it were an array, but `number` is just an integer, not an array.
-
+This error occurs because the variable `number` is declared as an `int` rather than an array. You're attempting to access an index (`[0]`) on a variable that's not an array.
+```
+        int number = 5;
+        int value = number[0];
+                            ^
+    }
+}
+```
 ## Steps to fix
-1. **Understand the issue:** In Java, you can only use square brackets to access elements in an array, not on an individual integer variable.
-
+### 1. Change variable type to an array
 ```diff
 public class NotArray {
     public static void main(String[] args) {
--       int number = 5;
-+       int[] number = {5}; // Define 'number' as an array with a single element.
--       int value = number[0]; // Access the first (and only) element of the 'number' array.
-+       int value = number[0];
+-        int number = 5;
++        int[] number = {5};
+        int value = number[0];
     }
 }
 ```
-
-2. **Fix the code:** Change the `number` variable to an array by using square brackets and assign the value you wish to access in the array. Then, you can access the first element using square brackets as intended for arrays. This allows you to access the first element of the array correctly.
-
+### 2. Initialize an array and access its index
 ```diff
 public class NotArray {
     public static void main(String[] args) {
--       int number = 5;
-+       int[] number = {5}; // Define 'number' as an array with a single element.
--       int value = number[0]; // Access the first (and only) element of the 'number' array.
-+       int value = number[0];
+        int[] number = {5};
++        number[0] = 5;
+        int value = number[0];
     }
 }
 ```
+These changes will rectify the error by ensuring the variable is treated as an array when accessing elements by index.

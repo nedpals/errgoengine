@@ -39,7 +39,7 @@ var UnknownVariableError = lib.ErrorTemplate{
 		variable := cd.Variables["variable"]
 
 		gen.Add("Create a variable.", func(s *lib.BugFixSuggestion) {
-			s.AddStep("(%s) Create a variable named \"%s\". For example: ", ctx.parentNode.Type(), variable).
+			s.AddStep("Create a variable named \"%s\". For example:", variable).
 				// TODO: use variable type from the inferred parameter
 				AddFix(lib.SuggestedFix{
 					NewText:       fmt.Sprintf("String %s = \"\";", variable),

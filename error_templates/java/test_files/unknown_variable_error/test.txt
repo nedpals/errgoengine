@@ -17,7 +17,15 @@ The program cannot find variable "a"
                            ^
     }
 }
-
 ```
 ## Steps to fix
-Nothing to fix
+### Create a variable.
+Create a variable named "a". For example:
+```diff
+public class Program {
+    public static void main(String[] args) {
+-         System.out.println(a);
++         String a = "";
+        System.out.println(a);
+    }
+```

@@ -77,7 +77,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	}
 
 	gen.generateFromExp(1, explain)
-	doc := cd.MainError.Document
+	doc := cd.MainError.Document.CopyContentsOnly()
 
 	if gen.IsTesting {
 		startRow := cd.MainError.Nearest.StartPoint().Row

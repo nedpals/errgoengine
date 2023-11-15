@@ -44,3 +44,12 @@ func comptimeErrorPattern(pattern string, endPattern_ ...string) string {
 	}
 	return fmt.Sprintf(`$stacktrace: error: %s%s`, pattern, endPattern)
 }
+
+// TODO:
+func getIdentifierNode(node lib.SyntaxNode) lib.SyntaxNode {
+	currentNode := node
+	for currentNode.Type() != "identifier" {
+		return currentNode
+	}
+	return currentNode
+}
