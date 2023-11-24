@@ -77,7 +77,6 @@ func (step *BugFixStep) AddFix(fix SuggestedFix) *BugFixStep {
 type SuggestedFix struct {
 	StartPosition Position
 	EndPosition   Position
-	Replace       bool
 	NewText       string
 	Description   string
 }

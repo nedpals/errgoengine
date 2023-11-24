@@ -53,16 +53,274 @@ func (loc Location) Range() sitter.Range {
 }
 
 type Changeset struct {
-	NewText   string
-	StartPos  Position
-	EndPos    Position
-	IsReplace bool
+	Id         int
+	NewText    string
+	StartPos   Position
+	EndPos     Position
+	linesAdded int
+	IsChanged  bool
 }
 
-type TempDocument struct {
+func (c Changeset) AddLines(lines int) Changeset {
+	if lines != 0 {
+		fmt.Println("adding lines", lines)
+
+		c.linesAdded += lines
+		c.StartPos.Line += lines
+		c.EndPos.Line += lines
+		c.IsChanged = true
+	}
+	return c
+}
+
+type EditableDocument struct {
 	*Document
-	lines      []string
-	changesets []Changeset
+	tree          *sitter.Tree
+	currentId     int
+	modifiedLines []string
+	parser        *sitter.Parser
+	changesets    []Changeset
+}
+
+func NewEditableDocument(doc *Document) *EditableDocument {
+	parser := sitter.NewParser()
+	parser.SetLanguage(doc.Language.SitterLanguage)
+
+	editableDoc := &EditableDocument{
+		Document: doc,
+		parser:   parser,
+	}
+
+	editableDoc.Reset()
+	return editableDoc
+}
+
+func (doc *EditableDocument) FillIndex(pos Position) Position {
+	if pos.Line == 0 && pos.Column == 0 && pos.Index == 0 {
+		return pos
+	}
+
+	gotIdx := 0
+	for lIdx, line := range doc.modifiedLines {
+		if lIdx == pos.Line {
+			break
+		}
+
+		gotIdx += len(line) + 1
+	}
+
+	if pos.Line >= len(doc.modifiedLines) {
+		gotIdx += (pos.Line - len(doc.modifiedLines))
+	}
+
+	gotIdx += pos.Column
+	return Position{
+		Line:   pos.Line,
+		Column: pos.Column,
+		Index:  gotIdx,
+	}
+}
+
+func (doc *EditableDocument) Apply(changeset Changeset) int {
+	totalLinesAdded := 0
+
+	// add id if not present
+	if changeset.Id == 0 {
+		doc.currentId++
+		changeset.Id = doc.currentId
+	}
+
+	if changeset.IsChanged {
+		changeset.StartPos.Index = doc.FillIndex(changeset.StartPos).Index
+		changeset.EndPos.Index = doc.FillIndex(changeset.EndPos).Index
+		changeset.IsChanged = false
+	}
+
+	// if the changeset text is empty but has a definite position range, this means that the changeset is a deletion
+	if len(changeset.NewText) == 0 {
+		total := 0
+
+		// if the changeset start line is not the same as the end line, split it
+		for i := changeset.StartPos.Line; i < len(doc.modifiedLines); {
+			if i > changeset.EndPos.Line {
+				break
+			}
+
+			startPos := Position{Line: i, Column: 0}
+			endPos := Position{Line: i, Column: len(doc.modifiedLines[i])}
+
+			if i == changeset.StartPos.Line {
+				startPos.Column = changeset.StartPos.Column
+			} else if i == changeset.EndPos.Line {
+				endPos.Column = changeset.EndPos.Column
+			}
+
+			if i != changeset.StartPos.Line {
+				startPos.Line = i - 1
+				endPos.Line = i - 1
+			}
+
+			changeset := Changeset{
+				Id:       changeset.Id,
+				NewText:  changeset.NewText,
+				StartPos: doc.FillIndex(startPos),
+				EndPos:   doc.FillIndex(endPos),
+			}
+
+			total += doc.Apply(changeset.AddLines(total))
+		}
+
+		return total
+	}
+
+	// if the changeset is a newline, split the new text into lines and apply them
+	nlCount := strings.Count(changeset.NewText, "\n")
+	if (nlCount == 1 && !strings.HasSuffix(changeset.NewText, "\n")) || nlCount > 1 {
+		newLines := strings.Split(changeset.NewText, "\n")
+		total := 0
+
+		for i, line := range newLines {
+			textToAdd := line
+			if i < len(newLines)-1 {
+				textToAdd += "\n"
+			}
+
+			startPos := Position{Line: changeset.StartPos.Line, Column: changeset.StartPos.Column}
+			endPos := Position{Line: changeset.EndPos.Line, Column: len(doc.modifiedLines[changeset.StartPos.Line+i])}
+			if i > 0 {
+				startPos.Column = 0
+			}
+
+			if i == len(newLines)-1 {
+				endPos.Column = changeset.EndPos.Column
+			}
+
+			changeset := Changeset{
+				Id:       changeset.Id,
+				NewText:  textToAdd,
+				StartPos: startPos,
+				EndPos:   endPos,
+			}
+
+			total += doc.Apply(changeset.AddLines(total))
+		}
+
+		return total
+	}
+
+	// to avoid out of bounds error. limit the endpos column to the length of the doc line
+	changeset.EndPos.Column = min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line]))
+
+	if len(changeset.NewText) == 0 && changeset.StartPos.Column == 0 && changeset.EndPos.Column == len(doc.modifiedLines[changeset.StartPos.Line]) {
+		// remove the line if the changeset is an empty and the position covers the entire line
+		doc.modifiedLines = append(doc.modifiedLines[:changeset.StartPos.Line], doc.modifiedLines[changeset.EndPos.Line:]...)
+		changeset.linesAdded = -1
+	} else {
+		left := doc.modifiedLines[changeset.StartPos.Line][:changeset.StartPos.Column]
+		right := doc.modifiedLines[changeset.EndPos.Line][changeset.EndPos.Column:]
+
+		// remove newline if the changeset is a newline
+		if nlCount >= 1 {
+			changeset.NewText = changeset.NewText[:len(changeset.NewText)-1]
+		}
+
+		// create a new line if the changeset is a newline
+		if len(changeset.NewText) > 1 && nlCount >= 1 {
+			doc.modifiedLines = append(
+				append(append([]string{}, doc.modifiedLines[:changeset.StartPos.Line]...), ""),
+				doc.modifiedLines[changeset.EndPos.Line:]...)
+
+			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText
+			changeset.linesAdded++
+		} else {
+			fmt.Println(changeset.EndPos.Line)
+
+			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText + right
+			changeset.linesAdded = 0
+		}
+	}
+
+	fmt.Printf("new: %q for %q\n", changeset.NewText, doc.modifiedLines)
+
+	// add changeset
+	doc.changesets = append(doc.changesets, changeset)
+
+	// reparse the document
+	doc.tree.Edit(sitter.EditInput{
+		StartIndex:  uint32(changeset.StartPos.Index),
+		OldEndIndex: uint32(changeset.EndPos.Index),
+		NewEndIndex: uint32(changeset.StartPos.Index + len(changeset.NewText)),
+		StartPoint: sitter.Point{
+			Row:    uint32(changeset.StartPos.Line),
+			Column: uint32(changeset.StartPos.Column),
+		},
+		OldEndPoint: sitter.Point{
+			Row:    uint32(changeset.EndPos.Line - totalLinesAdded),
+			Column: uint32(changeset.EndPos.Column),
+		},
+		NewEndPoint: sitter.Point{
+			Row:    uint32(changeset.StartPos.Line),
+			Column: uint32(changeset.StartPos.Column + len(changeset.NewText)),
+		},
+	})
+
+	newTree, err := doc.parser.ParseCtx(
+		context.Background(),
+		doc.tree,
+		[]byte(doc.String()),
+	)
+	if err != nil {
+		return 0
+	}
+
+	doc.tree = newTree
+	return totalLinesAdded
+}
+
+func (doc *EditableDocument) String() string {
+	return strings.Join(doc.modifiedLines, "\n")
+}
+
+func (doc *EditableDocument) ModifiedLineAt(idx int) string {
+	if idx < 0 || idx >= len(doc.modifiedLines) {
+		return ""
+	}
+	return doc.modifiedLines[idx]
+}
+
+func linesAt(list []string, from int, to int) []string {
+	if from > to {
+		from, to = to, from
+	}
+	if to == -1 {
+		to = len(list)
+	}
+	from = max(from, 0)
+	to = min(to, len(list))
+	if from == 0 && to == len(list) {
+		return list
+	} else if from > 0 && to == len(list) {
+		return list[from:]
+	} else if from == 0 && to < len(list) {
+		return list[:to]
+	}
+
+	return list[from:to]
+}
+
+func (doc *EditableDocument) ModifiedLinesAt(from int, to int) []string {
+	return linesAt(doc.modifiedLines, from, to)
+}
+
+func (doc *EditableDocument) Reset() {
+	rawLines := doc.Lines()
+	lines := make([]string, len(rawLines))
+	copy(lines, rawLines)
+
+	doc.modifiedLines = lines
+	doc.changesets = nil
+	doc.tree = doc.Tree.Copy()
+	doc.parser.Reset()
 }
 
 type Document struct {
@@ -73,38 +331,8 @@ type Document struct {
 	Tree        *sitter.Tree
 }
 
-func (doc *TempDocument) ApplyEdit(newText string, startPos Position, endPos Position) {
-	isReplace := !startPos.Eq(endPos)
-	doc.changesets = append(doc.changesets, Changeset{
-		NewText:   newText,
-		StartPos:  startPos,
-		EndPos:    endPos,
-		IsReplace: isReplace,
-	})
-
-	if isReplace {
-		if startPos.Column == 0 && endPos.Column == 0 {
-			doc.cachedLines[startPos.Line] = newText
-		} else {
-			line := startPos.Line
-			left := doc.cachedLines[line][:startPos.Column]
-			right := doc.cachedLines[line][endPos.Column:]
-			doc.cachedLines[line] = left + newText + right
-		}
-	} else {
-		doc.cachedLines = append(doc.cachedLines[:startPos.Line+1], doc.cachedLines[endPos.Line:]...)
-		doc.cachedLines[startPos.Line] = newText
-	}
-}
-
-func (doc *Document) CreateTempDoc() TempDocument {
-	lines := make([]string, len(doc.Lines()))
-	copy(lines, doc.Lines())
-
-	return TempDocument{
-		Document: doc,
-		lines:    lines,
-	}
+func (doc *Document) Editable() *EditableDocument {
+	return NewEditableDocument(doc)
 }
 
 func (doc *Document) LineAt(idx int) string {
@@ -118,30 +346,18 @@ func (doc *Document) LineAt(idx int) string {
 }
 
 func (doc *Document) LinesAt(from int, to int) []string {
-	if doc.cachedLines == nil {
+	if doc.cachedLines == nil || (len(doc.Contents) != 0 && len(doc.cachedLines) == 0) {
 		doc.cachedLines = strings.Split(doc.Contents, "\n")
 	}
-	if from > to {
-		from, to = to, from
-	}
-	from = max(from, 0)
-	to = min(to, len(doc.cachedLines))
-	if from == 0 && to == len(doc.cachedLines) {
-		return doc.cachedLines
-	} else if from > 0 && to == len(doc.cachedLines) {
-		return doc.cachedLines[from:]
-	} else if from == 0 && to < len(doc.cachedLines) {
-		return doc.cachedLines[:to]
-	}
-	return doc.cachedLines[from:to]
+	return linesAt(doc.cachedLines, from, to)
 }
 
 func (doc *Document) Lines() []string {
-	return doc.LinesAt(0, len(doc.cachedLines)-1)
+	return doc.LinesAt(-2, -1)
 }
 
 func (doc *Document) TotalLines() int {
-	return len(doc.cachedLines)
+	return len(doc.Lines())
 }
 
 func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *Language, existingDoc *Document) (*Document, error) {

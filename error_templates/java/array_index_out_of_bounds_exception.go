@@ -38,7 +38,6 @@ var ArrayIndexOutOfBoundsException = lib.ErrorTemplate{
 					NewText:       fmt.Sprintf("%d", sampleIndex),
 					StartPosition: cd.MainError.Nearest.StartPosition(),
 					EndPosition:   cd.MainError.Nearest.EndPosition(),
-					Replace:       true,
 					Description:   "This adjustment ensures that you're accessing an index that exists within the array bounds, preventing the `ArrayIndexOutOfBoundsException`.",
 				})
 		})

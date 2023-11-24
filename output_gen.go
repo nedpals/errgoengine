@@ -77,7 +77,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	}
 
 	gen.generateFromExp(1, explain)
-	doc := cd.MainError.Document.CopyContentsOnly()
+	doc := cd.MainError.Document
 
 	if gen.IsTesting {
 		startRow := cd.MainError.Nearest.StartPoint().Row
@@ -113,6 +113,8 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	gen.heading(2, "Steps to fix")
 
 	if bugFix.Suggestions != nil && len(bugFix.Suggestions) != 0 {
+		editedDoc := doc.Editable()
+
 		for sIdx, s := range bugFix.Suggestions {
 			if len(bugFix.Suggestions) == 1 {
 				gen.heading(3, s.Title)
@@ -132,28 +134,32 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 				}
 
 				for fIdx, fix := range step.Fixes {
-					gen.writeln("```diff")
+					editedDoc.Apply(Changeset{
+						NewText:  fix.NewText,
+						StartPos: fix.StartPosition,
+						EndPos:   fix.EndPosition,
+					})
+
 					startLine := fix.StartPosition.Line
-					gen.writeLines(doc.LinesAt(startLine-2, startLine)...)
+					afterLine := fix.EndPosition.Line
 
-					gen.write("- ")
-					gen.writeln(doc.LineAt(fix.StartPosition.Line))
+					gen.writeln("```diff")
+					gen.writeLines(editedDoc.LinesAt(startLine-2, startLine)...)
 
-					gen.write("+ ")
-					gen.write(doc.LineAt(fix.StartPosition.Line)[:fix.StartPosition.Column])
-					gen.write(fix.NewText)
+					original := editedDoc.LinesAt(startLine, afterLine)
+					for _, origLine := range original {
+						gen.write("- ")
+						gen.writeln(origLine)
+					}
 
-					if fix.Replace {
-						gen.write(doc.LineAt(fix.StartPosition.Line)[fix.EndPosition.Column:])
+					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
+					for _, modifiedLine := range modified {
+						gen.write("+ ")
+						gen.writeln(modifiedLine)
 					}
 
 					gen._break()
-					afterLine := startLine
-					if fix.Replace {
-						afterLine++
-					}
-
-					gen.writeLines(doc.LinesAt(afterLine, min(afterLine+2, doc.TotalLines()))...)
+					gen.writeLines(editedDoc.LinesAt(afterLine, min(afterLine+2, editedDoc.TotalLines()))...)
 					gen.writeln("```")
 
 					if fIdx < len(step.Fixes)-1 {
@@ -163,8 +169,9 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					}
 				}
 			}
+
+			editedDoc.Reset()
 		}
-		// gen._break()
 	} else {
 		gen.writeln("Nothing to fix")
 	}

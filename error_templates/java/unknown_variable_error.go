@@ -45,7 +45,6 @@ var UnknownVariableError = lib.ErrorTemplate{
 					NewText:       fmt.Sprintf("String %s = \"\";", variable),
 					StartPosition: ctx.rootNode.StartPosition(),
 					EndPosition:   ctx.rootNode.StartPosition(),
-					Replace:       false,
 				})
 		})
 	},

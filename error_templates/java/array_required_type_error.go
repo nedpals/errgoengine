@@ -59,7 +59,6 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 					NewText:       fmt.Sprintf("%s[] %s = {%s}", cd.Variables["foundType"], varNode.Text(), valueNode.Text()),
 					StartPosition: declNode.StartPosition(),
 					EndPosition:   declNode.EndPosition(),
-					Replace:       true,
 				})
 		})
 

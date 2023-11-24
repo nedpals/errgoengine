@@ -73,7 +73,6 @@ var ArithmeticException = lib.ErrorTemplate{
 						Description:   "This adjustment replaces the division by zero with a value that is not zero, ensuring the operation is valid. Division by zero is mathematically undefined, causing an 'ArithmeticException'. By changing the denominator to a non-zero value, you prevent the error.",
 						StartPosition: cd.MainError.Nearest.StartPosition(),
 						EndPosition:   cd.MainError.Nearest.EndPosition(),
-						Replace:       true,
 					})
 			})
 		case nonTerminatingDecimal:
@@ -83,7 +82,6 @@ var ArithmeticException = lib.ErrorTemplate{
 						NewText:       ", RoundingMode.HALF_UP)",
 						StartPosition: cd.MainError.Nearest.EndPosition(),
 						EndPosition:   cd.MainError.Nearest.EndPosition(),
-						Replace:       true,
 					})
 			})
 

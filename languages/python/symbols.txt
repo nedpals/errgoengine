@@ -1,11 +1,6 @@
 (import_statement
 	name: (_) @import.path) @import
 
-(expression_statement
-	(assignment
-    	left: (identifier) @assignment.name
-        right: (_) @assignment.content)) @assignment
-        
 (function_definition
 	parameters: (parameters
     	[
@@ -14,7 +9,7 @@
             	((identifier) @parameter.name)
                 type: (_) @parameter.return-type)
         ]? @parameter) @parameters) @function
-  	(return_statement 
+  	(return_statement
   		(_) @block.content)?
 
 (expression_statement
