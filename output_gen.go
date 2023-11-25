@@ -85,7 +85,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 			startRow = uint32(cd.MainError.ErrorNode.StartPos.Line)
 		}
 
-		startLines := doc.LinesAt(int(startRow)-1, int(startRow)+1)
+		startLines := doc.LinesAt(int(startRow)-1, int(startRow))
 		endLines := doc.LinesAt(min(int(startRow)+1, doc.TotalLines()), doc.TotalLines())
 		arrowLength := int(cd.MainError.Nearest.EndByte() - cd.MainError.Nearest.StartByte())
 		if arrowLength == 0 {
@@ -136,8 +136,14 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 
 				if len(step.Fixes) != 0 {
 					descriptionBuilder := &strings.Builder{}
+
+					// get the start and end line after applying the diff
 					startLine := step.Fixes[0].StartPosition.Line
 					afterLine := step.Fixes[0].EndPosition.Line
+
+					// get the original start and end line
+					origStartLine := step.Fixes[0].StartPosition.Line
+					origAfterLine := step.Fixes[0].EndPosition.Line
 
 					for fIdx, fix := range step.Fixes {
 						diffPosition = diffPosition.addNoCheck(editedDoc.Apply(Changeset{
@@ -146,8 +152,11 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 							EndPos:   fix.EndPosition,
 						}.Add(diffPosition)))
 
-						startLine = min(startLine, fix.StartPosition.Line)
-						afterLine = max(afterLine, fix.EndPosition.Line)
+						origStartLine = min(origStartLine, fix.StartPosition.Line)
+						origAfterLine = max(origAfterLine, fix.EndPosition.Line)
+
+						startLine = min(startLine, fix.StartPosition.Line+diffPosition.Line)
+						afterLine = max(afterLine, fix.EndPosition.Line+diffPosition.Line)
 
 						if len(fix.Description) != 0 {
 							if fIdx < len(step.Fixes)-1 {
@@ -159,21 +168,21 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					}
 
 					gen.writeln("```diff")
-					gen.writeLines(editedDoc.LinesAt(startLine-2, startLine)...)
+					gen.writeLines(editedDoc.LinesAt(startLine-2, startLine-1)...)
 
-					original := editedDoc.LinesAt(startLine+1, afterLine)
+					original := editedDoc.LinesAt(origStartLine, origAfterLine)
 					for _, origLine := range original {
 						gen.write("- ")
 						gen.writeln(origLine)
 					}
 
-					modified := editedDoc.ModifiedLinesAt(startLine+1, afterLine)
+					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
 					for _, modifiedLine := range modified {
 						gen.write("+ ")
 						gen.writeln(modifiedLine)
 					}
 
-					gen.writeLines(editedDoc.LinesAt(afterLine+1, min(afterLine+3, editedDoc.TotalLines()))...)
+					gen.writeLines(editedDoc.LinesAt(origAfterLine+1, min(origAfterLine+2, editedDoc.TotalLines()))...)
 					gen.writeln("```")
 					if descriptionBuilder.Len() != 0 {
 						gen.writeln(descriptionBuilder.String())

@@ -15,6 +15,10 @@ type Position struct {
 	Index  int
 }
 
+func (pos Position) IsInBetween(loc Location) bool {
+	return pos.Index >= loc.StartPos.Index && pos.Index <= loc.EndPos.Index
+}
+
 func (pos Position) Add(pos2 Position) Position {
 	return Position{
 		Line:   max(pos.Line+pos2.Line, 0),
@@ -46,6 +50,10 @@ type Location struct {
 	// Position
 	StartPos Position
 	EndPos   Position
+}
+
+func (loc Location) IsWithin(other Location) bool {
+	return loc.StartPos.IsInBetween(other) && loc.EndPos.IsInBetween(other)
 }
 
 func (loc Location) Point() sitter.Point {
@@ -307,10 +315,10 @@ func linesAt(list []string, from int, to int) []string {
 	} else if from > 0 && to == len(list) {
 		return list[from:]
 	} else if from == 0 && to < len(list) {
-		return list[:to]
+		return list[:to+1]
 	}
 
-	return list[from:to]
+	return list[from : to+1]
 }
 
 func (doc *EditableDocument) ModifiedLinesAt(from int, to int) []string {
