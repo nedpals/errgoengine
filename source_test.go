@@ -15,7 +15,7 @@ var testLanguage = &Language{
 	StackTracePattern: `\s+File "(?P<path>\S+)", line (?P<position>\d+), in (?P<symbol>\S+)`,
 	ErrorPattern:      `Traceback \(most recent call last\):$stacktrace$message`,
 	AnalyzerFactory: func(cd *ContextData) LanguageAnalyzer {
-		return &pyAnalyzer{cd}
+		return &testAnalyzer{cd}
 	},
 	SymbolsToCapture: `
 (expression_statement
@@ -25,20 +25,20 @@ var testLanguage = &Language{
 `,
 }
 
-type pyAnalyzer struct {
+type testAnalyzer struct {
 	*ContextData
 }
 
-func (an *pyAnalyzer) FallbackSymbol() Symbol {
+func (an *testAnalyzer) FallbackSymbol() Symbol {
 	return Builtin("any")
 }
 
-func (an *pyAnalyzer) AnalyzeNode(n SyntaxNode) Symbol {
+func (an *testAnalyzer) AnalyzeNode(n SyntaxNode) Symbol {
 	// TODO:
 	return Builtin("void")
 }
 
-func (an *pyAnalyzer) AnalyzeImport(params ImportParams) ResolvedImport {
+func (an *testAnalyzer) AnalyzeImport(params ImportParams) ResolvedImport {
 	// TODO:
 
 	return ResolvedImport{
@@ -238,6 +238,45 @@ func TestEditableDocument(t *testing.T) {
 
 		if editableDoc.String() != "a = 1" {
 			t.Errorf("Expected contents to be \"a = 1\", got %q", editableDoc.String())
+		}
+	})
+
+	t.Run("EditableDocument.RemoveMultipleLines2", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		editableDoc.Apply(Changeset{
+			NewText: "a = 1\nb = 2\n",
+			StartPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+		})
+
+		if editableDoc.String() != "a = 1\nb = 2\nhello = 1" {
+			t.Errorf("Expected contents to be \"a = 1\\nb = 2\\nhello = 1\", got %q", editableDoc.String())
+		}
+
+		editableDoc.Apply(Changeset{
+			StartPos: Position{
+				Line:   1,
+				Column: 0,
+				Index:  6,
+			},
+			EndPos: Position{
+				Line:   2,
+				Column: 1,
+				Index:  9,
+			},
+		})
+
+		if editableDoc.String() != "a = 1\nello = 1" {
+			t.Errorf("Expected contents to be \"a = 1\\nello = 1\", got %q", editableDoc.String())
 		}
 	})
 }

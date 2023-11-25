@@ -15,6 +15,14 @@ type Position struct {
 	Index  int
 }
 
+func (pos Position) Add(pos2 Position) Position {
+	return Position{
+		Line:   max(pos.Line+pos2.Line, 0),
+		Column: max(pos.Column+pos2.Column, 0),
+		Index:  max(pos.Index+pos2.Index, 0),
+	}
+}
+
 func (a Position) Eq(b Position) bool {
 	return a.Column == b.Column &&
 		a.Line == b.Line &&
@@ -53,22 +61,22 @@ func (loc Location) Range() sitter.Range {
 }
 
 type Changeset struct {
-	Id         int
-	NewText    string
-	StartPos   Position
-	EndPos     Position
-	linesAdded int
-	IsChanged  bool
+	Id        int
+	NewText   string
+	StartPos  Position
+	EndPos    Position
+	IsChanged bool
 }
 
 func (c Changeset) AddLines(lines int) Changeset {
 	if lines != 0 {
-		fmt.Println("adding lines", lines)
-
-		c.linesAdded += lines
-		c.StartPos.Line += lines
-		c.EndPos.Line += lines
-		c.IsChanged = true
+		return Changeset{
+			Id:        c.Id,
+			NewText:   c.NewText,
+			StartPos:  c.StartPos.Add(Position{Line: lines}),
+			EndPos:    c.EndPos.Add(Position{Line: lines}),
+			IsChanged: true,
+		}
 	}
 	return c
 }
@@ -131,53 +139,45 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 	}
 
 	if changeset.IsChanged {
-		changeset.StartPos.Index = doc.FillIndex(changeset.StartPos).Index
-		changeset.EndPos.Index = doc.FillIndex(changeset.EndPos).Index
+		changeset.StartPos = doc.FillIndex(changeset.StartPos)
+		changeset.EndPos = doc.FillIndex(changeset.EndPos)
 		changeset.IsChanged = false
 	}
 
 	// if the changeset text is empty but has a definite position range, this means that the changeset is a deletion
-	if len(changeset.NewText) == 0 {
-		total := 0
-
+	if len(changeset.NewText) == 0 && changeset.StartPos.Line != changeset.EndPos.Line {
 		// if the changeset start line is not the same as the end line, split it
-		for i := changeset.StartPos.Line; i < len(doc.modifiedLines); {
-			if i > changeset.EndPos.Line {
-				break
+		for line := changeset.StartPos.Line; line <= changeset.EndPos.Line; line++ {
+			startPos := Position{Line: line, Column: 0}
+			endPos := Position{Line: line, Column: 0}
+
+			if line < len(doc.modifiedLines) {
+				// if the line is the last line, set the end position to the length of the line.
+				// take note, this is the length of the original line, not the modified line
+				endPos.Column = len(doc.modifiedLines[line])
 			}
 
-			startPos := Position{Line: i, Column: 0}
-			endPos := Position{Line: i, Column: len(doc.modifiedLines[i])}
-
-			if i == changeset.StartPos.Line {
+			if line == changeset.StartPos.Line {
 				startPos.Column = changeset.StartPos.Column
-			} else if i == changeset.EndPos.Line {
+			} else if line == changeset.EndPos.Line {
 				endPos.Column = changeset.EndPos.Column
 			}
 
-			if i != changeset.StartPos.Line {
-				startPos.Line = i - 1
-				endPos.Line = i - 1
-			}
-
-			changeset := Changeset{
-				Id:       changeset.Id,
-				NewText:  changeset.NewText,
-				StartPos: doc.FillIndex(startPos),
-				EndPos:   doc.FillIndex(endPos),
-			}
-
-			total += doc.Apply(changeset.AddLines(total))
+			totalLinesAdded += doc.Apply(Changeset{
+				Id:        changeset.Id,
+				StartPos:  startPos,
+				EndPos:    endPos,
+				IsChanged: true, // turn it on so that FillIndex will be called in the earlier part of this function
+			}.AddLines(totalLinesAdded))
 		}
 
-		return total
+		return totalLinesAdded
 	}
 
 	// if the changeset is a newline, split the new text into lines and apply them
 	nlCount := strings.Count(changeset.NewText, "\n")
 	if (nlCount == 1 && !strings.HasSuffix(changeset.NewText, "\n")) || nlCount > 1 {
 		newLines := strings.Split(changeset.NewText, "\n")
-		total := 0
 
 		for i, line := range newLines {
 			textToAdd := line
@@ -195,26 +195,24 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 				endPos.Column = changeset.EndPos.Column
 			}
 
-			changeset := Changeset{
+			totalLinesAdded += doc.Apply(Changeset{
 				Id:       changeset.Id,
 				NewText:  textToAdd,
 				StartPos: startPos,
 				EndPos:   endPos,
-			}
-
-			total += doc.Apply(changeset.AddLines(total))
+			}.AddLines(totalLinesAdded))
 		}
 
-		return total
+		return totalLinesAdded
 	}
 
 	// to avoid out of bounds error. limit the endpos column to the length of the doc line
-	changeset.EndPos.Column = min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line]))
+	changeset.EndPos.Column = min(max(changeset.EndPos.Column, 0), len(doc.modifiedLines[changeset.EndPos.Line]))
 
-	if len(changeset.NewText) == 0 && changeset.StartPos.Column == 0 && changeset.EndPos.Column == len(doc.modifiedLines[changeset.StartPos.Line]) {
+	if len(changeset.NewText) == 0 && changeset.StartPos.Column == 0 && changeset.EndPos.Column == len(doc.modifiedLines[changeset.EndPos.Line]) {
 		// remove the line if the changeset is an empty and the position covers the entire line
-		doc.modifiedLines = append(doc.modifiedLines[:changeset.StartPos.Line], doc.modifiedLines[changeset.EndPos.Line:]...)
-		changeset.linesAdded = -1
+		doc.modifiedLines = append(doc.modifiedLines[:changeset.StartPos.Line], doc.modifiedLines[changeset.EndPos.Line+1:]...)
+		totalLinesAdded = -1
 	} else {
 		left := doc.modifiedLines[changeset.StartPos.Line][:changeset.StartPos.Column]
 		right := doc.modifiedLines[changeset.EndPos.Line][changeset.EndPos.Column:]
@@ -231,16 +229,14 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 				doc.modifiedLines[changeset.EndPos.Line:]...)
 
 			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText
-			changeset.linesAdded++
+			totalLinesAdded++
 		} else {
-			fmt.Println(changeset.EndPos.Line)
-
 			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText + right
-			changeset.linesAdded = 0
+			totalLinesAdded = 0
 		}
 	}
 
-	fmt.Printf("new: %q for %q\n", changeset.NewText, doc.modifiedLines)
+	// fmt.Printf("new: %v for %q\n", changeset, doc.modifiedLines)
 
 	// add changeset
 	doc.changesets = append(doc.changesets, changeset)
