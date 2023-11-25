@@ -113,7 +113,7 @@ func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(QueryNodeCtx
 		panic(err)
 	}
 
-	q, err := sitter.NewQuery([]byte(query), rootNode.Doc.Language.SitterLanguage)
+	q, err := sitter.NewQuery(query, rootNode.Doc.Language.SitterLanguage)
 	if err != nil {
 		panic(err)
 	}
