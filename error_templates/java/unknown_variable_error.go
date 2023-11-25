@@ -41,7 +41,7 @@ var UnknownVariableError = lib.ErrorTemplate{
 		gen.Add("Create a variable.", func(s *lib.BugFixSuggestion) {
 			s.AddStep("Create a variable named \"%s\". For example:", variable).
 				// TODO: use variable type from the inferred parameter
-				AddFix(lib.SuggestedFix{
+				AddFix(lib.FixSuggestion{
 					NewText:       fmt.Sprintf("String %s = \"\";", variable),
 					StartPosition: ctx.rootNode.StartPosition(),
 					EndPosition:   ctx.rootNode.StartPosition(),

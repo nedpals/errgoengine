@@ -62,19 +62,19 @@ func (gen *BugFixSuggestion) AddDescription(exp string, d ...any) {
 
 type BugFixStep struct {
 	Content string
-	Fixes   []SuggestedFix
+	Fixes   []FixSuggestion
 }
 
-func (step *BugFixStep) AddFix(fix SuggestedFix) *BugFixStep {
+func (step *BugFixStep) AddFix(fix FixSuggestion) *BugFixStep {
 	if step.Fixes == nil {
-		step.Fixes = []SuggestedFix{}
+		step.Fixes = []FixSuggestion{}
 	}
 
 	step.Fixes = append(step.Fixes, fix)
 	return step
 }
 
-type SuggestedFix struct {
+type FixSuggestion struct {
 	StartPosition Position
 	EndPosition   Position
 	NewText       string

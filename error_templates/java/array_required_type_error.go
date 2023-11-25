@@ -55,7 +55,7 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 			declNode = declNode.Parent()
 
 			s.AddStep("Declare the variable `%s` as an array of `%s`.", varNode.Text(), cd.Variables["foundType"]).
-				AddFix(lib.SuggestedFix{
+				AddFix(lib.FixSuggestion{
 					NewText:       fmt.Sprintf("%s[] %s = {%s}", cd.Variables["foundType"], varNode.Text(), valueNode.Text()),
 					StartPosition: declNode.StartPosition(),
 					EndPosition:   declNode.EndPosition(),
@@ -64,7 +64,7 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 
 		gen.Add("Initialize an array and access its index", func(s *lib.BugFixSuggestion) {
 			s.AddStep("").
-				AddFix(lib.SuggestedFix{
+				AddFix(lib.FixSuggestion{
 					NewText:       "number[0] = 5a",
 					StartPosition: cd.MainError.Nearest.StartPosition(),
 					EndPosition:   cd.MainError.Nearest.EndPosition(),

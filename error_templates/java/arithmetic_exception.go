@@ -68,7 +68,7 @@ var ArithmeticException = lib.ErrorTemplate{
 		case dividedByZero:
 			gen.Add("Avoid dividing by zero.", func(s *lib.BugFixSuggestion) {
 				s.AddStep("To fix the 'ArithmeticException: / by zero', you need to ensure you are not dividing by zero, which is mathematically undefined.").
-					AddFix(lib.SuggestedFix{
+					AddFix(lib.FixSuggestion{
 						NewText:       "1",
 						Description:   "This adjustment replaces the division by zero with a value that is not zero, ensuring the operation is valid. Division by zero is mathematically undefined, causing an 'ArithmeticException'. By changing the denominator to a non-zero value, you prevent the error.",
 						StartPosition: cd.MainError.Nearest.StartPosition(),
@@ -78,7 +78,7 @@ var ArithmeticException = lib.ErrorTemplate{
 		case nonTerminatingDecimal:
 			gen.Add("Ensure precise division", func(s *lib.BugFixSuggestion) {
 				s.AddStep("To fix the 'ArithmeticException: Non-terminating decimal expansion', you need to ensure the division operation is precise.").
-					AddFix(lib.SuggestedFix{
+					AddFix(lib.FixSuggestion{
 						NewText:       ", RoundingMode.HALF_UP)",
 						StartPosition: cd.MainError.Nearest.EndPosition(),
 						EndPosition:   cd.MainError.Nearest.EndPosition(),
@@ -91,12 +91,12 @@ var ArithmeticException = lib.ErrorTemplate{
 					lastChild := parent.LastNamedChild()
 
 					s.AddStep("Handle the ArithmeticException by wrapping the division operation in a try-catch block to manage the potential exception and inform the user about the non-terminating result.").
-						AddFix(lib.SuggestedFix{
+						AddFix(lib.FixSuggestion{
 							NewText:       "try {",
 							StartPosition: firstChild.StartPosition(),
 							EndPosition:   firstChild.StartPosition(),
 						}).
-						AddFix(lib.SuggestedFix{
+						AddFix(lib.FixSuggestion{
 							NewText:       "} catch (ArithmeticException e) {\n\tSystem.out.println(\"Non-terminating result: \" + e.getMessage());\n}",
 							StartPosition: lastChild.StartPosition(),
 							EndPosition:   lastChild.StartPosition(),
