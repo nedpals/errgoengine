@@ -87,15 +87,15 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 
 		startLines := doc.LinesAt(int(startRow)-1, int(startRow)+1)
 		endLines := doc.LinesAt(min(int(startRow)+1, doc.TotalLines()), doc.TotalLines())
-		arrowLength := int(cd.MainError.Nearest.EndPoint().Row - cd.MainError.Nearest.StartPoint().Row)
+		arrowLength := int(cd.MainError.Nearest.EndByte() - cd.MainError.Nearest.StartByte())
 		if arrowLength == 0 {
 			arrowLength = 1
 		}
 
-		startArrowPos := cd.MainError.Nearest.EndPosition().Column
+		startArrowPos := cd.MainError.Nearest.StartPosition().Column
 		gen.writeln("```")
 		gen.writeLines(startLines...)
-		for i := 0; i < startArrowPos-1; i++ {
+		for i := 0; i < startArrowPos; i++ {
 			if startLines[1][i] == '\t' {
 				gen.wr.WriteString("    ")
 			} else {
@@ -113,9 +113,10 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	gen.heading(2, "Steps to fix")
 
 	if bugFix.Suggestions != nil && len(bugFix.Suggestions) != 0 {
-		editedDoc := doc.Editable()
-
 		for sIdx, s := range bugFix.Suggestions {
+			diffPosition := Position{}
+			editedDoc := doc.Editable()
+
 			if len(bugFix.Suggestions) == 1 {
 				gen.heading(3, s.Title)
 			} else {
@@ -133,41 +134,55 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					continue
 				}
 
-				for fIdx, fix := range step.Fixes {
-					editedDoc.Apply(Changeset{
-						NewText:  fix.NewText,
-						StartPos: fix.StartPosition,
-						EndPos:   fix.EndPosition,
-					})
+				if len(step.Fixes) != 0 {
+					descriptionBuilder := &strings.Builder{}
+					startLine := step.Fixes[0].StartPosition.Line
+					afterLine := step.Fixes[0].EndPosition.Line
 
-					startLine := fix.StartPosition.Line
-					afterLine := fix.EndPosition.Line
+					for fIdx, fix := range step.Fixes {
+						diffPosition = diffPosition.addNoCheck(editedDoc.Apply(Changeset{
+							NewText:  fix.NewText,
+							StartPos: fix.StartPosition,
+							EndPos:   fix.EndPosition,
+						}.Add(diffPosition)))
+
+						startLine = min(startLine, fix.StartPosition.Line)
+						afterLine = max(afterLine, fix.EndPosition.Line)
+
+						if len(fix.Description) != 0 {
+							if fIdx < len(step.Fixes)-1 {
+								descriptionBuilder.WriteString(fix.Description + "\n")
+							} else {
+								descriptionBuilder.WriteString(fix.Description)
+							}
+						}
+					}
 
 					gen.writeln("```diff")
 					gen.writeLines(editedDoc.LinesAt(startLine-2, startLine)...)
 
-					original := editedDoc.LinesAt(startLine, afterLine)
+					original := editedDoc.LinesAt(startLine+1, afterLine)
 					for _, origLine := range original {
 						gen.write("- ")
 						gen.writeln(origLine)
 					}
 
-					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
+					modified := editedDoc.ModifiedLinesAt(startLine+1, afterLine)
 					for _, modifiedLine := range modified {
 						gen.write("+ ")
 						gen.writeln(modifiedLine)
 					}
 
-					gen._break()
-					gen.writeLines(editedDoc.LinesAt(afterLine, min(afterLine+2, editedDoc.TotalLines()))...)
+					gen.writeLines(editedDoc.LinesAt(afterLine+1, min(afterLine+3, editedDoc.TotalLines()))...)
 					gen.writeln("```")
-
-					if fIdx < len(step.Fixes)-1 {
-						gen.writeln(fix.Description)
-					} else {
-						gen.write(fix.Description)
+					if descriptionBuilder.Len() != 0 {
+						gen.writeln(descriptionBuilder.String())
 					}
 				}
+			}
+
+			if sIdx < len(bugFix.Suggestions)-1 {
+				gen._break()
 			}
 
 			editedDoc.Reset()
@@ -176,7 +191,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 		gen.writeln("Nothing to fix")
 	}
 
-	return gen.wr.String()
+	return strings.TrimSpace(gen.wr.String())
 }
 
 func (gen *OutputGenerator) Reset() {

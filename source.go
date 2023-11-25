@@ -23,6 +23,14 @@ func (pos Position) Add(pos2 Position) Position {
 	}
 }
 
+func (pos Position) addNoCheck(pos2 Position) Position {
+	return Position{
+		Line:   pos.Line + pos2.Line,
+		Column: pos.Column + pos2.Column,
+		Index:  pos.Index + pos2.Index,
+	}
+}
+
 func (a Position) Eq(b Position) bool {
 	return a.Column == b.Column &&
 		a.Line == b.Line &&
@@ -68,17 +76,14 @@ type Changeset struct {
 	IsChanged bool
 }
 
-func (c Changeset) AddLines(lines int) Changeset {
-	if lines != 0 {
-		return Changeset{
-			Id:        c.Id,
-			NewText:   c.NewText,
-			StartPos:  c.StartPos.Add(Position{Line: lines}),
-			EndPos:    c.EndPos.Add(Position{Line: lines}),
-			IsChanged: true,
-		}
+func (c Changeset) Add(posToAdd Position) Changeset {
+	return Changeset{
+		Id:        c.Id,
+		NewText:   c.NewText,
+		StartPos:  c.StartPos.Add(posToAdd),
+		EndPos:    c.EndPos.Add(posToAdd),
+		IsChanged: true,
 	}
-	return c
 }
 
 type EditableDocument struct {
@@ -129,8 +134,8 @@ func (doc *EditableDocument) FillIndex(pos Position) Position {
 	}
 }
 
-func (doc *EditableDocument) Apply(changeset Changeset) int {
-	totalLinesAdded := 0
+func (doc *EditableDocument) Apply(changeset Changeset) Position {
+	diffPosition := Position{}
 
 	// add id if not present
 	if changeset.Id == 0 {
@@ -163,15 +168,15 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 				endPos.Column = changeset.EndPos.Column
 			}
 
-			totalLinesAdded += doc.Apply(Changeset{
+			diffPosition = diffPosition.addNoCheck(doc.Apply(Changeset{
 				Id:        changeset.Id,
 				StartPos:  startPos,
 				EndPos:    endPos,
 				IsChanged: true, // turn it on so that FillIndex will be called in the earlier part of this function
-			}.AddLines(totalLinesAdded))
+			}.Add(diffPosition)))
 		}
 
-		return totalLinesAdded
+		return diffPosition
 	}
 
 	// if the changeset is a newline, split the new text into lines and apply them
@@ -195,15 +200,15 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 				endPos.Column = changeset.EndPos.Column
 			}
 
-			totalLinesAdded += doc.Apply(Changeset{
+			diffPosition = diffPosition.addNoCheck(doc.Apply(Changeset{
 				Id:       changeset.Id,
 				NewText:  textToAdd,
 				StartPos: startPos,
 				EndPos:   endPos,
-			}.AddLines(totalLinesAdded))
+			}.Add(diffPosition)))
 		}
 
-		return totalLinesAdded
+		return diffPosition
 	}
 
 	// to avoid out of bounds error. limit the endpos column to the length of the doc line
@@ -212,7 +217,8 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 	if len(changeset.NewText) == 0 && changeset.StartPos.Column == 0 && changeset.EndPos.Column == len(doc.modifiedLines[changeset.EndPos.Line]) {
 		// remove the line if the changeset is an empty and the position covers the entire line
 		doc.modifiedLines = append(doc.modifiedLines[:changeset.StartPos.Line], doc.modifiedLines[changeset.EndPos.Line+1:]...)
-		totalLinesAdded = -1
+		diffPosition.Line = -1
+		diffPosition.Index = -(changeset.EndPos.Index - changeset.StartPos.Index)
 	} else {
 		left := doc.modifiedLines[changeset.StartPos.Line][:changeset.StartPos.Column]
 		right := doc.modifiedLines[changeset.EndPos.Line][changeset.EndPos.Column:]
@@ -229,10 +235,13 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 				doc.modifiedLines[changeset.EndPos.Line:]...)
 
 			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText
-			totalLinesAdded++
+			diffPosition.Line = 1
+			diffPosition.Index = len(changeset.NewText)
 		} else {
 			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText + right
-			totalLinesAdded = 0
+			diffPosition.Line = 0
+			diffPosition.Column = len(changeset.NewText) - (changeset.EndPos.Column - changeset.StartPos.Column)
+			diffPosition.Index = len(changeset.NewText) - (changeset.EndPos.Index - changeset.StartPos.Index)
 		}
 	}
 
@@ -251,7 +260,7 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 			Column: uint32(changeset.StartPos.Column),
 		},
 		OldEndPoint: sitter.Point{
-			Row:    uint32(changeset.EndPos.Line - totalLinesAdded),
+			Row:    uint32(changeset.EndPos.Line - diffPosition.Line),
 			Column: uint32(changeset.EndPos.Column),
 		},
 		NewEndPoint: sitter.Point{
@@ -266,11 +275,11 @@ func (doc *EditableDocument) Apply(changeset Changeset) int {
 		[]byte(doc.String()),
 	)
 	if err != nil {
-		return 0
+		return Position{}
 	}
 
 	doc.tree = newTree
-	return totalLinesAdded
+	return diffPosition
 }
 
 func (doc *EditableDocument) String() string {
