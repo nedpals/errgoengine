@@ -11,23 +11,32 @@ UnclosedCharacterLiteralError.java:4: error: unclosed character literal
 template: "Java.UnclosedCharacterLiteralError"
 ---
 # UnclosedCharacterLiteralError
-This error occurs because the character literal in the code is not correctly closed. In Java, character literals should contain only a single character enclosed in single quotes. However, in this case, 'Hello World' is a string and cannot be stored in a single character variable.
-
+This error occurs when there's an attempt to define a character literal with more than one character, or if the character literal is not closed properly.
+```
+    public static void main(String[] args) {
+        char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
+                  ^^^^^^^^^^^^^
+    }
+}
+```
 ## Steps to fix
-1. Change the variable type from `char` to `String` as 'Hello World' is a string.
+### 1. Store as a String
+The character literal should contain only one character. If you intend to store a string, use double quotes (`"`).
 ```diff
     public static void main(String[] args) {
--       char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
-+       String ch = "Hello World"; // Change the variable type to String for a string value.
+-         char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
++         String ch = "Hello World"; // This will cause an error because the character literal is not closed.
     }
+}
 ```
 
-2. If you want to store a single character, correct the character literal to contain only one character within single quotes.
+### 2. Use single quotes for characters
+If you want to store a single character, ensure that you use single quotes (`'`).
 ```diff
     public static void main(String[] args) {
--       char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
-+       char ch = 'H'; // Store a single character within single quotes.
+-         char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
++         char ch = 'H'; // This will cause an error because the character literal is not closed.
     }
+}
 ```
 
-The error message highlights an attempt to assign multiple characters within single quotes to a `char` variable, which causes the "UnclosedCharacterLiteralError". To fix this, either change the variable type to `String` or ensure that only a single character is enclosed within the single quotes for a `char` variable.
