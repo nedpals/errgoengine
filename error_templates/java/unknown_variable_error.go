@@ -42,7 +42,7 @@ var UnknownVariableError = lib.ErrorTemplate{
 			s.AddStep("Create a variable named \"%s\". For example:", variable).
 				// TODO: use variable type from the inferred parameter
 				AddFix(lib.FixSuggestion{
-					NewText:       fmt.Sprintf("String %s = \"\";", variable),
+					NewText:       fmt.Sprintf("String %s = \"\";\n", variable),
 					StartPosition: ctx.rootNode.StartPosition(),
 					EndPosition:   ctx.rootNode.StartPosition(),
 				})
