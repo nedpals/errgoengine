@@ -2,7 +2,6 @@ package errgoengine
 
 import (
 	"fmt"
-	"math"
 	"strings"
 )
 
@@ -63,7 +62,11 @@ func (gen *OutputGenerator) write(str string, d ...any) {
 
 func (gen *OutputGenerator) writeLines(lines ...string) {
 	for _, line := range lines {
-		gen.writeln(line)
+		if len(line) == 0 {
+			gen._break()
+		} else {
+			gen.writeln(line)
+		}
 	}
 }
 
@@ -80,13 +83,9 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	doc := cd.MainError.Document
 
 	if gen.IsTesting {
-		startRow := cd.MainError.Nearest.StartPoint().Row
-		if startRow-1 == math.MaxUint32 {
-			startRow = uint32(cd.MainError.ErrorNode.StartPos.Line)
-		}
-
-		startLines := doc.LinesAt(int(startRow)-1, int(startRow))
-		endLines := doc.LinesAt(min(int(startRow)+1, doc.TotalLines()), doc.TotalLines())
+		startLineNr := cd.MainError.Nearest.StartPosition().Line
+		startLines := doc.LinesAt(max(startLineNr-1, 0), startLineNr)
+		endLines := doc.LinesAt(min(startLineNr+1, doc.TotalLines()), min(startLineNr+2, doc.TotalLines()))
 		arrowLength := int(cd.MainError.Nearest.EndByte() - cd.MainError.Nearest.StartByte())
 		if arrowLength == 0 {
 			arrowLength = 1
@@ -96,7 +95,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 		gen.writeln("```")
 		gen.writeLines(startLines...)
 		for i := 0; i < startArrowPos; i++ {
-			if startLines[1][i] == '\t' {
+			if startLines[len(startLines)-1][i] == '\t' {
 				gen.wr.WriteString("    ")
 			} else {
 				gen.wr.WriteByte(' ')
@@ -168,7 +167,9 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					}
 
 					gen.writeln("```diff")
-					gen.writeLines(editedDoc.LinesAt(startLine-2, startLine-1)...)
+					if startLine > 0 {
+						gen.writeLines(editedDoc.LinesAt(startLine-2, startLine-1)...)
+					}
 
 					original := editedDoc.LinesAt(origStartLine, origAfterLine)
 					for _, origLine := range original {
