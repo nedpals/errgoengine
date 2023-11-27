@@ -1,3 +1,4 @@
+name: "MissingVariable"
 template: "Java.SymbolNotFoundError"
 ---
 Program.java:3: error: cannot find symbol

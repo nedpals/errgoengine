@@ -1,3 +1,4 @@
+name: "MissingMethod"
 template: "Java.SymbolNotFoundError"
 ---
 Test.java:4: error: cannot find symbol
