@@ -179,8 +179,12 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 
 					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
 					for _, modifiedLine := range modified {
-						gen.write("+ ")
-						gen.writeln(modifiedLine)
+						gen.write("+")
+						if len(modifiedLine) != 0 {
+							gen.write(" ")
+						}
+						gen.write(modifiedLine)
+						gen._break()
 					}
 
 					gen.writeLines(editedDoc.LinesAt(origAfterLine+1, min(origAfterLine+2, editedDoc.TotalLines()))...)
