@@ -1,4 +1,4 @@
-template: "Java.UnknownVariableError"
+template: "Java.SymbolNotFoundError"
 ---
 Program.java:3: error: cannot find symbol
         System.out.println(a);
@@ -7,9 +7,9 @@ Program.java:3: error: cannot find symbol
   location: class Program
 1 error
 ===
-template: "Java.UnknownVariableError"
+template: "Java.SymbolNotFoundError"
 ---
-# UnknownVariableError
+# SymbolNotFoundError
 The program cannot find variable "a"
 ```
     public static void main(String[] args) {
