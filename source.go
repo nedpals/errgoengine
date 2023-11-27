@@ -228,16 +228,41 @@ func (doc *EditableDocument) Apply(changeset Changeset) Position {
 		diffPosition.Line = -1
 		diffPosition.Index = -(changeset.EndPos.Index - changeset.StartPos.Index)
 	} else {
-		left := doc.modifiedLines[changeset.StartPos.Line][:changeset.StartPos.Column]
-		right := doc.modifiedLines[changeset.EndPos.Line][changeset.EndPos.Column:]
-
 		// remove newline if the changeset is a newline
-		if nlCount >= 1 {
+		if len(changeset.NewText) != 0 && changeset.NewText[len(changeset.NewText)-1] == '\n' {
 			changeset.NewText = changeset.NewText[:len(changeset.NewText)-1]
 		}
 
-		// create a new line if the changeset is a newline
-		if len(changeset.NewText) > 1 && nlCount >= 1 {
+		startPosColumn := min(changeset.StartPos.Column, len(doc.modifiedLines[changeset.StartPos.Line]))
+		left := doc.modifiedLines[changeset.StartPos.Line][:startPosColumn]
+
+		if len(changeset.NewText) == 0 && nlCount == 1 {
+			// create an empty line if the changeset is a newline
+			if changeset.StartPos.Column == len(doc.modifiedLines[changeset.StartPos.Line]) {
+				doc.modifiedLines = append(
+					append(append([]string{}, doc.modifiedLines[:changeset.StartPos.Line+1]...), ""),
+					doc.modifiedLines[changeset.EndPos.Line+1:]...)
+			} else {
+				right := doc.modifiedLines[changeset.StartPos.Line][startPosColumn:]
+
+				doc.modifiedLines = append(
+					append(
+						append(
+							append([]string{}, doc.modifiedLines[:changeset.StartPos.Line]...),
+							left,
+							"",
+						),
+						right,
+					),
+					doc.modifiedLines[min(changeset.StartPos.Line+1, len(doc.modifiedLines[changeset.StartPos.Line])):]...,
+				)
+			}
+
+			diffPosition.Line = 1
+			diffPosition.Index = 1
+			diffPosition.Column = 0
+		} else if len(changeset.NewText) > 1 && nlCount >= 1 {
+			// create a new line if the changeset is a newline
 			doc.modifiedLines = append(
 				append(append([]string{}, doc.modifiedLines[:changeset.StartPos.Line]...), ""),
 				doc.modifiedLines[changeset.EndPos.Line:]...)
@@ -246,6 +271,9 @@ func (doc *EditableDocument) Apply(changeset Changeset) Position {
 			diffPosition.Line = 1
 			diffPosition.Index = len(changeset.NewText)
 		} else {
+			right := doc.modifiedLines[changeset.EndPos.Line][min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line])):]
+
+			// replace the line if the changeset is not a newline
 			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText + right
 			diffPosition.Line = 0
 			diffPosition.Column = len(changeset.NewText) - (changeset.EndPos.Column - changeset.StartPos.Column)

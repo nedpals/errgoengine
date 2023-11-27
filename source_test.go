@@ -134,6 +134,84 @@ func TestEditableDocument(t *testing.T) {
 		}
 	})
 
+	t.Run("EditableDocument.AddMultipleLinesAfter", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		addedLines := []string{
+			"println('hello world!')",
+			"world = 2",
+		}
+
+		editableDoc.Apply(Changeset{
+			NewText: "\n" + strings.Join(addedLines, "\n"),
+			StartPos: Position{
+				Line:   0,
+				Column: 9,
+				Index:  9,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 9,
+				Index:  9,
+			},
+		})
+
+		exp := "hello = 1\n" + strings.Join(addedLines, "\n")
+		if editableDoc.String() != exp {
+			t.Errorf("Expected contents to be %q, got %q", exp, editableDoc.String())
+		}
+	})
+
+	t.Run("EditableDocument.AddMultipleLinesAfterDouble", func(t *testing.T) {
+		editableDoc := doc.Editable()
+		editableDoc.Apply(Changeset{
+			NewText: "\n\n" + "println('hello world!')",
+			StartPos: Position{
+				Line:   0,
+				Column: 9,
+				Index:  9,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 9,
+				Index:  9,
+			},
+		})
+
+		exp := "hello = 1\n\n" + "println('hello world!')"
+		if editableDoc.String() != exp {
+			t.Errorf("Expected contents to be %q, got %q", exp, editableDoc.String())
+		}
+	})
+
+	t.Run("EditableDocument.AddMultipleLinesMiddle", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		addedLines := []string{
+			"println('hello world!')",
+			"world = 2",
+		}
+
+		editableDoc.Apply(Changeset{
+			NewText: "\n" + strings.Join(addedLines, "\n"),
+			StartPos: Position{
+				Line:   0,
+				Column: 2,
+				Index:  2,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 2,
+				Index:  2,
+			},
+		})
+
+		exp := "he\n" + strings.Join(addedLines, "\n") + "\nllo = 1"
+		if editableDoc.String() != exp {
+			t.Errorf("Expected contents to be %q, got %q", exp, editableDoc.String())
+		}
+	})
+
 	// Replace
 	t.Run("EditableDocument.Replace", func(t *testing.T) {
 		editableDoc := doc.Editable()
