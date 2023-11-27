@@ -23,6 +23,7 @@ This error occurs when there's an attempt to define a character literal with mor
 ### 1. Store as a String
 The character literal should contain only one character. If you intend to store a string, use double quotes (`"`).
 ```diff
+
     public static void main(String[] args) {
 -         char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
 +         String ch = "Hello World"; // This will cause an error because the character literal is not closed.
@@ -33,6 +34,7 @@ The character literal should contain only one character. If you intend to store 
 ### 2. Use single quotes for characters
 If you want to store a single character, ensure that you use single quotes (`'`).
 ```diff
+
     public static void main(String[] args) {
 -         char ch = 'Hello World'; // This will cause an error because the character literal is not closed.
 +         char ch = 'H'; // This will cause an error because the character literal is not closed.
