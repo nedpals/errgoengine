@@ -134,6 +134,136 @@ func TestEditableDocument(t *testing.T) {
 		}
 	})
 
+	t.Run("EditableDocument.AddMultipleLinesDouble", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		addedLines := []string{
+			"println('hello world!')",
+			"world = 2",
+		}
+
+		editableDoc.Apply(Changeset{
+			NewText: strings.Join(addedLines, "\n") + "\n\n",
+			StartPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  5,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+		})
+
+		if len(editableDoc.changesets) != 4 {
+			t.Errorf("Expected changesets to be 4, got %d", len(editableDoc.changesets))
+		}
+
+		if len(editableDoc.modifiedLines) != 4 {
+			t.Errorf("Expected cached lines to be 4, got %d", len(editableDoc.modifiedLines))
+		}
+
+		for idx, line := range addedLines {
+			if editableDoc.modifiedLines[idx] != line {
+				t.Errorf("Expected contents to be %q on line %d, got %q", line, idx, editableDoc.modifiedLines[idx])
+			}
+		}
+
+		exp := strings.Join(addedLines, "\n") + "\n\n" + "hello = 1"
+		if editableDoc.String() != exp {
+			t.Errorf("Expected contents to be %q, got %q", exp, editableDoc.String())
+		}
+	})
+
+	t.Run("EditableDocument.AddAndExtendLine", func(t *testing.T) {
+		editableDoc := doc.Editable()
+		addedLines := []string{
+			"println('hello world!')",
+			"foo_",
+		}
+
+		editableDoc.Apply(Changeset{
+			NewText: strings.Join(addedLines, "\n"),
+			StartPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+		})
+
+		if len(editableDoc.changesets) != 2 {
+			t.Errorf("Expected changesets to be 2, got %d", len(editableDoc.changesets))
+		}
+
+		if len(editableDoc.modifiedLines) != 2 {
+			t.Errorf("Expected cached lines to be 2, got %d", len(editableDoc.modifiedLines))
+		}
+
+		for idx, line := range addedLines {
+			if idx == len(addedLines)-1 {
+				if editableDoc.modifiedLines[idx] != "foo_hello = 1" {
+					t.Errorf("Expected contents to be %q on line %d, got %q", "foo_hello = 1", idx, editableDoc.modifiedLines[idx])
+				}
+			} else if editableDoc.modifiedLines[idx] != line {
+				t.Errorf("Expected contents to be %q on line %d, got %q", line, idx, editableDoc.modifiedLines[idx])
+			}
+		}
+
+		exp := strings.Join(addedLines, "\n") + "hello = 1"
+		if editableDoc.String() != exp {
+			t.Errorf("Expected contents to be %q, got %q", exp, editableDoc.String())
+		}
+	})
+
+	t.Run("EditableDocument.AddMultipleLines2", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		addedLines := []string{
+			"println('hello world!')",
+			"{",
+			"}",
+		}
+
+		editableDoc.Apply(Changeset{
+			NewText: strings.Join(addedLines, "\n") + "\n",
+			StartPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  5,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+		})
+
+		if len(editableDoc.changesets) != 4 {
+			t.Errorf("Expected changesets to be 4, got %d", len(editableDoc.changesets))
+		}
+
+		if len(editableDoc.modifiedLines) != 4 {
+			t.Errorf("Expected cached lines to be 4, got %d", len(editableDoc.modifiedLines))
+		}
+
+		for idx, line := range addedLines {
+			if editableDoc.modifiedLines[idx] != line {
+				t.Errorf("Expected contents to be %q on line %d, got %q", line, idx, editableDoc.modifiedLines[idx])
+			}
+		}
+
+		exp := strings.Join(addedLines, "\n") + "\nhello = 1"
+		if editableDoc.String() != exp {
+			t.Errorf("Expected contents to be %q, got %q", exp, editableDoc.String())
+		}
+	})
+
 	t.Run("EditableDocument.AddMultipleLinesAfter", func(t *testing.T) {
 		editableDoc := doc.Editable()
 
@@ -193,7 +323,7 @@ func TestEditableDocument(t *testing.T) {
 		}
 
 		editableDoc.Apply(Changeset{
-			NewText: "\n" + strings.Join(addedLines, "\n"),
+			NewText: "\n" + strings.Join(addedLines, "\n") + "\n",
 			StartPos: Position{
 				Line:   0,
 				Column: 2,
@@ -201,8 +331,8 @@ func TestEditableDocument(t *testing.T) {
 			},
 			EndPos: Position{
 				Line:   0,
-				Column: 2,
-				Index:  2,
+				Column: 0,
+				Index:  0,
 			},
 		})
 

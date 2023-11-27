@@ -145,7 +145,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					origAfterLine := step.Fixes[0].EndPosition.Line
 
 					for fIdx, fix := range step.Fixes {
-						diffPosition = diffPosition.addNoCheck(editedDoc.Apply(Changeset{
+						diffPosition = diffPosition.addUnsafe(editedDoc.Apply(Changeset{
 							NewText:  fix.NewText,
 							StartPos: fix.StartPosition,
 							EndPos:   fix.EndPosition,

@@ -27,7 +27,7 @@ func (pos Position) Add(pos2 Position) Position {
 	}
 }
 
-func (pos Position) addNoCheck(pos2 Position) Position {
+func (pos Position) addUnsafe(pos2 Position) Position {
 	return Position{
 		Line:   pos.Line + pos2.Line,
 		Column: pos.Column + pos2.Column,
@@ -142,6 +142,125 @@ func (doc *EditableDocument) FillIndex(pos Position) Position {
 	}
 }
 
+// applyDeleteOperation applies a delete operation to the document based on the changeset
+func applyDeleteOperation(doc *EditableDocument, changeset Changeset) Position {
+	diff := changeset.EndPos.Index - changeset.StartPos.Index
+
+	// remove the line if the changeset is an empty and the position covers the entire line
+	if changeset.StartPos.Column == 0 && changeset.EndPos.Column == len(doc.modifiedLines[changeset.EndPos.Line]) {
+		doc.modifiedLines = append(doc.modifiedLines[:changeset.StartPos.Line], doc.modifiedLines[changeset.EndPos.Line+1:]...)
+		return Position{
+			Line: -1,
+			// Column: -diff,
+		}
+	}
+
+	left := ""
+	right := ""
+
+	if changeset.StartPos.Line < len(doc.modifiedLines) {
+		targetLeftColumn := min(changeset.StartPos.Column, len(doc.modifiedLines[changeset.StartPos.Line]))
+		left = doc.modifiedLines[changeset.StartPos.Line][:targetLeftColumn]
+
+		// get the right part of the line if the changeset start line is the same as the end line
+		if changeset.StartPos.Line == changeset.EndPos.Line {
+			targetRightColumn := min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line]))
+			right = doc.modifiedLines[changeset.EndPos.Line][targetRightColumn:]
+		}
+	}
+
+	doc.modifiedLines[changeset.StartPos.Line] = left + right
+	return Position{
+		Line:   0,
+		Column: -diff,
+		Index:  -diff,
+	}
+}
+
+// applyInsertOperation applies an insert operation to the document based on the changeset
+func applyInsertOperation(doc *EditableDocument, changeset Changeset) Position {
+	diffPosition := Position{}
+	left := ""
+	right := ""
+
+	shouldAddNewLine := strings.HasSuffix(changeset.NewText, "\n")
+	if shouldAddNewLine {
+		// remove the newline from the changeset
+		changeset.NewText = strings.TrimSuffix(changeset.NewText, "\n")
+	}
+
+	// if the changeset start line is not the same as the end line, split it
+	if changeset.StartPos.Line < len(doc.modifiedLines) {
+		targetLeftColumn := min(changeset.StartPos.Column, len(doc.modifiedLines[changeset.StartPos.Line]))
+		left = doc.modifiedLines[changeset.StartPos.Line][:targetLeftColumn]
+
+		// endpos is ignored since we are only using a single position for determining the right side
+		targetRightColumn := min(changeset.StartPos.Column, len(doc.modifiedLines[changeset.StartPos.Line]))
+		right = doc.modifiedLines[changeset.EndPos.Line][targetRightColumn:]
+	}
+
+	// insert the new text
+	doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText
+
+	// if the changeset has a newline, split the line
+	if shouldAddNewLine {
+		doc.modifiedLines = append(
+			append(
+				append([]string{}, doc.modifiedLines[:min(changeset.StartPos.Line+1, len(doc.modifiedLines))]...), // add the lines before the changeset start line
+				"", // add an empty line
+			),
+			doc.modifiedLines[min(changeset.EndPos.Line+1, len(doc.modifiedLines)):]..., // add the lines after the changeset end line
+		)
+
+		diffPosition.Line++
+		changeset.NewText = strings.TrimSuffix(changeset.NewText, "\n")
+
+		// deduct the length of the left part of the line from the diff position
+		diffPosition.Column = -len(left)
+		diffPosition.Index = -len(left)
+	} else {
+		diffPosition.Column = len(changeset.NewText)
+		diffPosition.Index = len(changeset.NewText)
+	}
+
+	// insert the right part of the line. in the case that a new line was
+	// inserted, the right part of the line will be inserted in the next line
+	doc.modifiedLines[changeset.StartPos.Line+diffPosition.Line] += right
+
+	return diffPosition
+}
+
+func applyOperation(op string, doc *EditableDocument, changeset Changeset) Position {
+	// to avoid out of bounds error. limit the endpos column to the length of the doc line
+	changeset.EndPos.Column = min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line]))
+
+	switch op {
+	case "insert":
+		return applyInsertOperation(doc, changeset)
+	case "delete":
+		return applyDeleteOperation(doc, changeset)
+	case "replace":
+		deleteDiff := applyDeleteOperation(doc, Changeset{
+			NewText:  "",
+			Id:       changeset.Id,
+			StartPos: changeset.StartPos,
+			EndPos:   changeset.EndPos,
+		})
+
+		insertDiff := applyInsertOperation(doc, Changeset{
+			NewText:  changeset.NewText,
+			Id:       changeset.Id,
+			StartPos: changeset.StartPos.Add(deleteDiff),
+			EndPos:   changeset.StartPos.Add(deleteDiff),
+		})
+
+		// combine the diff to create an interesecting diff
+		return insertDiff.addUnsafe(deleteDiff)
+	default:
+		return Position{}
+	}
+}
+
 func (doc *EditableDocument) Apply(changeset Changeset) Position {
 	diffPosition := Position{}
 
@@ -164,124 +283,103 @@ func (doc *EditableDocument) Apply(changeset Changeset) Position {
 			startPos := Position{Line: line, Column: 0}
 			endPos := Position{Line: line, Column: 0}
 
-			if line < len(doc.modifiedLines) {
+			if line == changeset.StartPos.Line {
+				startPos.Column = changeset.StartPos.Column
+			}
+
+			if line == changeset.EndPos.Line {
+				endPos.Column = changeset.EndPos.Column
+			} else if line < len(doc.modifiedLines) {
 				// if the line is the last line, set the end position to the length of the line.
 				// take note, this is the length of the original line, not the modified line
 				endPos.Column = len(doc.modifiedLines[line])
 			}
 
-			if line == changeset.StartPos.Line {
-				startPos.Column = changeset.StartPos.Column
-			} else if line == changeset.EndPos.Line {
-				endPos.Column = changeset.EndPos.Column
-			}
-
-			diffPosition = diffPosition.addNoCheck(doc.Apply(Changeset{
+			finalChangeset := Changeset{
 				Id:        changeset.Id,
 				StartPos:  startPos,
 				EndPos:    endPos,
 				IsChanged: true, // turn it on so that FillIndex will be called in the earlier part of this function
-			}.Add(diffPosition)))
+			}.Add(diffPosition)
+
+			// avoid removals with 0 difference in range
+			if finalChangeset.StartPos.Eq(finalChangeset.EndPos) {
+				continue
+			}
+
+			diffPosition = diffPosition.addUnsafe(
+				doc.Apply(finalChangeset),
+			)
 		}
 
 		return diffPosition
 	}
 
-	// if the changeset is a newline, split the new text into lines and apply them
+	// if the changeset is a newline, split the new text into lines and apply them one by one
 	nlCount := strings.Count(changeset.NewText, "\n")
-	if (nlCount == 1 && !strings.HasSuffix(changeset.NewText, "\n")) || nlCount > 1 {
+	hasTrailingNewLine := strings.HasSuffix(changeset.NewText, "\n")
+	if (nlCount == 1 && !hasTrailingNewLine) || nlCount > 1 {
 		newLines := strings.Split(changeset.NewText, "\n")
 
 		for i, line := range newLines {
 			textToAdd := line
+			// the extra empty string or a last string will
+			// indicate that the will be inserted without newline
 			if i < len(newLines)-1 {
 				textToAdd += "\n"
 			}
 
-			startPos := Position{Line: changeset.StartPos.Line, Column: changeset.StartPos.Column}
-			endPos := Position{Line: changeset.EndPos.Line, Column: len(doc.modifiedLines[changeset.StartPos.Line+i])}
-			if i > 0 {
-				startPos.Column = 0
+			startPos := Position{Line: changeset.StartPos.Line, Column: 0}
+			endPos := Position{Line: changeset.EndPos.Line, Column: 0}
+
+			if i == 0 {
+				startPos.Column = changeset.StartPos.Column
 			}
 
-			if i == len(newLines)-1 {
+			if endPos.Line == changeset.EndPos.Line {
 				endPos.Column = changeset.EndPos.Column
+			} else if i < len(newLines)-1 && changeset.StartPos.Line+i < len(doc.modifiedLines) {
+				endPos.Column = len(doc.modifiedLines[changeset.StartPos.Line+i])
 			}
 
-			diffPosition = diffPosition.addNoCheck(doc.Apply(Changeset{
-				Id:       changeset.Id,
-				NewText:  textToAdd,
-				StartPos: startPos,
-				EndPos:   endPos,
-			}.Add(diffPosition)))
+			diffPosition = diffPosition.addUnsafe(
+				doc.Apply(
+					Changeset{
+						Id:       changeset.Id,
+						NewText:  textToAdd,
+						StartPos: startPos,
+						EndPos:   endPos,
+					}.Add(diffPosition),
+				),
+			)
 		}
 
 		return diffPosition
 	}
 
-	// to avoid out of bounds error. limit the endpos column to the length of the doc line
-	changeset.EndPos.Column = min(max(changeset.EndPos.Column, 0), len(doc.modifiedLines[changeset.EndPos.Line]))
+	selectedOperation := "insert"
 
-	if len(changeset.NewText) == 0 && changeset.StartPos.Column == 0 && changeset.EndPos.Column == len(doc.modifiedLines[changeset.EndPos.Line]) {
-		// remove the line if the changeset is an empty and the position covers the entire line
-		doc.modifiedLines = append(doc.modifiedLines[:changeset.StartPos.Line], doc.modifiedLines[changeset.EndPos.Line+1:]...)
-		diffPosition.Line = -1
-		diffPosition.Index = -(changeset.EndPos.Index - changeset.StartPos.Index)
-	} else {
-		// remove newline if the changeset is a newline
-		if len(changeset.NewText) != 0 && changeset.NewText[len(changeset.NewText)-1] == '\n' {
-			changeset.NewText = changeset.NewText[:len(changeset.NewText)-1]
-		}
-
-		startPosColumn := min(changeset.StartPos.Column, len(doc.modifiedLines[changeset.StartPos.Line]))
-		left := doc.modifiedLines[changeset.StartPos.Line][:startPosColumn]
-
-		if len(changeset.NewText) == 0 && nlCount == 1 {
-			// create an empty line if the changeset is a newline
-			if changeset.StartPos.Column == len(doc.modifiedLines[changeset.StartPos.Line]) {
-				doc.modifiedLines = append(
-					append(append([]string{}, doc.modifiedLines[:changeset.StartPos.Line+1]...), ""),
-					doc.modifiedLines[changeset.EndPos.Line+1:]...)
-			} else {
-				right := doc.modifiedLines[changeset.StartPos.Line][startPosColumn:]
-
-				doc.modifiedLines = append(
-					append(
-						append(
-							append([]string{}, doc.modifiedLines[:changeset.StartPos.Line]...),
-							left,
-							"",
-						),
-						right,
-					),
-					doc.modifiedLines[min(changeset.StartPos.Line+1, len(doc.modifiedLines[changeset.StartPos.Line])):]...,
-				)
-			}
-
-			diffPosition.Line = 1
-			diffPosition.Index = 1
-			diffPosition.Column = 0
-		} else if len(changeset.NewText) > 1 && nlCount >= 1 {
-			// create a new line if the changeset is a newline
-			doc.modifiedLines = append(
-				append(append([]string{}, doc.modifiedLines[:changeset.StartPos.Line]...), ""),
-				doc.modifiedLines[changeset.EndPos.Line:]...)
-
-			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText
-			diffPosition.Line = 1
-			diffPosition.Index = len(changeset.NewText)
-		} else {
-			right := doc.modifiedLines[changeset.EndPos.Line][min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line])):]
-
-			// replace the line if the changeset is not a newline
-			doc.modifiedLines[changeset.StartPos.Line] = left + changeset.NewText + right
-			diffPosition.Line = 0
-			diffPosition.Column = len(changeset.NewText) - (changeset.EndPos.Column - changeset.StartPos.Column)
-			diffPosition.Index = len(changeset.NewText) - (changeset.EndPos.Index - changeset.StartPos.Index)
+	// if the changeset has a definite position range, check if it is a replacement or a deletion
+	if !changeset.StartPos.Eq(changeset.EndPos) {
+		if len(changeset.NewText) == 0 {
+			// if the changeset text is empty but has a definite position
+			// range, this means that the changeset is a deletion
+			selectedOperation = "delete"
+		} else if !hasTrailingNewLine {
+			// if the changeset has no trailing newline, this
+			// means that the changeset is a replacement
+			selectedOperation = "replace"
 		}
 	}
 
-	// fmt.Printf("new: %v for %q\n", changeset, doc.modifiedLines)
+	// apply editing operation
+	diffPosition = diffPosition.addUnsafe(
+		applyOperation(
+			selectedOperation,
+			doc,
+			changeset.Add(diffPosition),
+		),
+	)
 
 	// add changeset
 	doc.changesets = append(doc.changesets, changeset)
