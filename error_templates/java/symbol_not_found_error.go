@@ -29,7 +29,12 @@ var SymbolNotFoundError = lib.ErrorTemplate{
 			rootNode:      m.Nearest,
 		}
 
-		query := fmt.Sprintf("((identifier) @symbol (#eq? @symbol \"%s\"))", symbolName)
+		nodeTypeToFind := "identifier"
+		if errorCtx.symbolType == "class" {
+			nodeTypeToFind = "type_identifier"
+		}
+
+		query := fmt.Sprintf("((%s) @symbol (#eq? @symbol \"%s\"))", nodeTypeToFind, symbolName)
 		lib.QueryNode(m.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
 			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
 			for _, c := range match.Captures {
@@ -65,6 +70,8 @@ var SymbolNotFoundError = lib.ErrorTemplate{
 			gen.Add(`The program cannot find variable "%s"`, ctx.symbolName)
 		case "method":
 			gen.Add("The error indicates that the compiler cannot find the method `%s` in the `%s` class.", ctx.symbolName, ctx.locationClass)
+		case "class":
+			gen.Add("The error indicates that the compiler cannot find the class `%s` when attempting to create an instance of it in the `%s` class.", ctx.symbolName, ctx.locationClass)
 		}
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
@@ -97,6 +104,21 @@ var SymbolNotFoundError = lib.ErrorTemplate{
 						NewText:       fmt.Sprintf("\n\n\tprivate static void %s(%s) {\n\t\t// Add code here\n\t}\n", methodName, strings.Join(parameters, ", ")),
 						StartPosition: lastMethodNode.EndPosition().Add(lib.Position{Column: 1}), // add 1 column so that the parenthesis won't be replaced
 						EndPosition:   lastMethodNode.EndPosition().Add(lib.Position{Column: 1}), // same thing here
+					})
+			})
+		case "class":
+			gen.Add("Create the missing class", func(s *lib.BugFixSuggestion) {
+				s.AddStep("Create a new class named `%s` to resolve the \"cannot find symbol\" error.", ctx.symbolName).
+					AddFix(lib.FixSuggestion{
+						NewText: fmt.Sprintf("class %s {\n\t// Add any necessary code for %s class\n}\n\n", ctx.symbolName, ctx.symbolName),
+						StartPosition: lib.Position{
+							Line:   ctx.locationNode.StartPosition().Line,
+							Column: 0,
+						},
+						EndPosition: lib.Position{
+							Line:   ctx.locationNode.StartPosition().Line,
+							Column: 0,
+						},
 					})
 			})
 		}

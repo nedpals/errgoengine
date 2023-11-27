@@ -1,0 +1,40 @@
+name: "MissingClass"
+template: "Java.SymbolNotFoundError"
+---
+MyClass.java:5: error: cannot find symbol
+        NonExistingClass obj = new NonExistingClass();
+        ^
+  symbol:   class NonExistingClass
+  location: class MyClass
+MyClass.java:5: error: cannot find symbol
+        NonExistingClass obj = new NonExistingClass();
+                                   ^
+  symbol:   class NonExistingClass
+  location: class MyClass
+2 errors
+===
+template: "Java.SymbolNotFoundError"
+---
+# SymbolNotFoundError
+The error indicates that the compiler cannot find the class `NonExistingClass` when attempting to create an instance of it in the `MyClass` class.
+```
+        // Attempting to create an instance of a non-existing class
+        NonExistingClass obj = new NonExistingClass();
+        ^^^^^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Create the missing class
+Create a new class named `NonExistingClass` to resolve the "cannot find symbol" error.
+```diff
+// MyClass.java
+- public class MyClass {
++ class NonExistingClass {
++     // Add any necessary code for NonExistingClass class
++ }
++
++ public class MyClass {
+    public static void main(String[] args) {
+        // Attempting to create an instance of a non-existing class
+```
