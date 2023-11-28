@@ -478,6 +478,43 @@ func TestEditableDocument(t *testing.T) {
 		}
 	})
 
+	t.Run("EditableDocument.RemoveMultipleLinesMiddle", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		editableDoc.Apply(Changeset{
+			NewText: "a = 1\nb = 2\nc = 3\n",
+			StartPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+		})
+
+		if editableDoc.String() != "a = 1\nb = 2\nc = 3\nhello = 1" {
+			t.Errorf("Expected contents to be \"a = 1\\nb = 2\\nc = 3\\nhello = 1\", got %q", editableDoc.String())
+		}
+
+		editableDoc.Apply(Changeset{
+			StartPos: Position{
+				Line:   1,
+				Column: 0,
+			},
+			EndPos: Position{
+				Line:   2,
+				Column: 5,
+			},
+		})
+
+		if editableDoc.String() != "a = 1\nhello = 1" {
+			t.Errorf("Expected contents to be \"a = 1\", got %q", editableDoc.String())
+		}
+	})
+
 	t.Run("EditableDocument.RemoveMultipleLines2", func(t *testing.T) {
 		editableDoc := doc.Editable()
 
