@@ -9,13 +9,21 @@ template: "Java.UnreachableStatementError"
 ---
 # UnreachableStatementError
 This error occurs because there's code after a return statement, which can never be reached as the function has already exited.
-
+```
+        return;
+        System.out.println("c");
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    }
+}
+```
 ## Steps to fix
-1. Remove the code after the `return` statement.
-
+### Remove unreachable code
+Since the `return` statement is encountered before `System.out.println("c");`, the latter statement is unreachable. Remove the unreachable statement/s.
 ```diff
-    System.out.println("b");
-    return;
--   System.out.println("c");
+    public static void main(String[] args) {
+        System.out.println("b");
+        return;
+-         System.out.println("c");
+    }
 }
 ```
