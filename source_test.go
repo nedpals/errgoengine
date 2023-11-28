@@ -365,6 +365,35 @@ func TestEditableDocument(t *testing.T) {
 		}
 	})
 
+	t.Run("EditableDocument.ReplaceWithPadding", func(t *testing.T) {
+		doc, err := ParseDocument("test", strings.NewReader(`        hello = 1`), parser, testLanguage, nil)
+		if err != nil {
+			t.Error(err)
+		} else if doc.TotalLines() < 1 {
+			t.Errorf("Expected document to have at least 1 line, got %d", doc.TotalLines())
+		}
+
+		editableDoc := doc.Editable()
+
+		editableDoc.Apply(Changeset{
+			NewText: "world",
+			StartPos: Position{
+				Line:   0,
+				Column: 8,
+				Index:  8,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 13,
+				Index:  13,
+			},
+		})
+
+		if editableDoc.String() != "        world = 1" {
+			t.Errorf("Expected contents to be \"        world = 1\", got %q", editableDoc.String())
+		}
+	})
+
 	t.Run("EditableDocument.ReplaceMultipleLines", func(t *testing.T) {
 		editableDoc := doc.Editable()
 

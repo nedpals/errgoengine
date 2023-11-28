@@ -250,8 +250,8 @@ func applyOperation(op string, doc *EditableDocument, changeset Changeset) Posit
 		insertDiff := applyInsertOperation(doc, Changeset{
 			NewText:  changeset.NewText,
 			Id:       changeset.Id,
-			StartPos: changeset.StartPos.Add(deleteDiff),
-			EndPos:   changeset.StartPos.Add(deleteDiff),
+			StartPos: changeset.StartPos,
+			EndPos:   changeset.StartPos,
 		})
 
 		// combine the diff to create an interesecting diff
