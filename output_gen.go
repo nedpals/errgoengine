@@ -155,7 +155,13 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						origAfterLine = max(origAfterLine, fix.EndPosition.Line)
 
 						startLine = min(startLine, fix.StartPosition.Line+diffPosition.Line)
-						afterLine = max(afterLine, fix.EndPosition.Line+diffPosition.Line)
+
+						// if the diff position is negative, we need to set the after line to the latest position
+						if diffPosition.Line < 0 {
+							afterLine = fix.EndPosition.Line + diffPosition.Line
+						} else {
+							afterLine = max(afterLine, fix.EndPosition.Line+diffPosition.Line)
+						}
 
 						if len(fix.Description) != 0 {
 							if fIdx < len(step.Fixes)-1 {
@@ -167,8 +173,14 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					}
 
 					gen.writeln("```diff")
+
+					// use origStartLine instead of startLine because we want to show the original lines
 					if startLine > 0 {
-						gen.writeLines(editedDoc.LinesAt(startLine-2, startLine-1)...)
+						deduct := -2
+						if diffPosition.Line < 0 {
+							deduct += diffPosition.Line
+						}
+						gen.writeLines(editedDoc.LinesAt(origStartLine+deduct, origStartLine-1)...)
 					}
 
 					original := editedDoc.LinesAt(origStartLine, origAfterLine)
@@ -177,14 +189,17 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						gen.writeln(origLine)
 					}
 
-					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
-					for _, modifiedLine := range modified {
-						gen.write("+")
-						if len(modifiedLine) != 0 {
-							gen.write(" ")
+					// show this only if the total is not negative
+					if startLine >= origStartLine && afterLine >= origAfterLine {
+						modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
+						for _, modifiedLine := range modified {
+							gen.write("+")
+							if len(modifiedLine) != 0 {
+								gen.write(" ")
+							}
+							gen.write(modifiedLine)
+							gen._break()
 						}
-						gen.write(modifiedLine)
-						gen._break()
 					}
 
 					gen.writeLines(editedDoc.LinesAt(origAfterLine+1, min(origAfterLine+2, editedDoc.TotalLines()))...)
