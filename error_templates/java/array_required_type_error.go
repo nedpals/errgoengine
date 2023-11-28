@@ -41,8 +41,7 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 		// indexNode := cd.MainError.Nearest
 		tree := cd.InitOrGetSymbolTree(cd.MainDocumentPath())
 
-		gen.Add("Change variable type to an array", func(s *lib.BugFixSuggestion) {
-			fmt.Printf("%v\n", tree.GetNearestScopedTree(varNode.StartPosition().Index).Symbols["number"])
+		gen.Add("Convert variable to an array", func(s *lib.BugFixSuggestion) {
 			declSym := tree.GetSymbolByNode(getIdentifierNode(varNode))
 			declNode := lib.WrapNode(
 				cd.MainError.Document,
@@ -56,19 +55,9 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 
 			s.AddStep("Declare the variable `%s` as an array of `%s`.", varNode.Text(), cd.Variables["foundType"]).
 				AddFix(lib.FixSuggestion{
-					NewText:       fmt.Sprintf("%s[] %s = {%s}", cd.Variables["foundType"], varNode.Text(), valueNode.Text()),
+					NewText:       fmt.Sprintf("%s[] %s = {%s};", cd.Variables["foundType"], varNode.Text(), valueNode.Text()),
 					StartPosition: declNode.StartPosition(),
 					EndPosition:   declNode.EndPosition(),
-				})
-		})
-
-		gen.Add("Initialize an array and access its index", func(s *lib.BugFixSuggestion) {
-			s.AddStep("").
-				AddFix(lib.FixSuggestion{
-					NewText:       "number[0] = 5a",
-					StartPosition: cd.MainError.Nearest.StartPosition(),
-					EndPosition:   cd.MainError.Nearest.EndPosition(),
-					Description:   "These changes will rectify the error by ensuring the variable is treated as an array when accessing elements by index.",
 				})
 		})
 	},

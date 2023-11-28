@@ -8,33 +8,22 @@ NotArray.java:4: error: array required, but int found
 template: "Java.ArrayRequiredTypeError"
 ---
 # ArrayRequiredTypeError
-This error occurs because the variable `number` is declared as an `int` rather than an array. You're attempting to access an index (`[0]`) on a variable that's not an array.
+This error occurs because the variable `number` is declared as an `int` rather than an array. You're attempting to access an index (`0`) on a variable that's not an array.
 ```
         int number = 5;
         int value = number[0];
-                            ^
+                           ^
     }
 }
 ```
 ## Steps to fix
-### 1. Change variable type to an array
+### Convert variable to an array
+Declare the variable `number` as an array of `int`.
 ```diff
 public class NotArray {
     public static void main(String[] args) {
--        int number = 5;
-+        int[] number = {5};
+-         int number = 5;
++         int[] number = {5};
         int value = number[0];
     }
-}
 ```
-### 2. Initialize an array and access its index
-```diff
-public class NotArray {
-    public static void main(String[] args) {
-        int[] number = {5};
-+        number[0] = 5;
-        int value = number[0];
-    }
-}
-```
-These changes will rectify the error by ensuring the variable is treated as an array when accessing elements by index.
