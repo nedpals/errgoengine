@@ -14,7 +14,6 @@ This error is raised when you try to perform arithmetic operations that are not 
                          ^
         System.out.println(out);
     }
-}
 ```
 ## Steps to fix
 ### Avoid dividing by zero.
