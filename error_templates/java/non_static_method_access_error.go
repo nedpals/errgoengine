@@ -47,14 +47,16 @@ var NonStaticMethodAccessError = lib.ErrorTemplate{
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		ctx := cd.MainError.Context.(nonStaticMethodAccessErrorCtx)
+		startPos := ctx.parent.StartPosition()
+		spacing := cd.MainError.Document.LineAt(startPos.Line)[:startPos.Column]
 
 		gen.Add("Instantiate and call the method", func(s *lib.BugFixSuggestion) {
 			s.AddStep("Create an instance of the class to access the non-static method").
 				AddFix(lib.FixSuggestion{
-					NewText: fmt.Sprintf("%s obj = new %s();\n", ctx.class, ctx.class),
+					NewText: fmt.Sprintf("%s obj = new %s();\n"+spacing, ctx.class, ctx.class),
 					StartPosition: lib.Position{
-						Line:   ctx.parent.StartPosition().Line,
-						Column: ctx.parent.StartPosition().Column,
+						Line:   startPos.Line,
+						Column: startPos.Column,
 					},
 					EndPosition: lib.Position{
 						Line:   ctx.parent.EndPosition().Line,
