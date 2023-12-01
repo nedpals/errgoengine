@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func (mfs *MultiReadFileFS) LastAttachedIdx() int {
 
 func (mfs *MultiReadFileFS) AttachOrReplace(fs fs.ReadFileFS, idx int) {
 	if idx < len(mfs.FSs) && idx >= 0 {
-		if mfs.FSs[idx] == fs {
+		if reflect.DeepEqual(mfs.FSs[idx], fs) {
 			return
 		}
 
@@ -30,7 +31,7 @@ func (mfs *MultiReadFileFS) AttachOrReplace(fs fs.ReadFileFS, idx int) {
 
 func (mfs *MultiReadFileFS) Attach(instance fs.ReadFileFS, idx int) {
 	if idx < len(mfs.FSs) && idx >= 0 {
-		if mfs.FSs[idx] == instance {
+		if reflect.DeepEqual(mfs.FSs[idx], instance) {
 			return
 		}
 
