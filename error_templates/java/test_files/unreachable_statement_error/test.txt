@@ -7,4 +7,23 @@ Unreachable.java:5: error: unreachable statement
 ===
 template: "Java.UnreachableStatementError"
 ---
-You have code below after you returned a value
+# UnreachableStatementError
+This error occurs because there's code after a return statement, which can never be reached as the function has already exited.
+```
+        return;
+        System.out.println("c");
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Remove unreachable code
+Since the `return` statement is encountered before `System.out.println("c");`, the latter statement is unreachable. Remove the unreachable statement/s.
+```diff
+    public static void main(String[] args) {
+        System.out.println("b");
+        return;
+-         System.out.println("c");
+    }
+}
+```

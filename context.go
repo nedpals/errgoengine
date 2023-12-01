@@ -4,9 +4,10 @@ type MainError struct {
 	ErrorNode *StackTraceEntry
 	Document  *Document
 	Nearest   SyntaxNode
+	Context   any
 }
 
-func (err MainError) DocumentPath() string {
+func (err *MainError) DocumentPath() string {
 	return err.ErrorNode.DocumentPath
 }
 
@@ -17,7 +18,7 @@ type ContextData struct {
 	CurrentDocumentPath string
 	Variables           map[string]string
 	TraceStack          TraceStack
-	MainError           MainError
+	MainError           *MainError
 }
 
 func NewContextData(store *Store, workingPath string) *ContextData {
@@ -30,7 +31,7 @@ func NewContextData(store *Store, workingPath string) *ContextData {
 }
 
 func (data *ContextData) MainDocumentPath() string {
-	if data.MainError.ErrorNode != nil {
+	if data.MainError != nil && data.MainError.ErrorNode != nil {
 		return data.MainError.DocumentPath()
 	}
 	return data.CurrentDocumentPath

@@ -1,0 +1,29 @@
+name: "DivisionByZero"
+template: "Java.ArithmeticException"
+---
+Exception in thread "main" java.lang.ArithmeticException: / by zero
+    at Arith.main(Arith.java:3)
+===
+template: "Java.ArithmeticException"
+---
+# ArithmeticException
+This error is raised when you try to perform arithmetic operations that are not mathematically possible, such as division by zero.
+```
+    public static void main(String[] args) {
+        double out = 3 / 0;
+                         ^
+        System.out.println(out);
+    }
+```
+## Steps to fix
+### Avoid dividing by zero.
+To fix the 'ArithmeticException: / by zero', you need to ensure you are not dividing by zero, which is mathematically undefined.
+```diff
+public class Arith {
+    public static void main(String[] args) {
+-         double out = 3 / 0;
++         double out = 3 / 1;
+        System.out.println(out);
+    }
+```
+This adjustment replaces the division by zero with a value that is not zero, ensuring the operation is valid. Division by zero is mathematically undefined, causing an 'ArithmeticException'. By changing the denominator to a non-zero value, you prevent the error.

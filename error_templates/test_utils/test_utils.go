@@ -4,12 +4,16 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
 
 	lib "github.com/nedpals/errgoengine"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
+
+var dmp = diffmatchpatch.New()
 
 // func init() {
 // 	testing.Init()
@@ -53,6 +57,8 @@ func SetupTest(tb testing.TB, cfg SetupTestConfig) TestCases {
 
 	// load error templates
 	engine := lib.New()
+	engine.OutputGen.IsTesting = true
+
 	cfg.TemplateLoader(&engine.ErrorTemplates)
 
 	// load tests
@@ -142,6 +148,14 @@ func SetupTest(tb testing.TB, cfg SetupTestConfig) TestCases {
 	return cases
 }
 
+func escapeOutput(text string) string {
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimSuffix(strings.TrimPrefix(strconv.QuoteToASCII(line), "\""), "\"") + "\\n"
+	}
+	return strings.Join(lines, "\n")
+}
+
 func (cases TestCases) Execute(t *testing.T) {
 	for tmpName := range cases.engine.ErrorTemplates {
 		t.Run(tmpName, func(t *testing.T) {
@@ -171,7 +185,8 @@ func (cases TestCases) Execute(t *testing.T) {
 
 					output := cases.engine.Translate(template, data)
 					if output != tCase.ExpectedOutput {
-						t.Errorf("\nExpected: %s\nGot:      %s", tCase.ExpectedOutput, output)
+						diff := dmp.DiffMain(escapeOutput(tCase.ExpectedOutput), escapeOutput(output), true)
+						t.Errorf("\n======== Expected ========\n%s\n=========== Got ===========\n%s\n=========== Diff===========\n%s", tCase.ExpectedOutput, output, dmp.DiffPrettyText(diff))
 					}
 				})
 			}

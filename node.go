@@ -30,6 +30,10 @@ func (n SyntaxNode) NamedChild(idx int) SyntaxNode {
 	return WrapNode(n.Doc, cNode)
 }
 
+func (n SyntaxNode) FirstNamedChild() SyntaxNode {
+	return n.NamedChild(0)
+}
+
 func (n SyntaxNode) LastNamedChild() SyntaxNode {
 	len := n.Node.NamedChildCount()
 	return n.NamedChild(int(len) - 1)
@@ -54,14 +58,15 @@ func (n SyntaxNode) EndPosition() Position {
 	return Position{
 		Line:   int(p.Row),
 		Column: int(p.Column),
-		Index:  int(n.Node.StartByte()),
+		Index:  int(n.Node.EndByte()),
 	}
 }
 
 func (n SyntaxNode) Location() Location {
 	return Location{
 		DocumentPath: n.Doc.Path,
-		Position:     n.StartPosition(),
+		StartPos:     n.StartPosition(),
+		EndPos:       n.EndPosition(),
 	}
 }
 
@@ -96,13 +101,19 @@ func nearestNodeFromPos(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 	}
 }
 
-func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(*sitter.QueryMatch, *sitter.Query) bool) {
+type QueryNodeCtx struct {
+	Match  *sitter.QueryMatch
+	Query  *sitter.Query
+	Cursor *sitter.QueryCursor
+}
+
+func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(QueryNodeCtx) bool) {
 	query, err := io.ReadAll(queryR)
 	if err != nil {
 		panic(err)
 	}
 
-	q, err := sitter.NewQuery([]byte(query), rootNode.Doc.Language.SitterLanguage)
+	q, err := sitter.NewQuery(query, rootNode.Doc.Language.SitterLanguage)
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +131,7 @@ func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(*sitter.Quer
 			continue
 		}
 
-		if !callback(m, q) {
+		if !callback(QueryNodeCtx{m, q, queryCursor}) {
 			break
 		}
 	}

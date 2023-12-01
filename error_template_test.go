@@ -9,6 +9,10 @@ import (
 
 type TestAnalyzer struct{}
 
+func (TestAnalyzer) FallbackSymbol() lib.Symbol {
+	return nil
+}
+
 func (TestAnalyzer) AnalyzeNode(lib.SyntaxNode) lib.Symbol {
 	return nil
 }
@@ -24,7 +28,8 @@ var testLanguage = &lib.Language{
 	LocationConverter: func(path, pos string) lib.Location {
 		return lib.Location{
 			DocumentPath: path,
-			Position:     lib.Position{0, 0, 0},
+			StartPos:     lib.Position{0, 0, 0},
+			EndPos:       lib.Position{0, 0, 0},
 		}
 	},
 	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
@@ -32,8 +37,8 @@ var testLanguage = &lib.Language{
 	},
 }
 
-func emptyExplainFn(cd *lib.ContextData) string      { return "" }
-func emptyBugFixFn(cd *lib.ContextData) []lib.BugFix { return make([]lib.BugFix, 0) }
+func emptyExplainFn(cd *lib.ContextData, gen *lib.ExplainGenerator) {}
+func emptyBugFixFn(cd *lib.ContextData, gen *lib.BugFixGenerator)   {}
 
 func setupTemplate(template lib.ErrorTemplate) (*lib.CompiledErrorTemplate, error) {
 	errorTemplates := lib.ErrorTemplates{}

@@ -19,7 +19,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, ParseEndOfFileError)
 	errorTemplates.MustAdd(java.Language, UnreachableStatementError)
 	errorTemplates.MustAdd(java.Language, ArrayRequiredTypeError)
-	errorTemplates.MustAdd(java.Language, UnknownVariableError)
+	errorTemplates.MustAdd(java.Language, SymbolNotFoundError)
 	errorTemplates.MustAdd(java.Language, NonStaticMethodAccessError)
 	errorTemplates.MustAdd(java.Language, UnclosedCharacterLiteralError)
 }
@@ -43,4 +43,13 @@ func comptimeErrorPattern(pattern string, endPattern_ ...string) string {
 		endPattern = `(?:.|\s)+` + endPattern_[0]
 	}
 	return fmt.Sprintf(`$stacktrace: error: %s%s`, pattern, endPattern)
+}
+
+// TODO:
+func getIdentifierNode(node lib.SyntaxNode) lib.SyntaxNode {
+	currentNode := node
+	for currentNode.Type() != "identifier" {
+		return currentNode
+	}
+	return currentNode
 }

@@ -14,6 +14,8 @@ func (kind SymbolKind) String() string {
 		return "function"
 	case SymbolKindVariable:
 		return "variable"
+	case SymbolKindAssignment:
+		return "assignment"
 	case SymbolKindArray:
 		return "array"
 	case SymbolKindImport:
@@ -23,14 +25,36 @@ func (kind SymbolKind) String() string {
 	}
 }
 
+func NewSymbolKindFromString(str string) SymbolKind {
+	switch str {
+	case "builtin":
+		return SymbolKindBuiltin
+	case "class":
+		return SymbolKindClass
+	case "function":
+		return SymbolKindFunction
+	case "variable":
+		return SymbolKindVariable
+	case "assignment":
+		return SymbolKindAssignment
+	case "array":
+		return SymbolKindArray
+	case "import":
+		return SymbolKindImport
+	default:
+		return SymbolKindUnknown
+	}
+}
+
 const (
-	SymbolKindUnknown  SymbolKind = 0
-	SymbolKindBuiltin  SymbolKind = iota
-	SymbolKindClass    SymbolKind = iota
-	SymbolKindFunction SymbolKind = iota
-	SymbolKindVariable SymbolKind = iota
-	SymbolKindArray    SymbolKind = iota
-	SymbolKindImport   SymbolKind = iota
+	SymbolKindUnknown    SymbolKind = 0
+	SymbolKindBuiltin    SymbolKind = iota
+	SymbolKindClass      SymbolKind = iota
+	SymbolKindFunction   SymbolKind = iota
+	SymbolKindVariable   SymbolKind = iota
+	SymbolKindAssignment SymbolKind = iota
+	SymbolKindArray      SymbolKind = iota
+	SymbolKindImport     SymbolKind = iota
 )
 
 type Symbol interface {
@@ -72,6 +96,32 @@ func CastChildrenSymbol(sym Symbol) IChildrenSymbol {
 		return cSym
 	}
 	return nil
+}
+
+type AssignmentSymbol struct {
+	Variable          Symbol
+	FallbackName      string
+	Location_         Location
+	ContentReturnType Symbol
+}
+
+func (sym AssignmentSymbol) Name() string {
+	if sym.Variable != nil {
+		return sym.Variable.Name()
+	}
+	return sym.FallbackName
+}
+
+func (sym AssignmentSymbol) Kind() SymbolKind {
+	return SymbolKindAssignment
+}
+
+func (sym AssignmentSymbol) Location() Location {
+	return sym.Location_
+}
+
+func (sym AssignmentSymbol) ReturnType() Symbol {
+	return sym.ContentReturnType
 }
 
 type VariableSymbol struct {
@@ -156,7 +206,12 @@ func (sym ImportSymbol) Kind() SymbolKind {
 func (sym ImportSymbol) Location() Location {
 	return Location{
 		DocumentPath: sym.Node.Path,
-		Position: Position{
+		StartPos: Position{
+			Line:   0,
+			Column: 0,
+			Index:  0,
+		},
+		EndPos: Position{
 			Line:   0,
 			Column: 0,
 			Index:  0,

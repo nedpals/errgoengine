@@ -43,6 +43,9 @@ func (store *Store) FindSymbol(docPath string, name string, pos int) Symbol {
 			if sym := parent.Find(name); sym != nil {
 				return sym
 			} else {
+				if parent == tree.Parent {
+					break
+				}
 				parent = tree.Parent
 			}
 		}

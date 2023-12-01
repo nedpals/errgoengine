@@ -5,12 +5,11 @@ import lib "github.com/nedpals/errgoengine"
 var ZeroDivisionError = lib.ErrorTemplate{
 	Name:    "ZeroDivisionError",
 	Pattern: "ZeroDivisionError: division by zero",
-	OnGenExplainFn: func(cd *lib.ContextData) string {
+	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		// TODO:
-		return "The number has been divided by zero"
+		gen.Add("The number has been divided by zero")
 	},
-	OnGenBugFixFn: func(cd *lib.ContextData) []lib.BugFix {
+	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		// TODO:
-		return make([]lib.BugFix, 0)
 	},
 }

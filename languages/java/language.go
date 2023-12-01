@@ -1,11 +1,15 @@
 package java
 
 import (
+	_ "embed"
 	"fmt"
 
 	lib "github.com/nedpals/errgoengine"
 	"github.com/smacker/go-tree-sitter/java"
 )
+
+//go:embed symbols.txt
+var symbols string
 
 var Language = &lib.Language{
 	Name:              "Java",
@@ -15,91 +19,15 @@ var Language = &lib.Language{
 	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
 		return &javaAnalyzer{cd}
 	},
-	SymbolsToCapture: lib.ISymbolCaptureList{
-		lib.SymbolCapture{
-			Query: "import_declaration",
-			Kind:  lib.SymbolKindImport,
-			NameNode: &lib.SymbolCapture{
-				Query: `(_) ("." (asterisk))*`,
-			},
-		},
-		lib.SymbolCapture{
-			Query: "class_declaration",
-			Kind:  lib.SymbolKindClass,
-			NameNode: &lib.SymbolCapture{
-				Field: "name",
-				Query: "identifier",
-			},
-			BodyNode: &lib.SymbolCapture{
-				Field: "body",
-				Query: "class_body",
-				Children: []*lib.SymbolCapture{
-					{
-						Query: "field_declaration (variable_declarator)",
-						Kind:  lib.SymbolKindVariable,
-						NameNode: &lib.SymbolCapture{
-							Field: "name",
-							Query: "identifier",
-						},
-					},
-					{
-						Query: "method_declaration",
-						Kind:  lib.SymbolKindFunction,
-						NameNode: &lib.SymbolCapture{
-							Field: "name",
-							Query: "identifier",
-						},
-						// TODO: make return type node work
-						ReturnTypeNode: &lib.SymbolCapture{
-							Field: "type",
-							Query: "_",
-						},
-						ContentNode: &lib.SymbolCapture{
-							Query:    "return_statement (expression)?",
-							Optional: true,
-						},
-						ParameterNodes: &lib.SymbolCapture{
-							Field: "parameters",
-							Query: "formal_parameters",
-							Children: []*lib.SymbolCapture{
-								{
-									Kind:  lib.SymbolKindVariable,
-									Query: "formal_parameter",
-									NameNode: &lib.SymbolCapture{
-										Field: "name",
-										Query: "identifier",
-									},
-								},
-							},
-						},
-						BodyNode: &lib.SymbolCapture{
-							Field: "body",
-							Query: "block",
-							Children: []*lib.SymbolCapture{
-								// FIXME: figure out return type of variables
-								{
-									Query: "local_variable_declaration (variable_declarator)",
-									Kind:  lib.SymbolKindVariable,
-									NameNode: &lib.SymbolCapture{
-										Field: "name",
-										Query: "identifier",
-									},
-									ContentNode: &lib.SymbolCapture{
-										Field: "value",
-										Query: "_",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
+	SymbolsToCapture: symbols,
 }
 
 type javaAnalyzer struct {
 	*lib.ContextData
+}
+
+func (an *javaAnalyzer) FallbackSymbol() lib.Symbol {
+	return BuiltinTypes.VoidSymbol
 }
 
 func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {

@@ -12,14 +12,21 @@ import (
 type ErrgoEngine struct {
 	SharedStore    *Store
 	ErrorTemplates ErrorTemplates
-	FS             fs.ReadFileFS
+	FS             *MultiReadFileFS
+	OutputGen      *OutputGenerator
 }
 
 func New() *ErrgoEngine {
+	filesystems := make([]fs.ReadFileFS, 2)
+	filesystems[0] = &RawFS{}
+
 	return &ErrgoEngine{
 		SharedStore:    NewEmptyStore(),
 		ErrorTemplates: ErrorTemplates{},
-		FS:             &RawFS{},
+		FS: &MultiReadFileFS{
+			FSs: filesystems,
+		},
+		OutputGen: &OutputGenerator{},
 	}
 }
 
@@ -32,6 +39,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// initial context data extraction
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
+	e.FS.FSs[1] = template.Language.stubFs
 
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
@@ -86,6 +94,11 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 			return nil, nil, err
 		}
 
+		// Skip stub files
+		if len(contents) == 0 {
+			continue
+		}
+
 		var selectedLanguage *Language
 		existingDoc, docExists := contextData.Documents[node.DocumentPath]
 
@@ -122,28 +135,38 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// get nearest node
 	doc := contextData.Documents[mainTraceNode.DocumentPath]
 	nearest := doc.Tree.RootNode().NamedDescendantForPointRange(
-		sitter.Point{Row: uint32(mainTraceNode.Line)},
-		sitter.Point{Row: uint32(mainTraceNode.Line)},
+		sitter.Point{Row: uint32(mainTraceNode.StartPos.Line)},
+		sitter.Point{Row: uint32(mainTraceNode.EndPos.Line)},
 	)
 
-	if nearest.StartPoint().Row != uint32(mainTraceNode.Line) {
+	if nearest.StartPoint().Row != uint32(mainTraceNode.StartPos.Line) {
 		cursor := sitter.NewTreeCursor(nearest)
-		nearest = nearestNodeFromPos(cursor, mainTraceNode.Position)
+		nearest = nearestNodeFromPos(cursor, mainTraceNode.StartPos)
 	}
 
-	contextData.MainError = MainError{
+	// further analyze main error
+	contextData.MainError = &MainError{
 		ErrorNode: &mainTraceNode,
 		Document:  doc,
 		Nearest:   WrapNode(doc, nearest),
+	}
+
+	if contextData.MainError != nil && template.OnAnalyzeErrorFn != nil {
+		template.OnAnalyzeErrorFn(contextData, contextData.MainError)
 	}
 
 	return template, contextData, nil
 }
 
 func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) string {
+	expGen := &ExplainGenerator{errorName: template.Name}
+	fixGen := &BugFixGenerator{}
+
 	// execute error generator function
-	explanation := template.OnGenExplainFn(contextData)
-	// TODO: execute bug fix generator function
-	_ = template.OnGenBugFixFn(contextData)
-	return explanation
+	template.OnGenExplainFn(contextData, expGen)
+	template.OnGenBugFixFn(contextData, fixGen)
+
+	output := e.OutputGen.Generate(contextData, expGen, fixGen)
+	defer e.OutputGen.Reset()
+	return output
 }

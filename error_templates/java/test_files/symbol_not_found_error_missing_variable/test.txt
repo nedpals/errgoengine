@@ -1,0 +1,33 @@
+name: "MissingVariable"
+template: "Java.SymbolNotFoundError"
+---
+Program.java:3: error: cannot find symbol
+        System.out.println(a);
+                           ^
+  symbol:   variable a
+  location: class Program
+1 error
+===
+template: "Java.SymbolNotFoundError"
+---
+# SymbolNotFoundError
+The program cannot find variable "a"
+```
+    public static void main(String[] args) {
+        System.out.println(a);
+                           ^
+    }
+}
+```
+## Steps to fix
+### Create a variable.
+Create a variable named "a". For example:
+```diff
+public class Program {
+    public static void main(String[] args) {
+-         System.out.println(a);
++         String a = "";
++         System.out.println(a);
+    }
+}
+```

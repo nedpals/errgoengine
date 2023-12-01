@@ -7,4 +7,24 @@ Main.java:9: error: non-static method printMessage() cannot be referenced from a
 ===
 template: "Java.NonStaticMethodAccessError"
 ---
-aa
+# NonStaticMethodAccessError
+This error occurs when trying to access a non-static method from a static context. In Java, a non-static method belongs to an instance of the class and needs an object to be called upon.
+```
+        // Attempt to call the non-static method without creating an object
+        printMessage(); // This will result in an error
+        ^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Instantiate and call the method
+Create an instance of the class to access the non-static method
+```diff
+    public static void main(String[] args) {
+        // Attempt to call the non-static method without creating an object
+-         printMessage(); // This will result in an error
++         Main obj = new Main();
++         obj.printMessage(); // This will result in an error
+    }
+}
+```

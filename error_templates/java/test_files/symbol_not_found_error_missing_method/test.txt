@@ -1,0 +1,36 @@
+name: "MissingMethod"
+template: "Java.SymbolNotFoundError"
+---
+Test.java:4: error: cannot find symbol
+        displayArray(numbers);
+        ^
+    symbol:   method displayArray(int[])
+    location: class Test
+1 error
+===
+template: "Java.SymbolNotFoundError"
+---
+# SymbolNotFoundError
+The error indicates that the compiler cannot find the method `displayArray(int[])` in the `Test` class.
+```
+        int[] numbers = {1, 2, 3, 4, 5};
+        displayArray(numbers);
+        ^^^^^^^^^^^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Define the missing method.
+Add the missing method `displayArray` to the `Test` class
+```diff
+        int[] numbers = {1, 2, 3, 4, 5};
+        displayArray(numbers);
+-     }
++     }
++
++     private static void displayArray(int[] a) {
++         // Add code here
++     }
+}
+
+```

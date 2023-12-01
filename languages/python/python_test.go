@@ -17,10 +17,10 @@ def main():
 	a = 1
 			`,
 			Expected: `
-(tree [0,0]-[0,0]
-	(function main [0,0]
-		(tree [1,1]-[1,6]
-			(variable a [1,1]))))
+(tree [0,0 | 0]-[1,6 | 18]
+	(function  [0,0 | 0]-[1,6 | 18]
+		(tree [0,0 | 0]-[1,6 | 18]
+			(assignment a [1,1 | 13]-[1,2 | 14]))))
 `,
 		},
 	}

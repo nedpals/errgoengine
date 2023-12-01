@@ -1,9 +1,14 @@
 package python
 
 import (
+	_ "embed"
+
 	lib "github.com/nedpals/errgoengine"
 	"github.com/smacker/go-tree-sitter/python"
 )
+
+//go:embed symbols.txt
+var symbols string
 
 var Language = &lib.Language{
 	Name:              "Python",
@@ -14,77 +19,15 @@ var Language = &lib.Language{
 	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
 		return &pyAnalyzer{cd}
 	},
-	SymbolsToCapture: lib.ISymbolCaptureList{
-		lib.SymbolCapture{
-			Query: "import_statement",
-			Kind:  lib.SymbolKindImport,
-			NameNode: &lib.SymbolCapture{
-				Query: "_",
-				Field: "name",
-			},
-		},
-		lib.SymbolCapture{
-			Query: "import_from_statement",
-			Kind:  lib.SymbolKindImport,
-			NameNode: &lib.SymbolCapture{
-				Query: "_",
-				Field: "module_name",
-			},
-			// TODO: include symbol names?
-		},
-		lib.SymbolCapture{
-			Query: "function_definition",
-			Kind:  lib.SymbolKindFunction,
-			NameNode: &lib.SymbolCapture{
-				Query: "identifier",
-				Field: "name",
-			},
-			ParameterNodes: &lib.SymbolCapture{
-				Field: "parameters",
-				Query: "parameters",
-				Children: []*lib.SymbolCapture{
-					{
-						Kind:  lib.SymbolKindVariable,
-						Query: "parameter",
-						NameNode: &lib.SymbolCapture{
-							Query: "identifier",
-						},
-					},
-					{
-						Kind:  lib.SymbolKindVariable,
-						Query: "parameter",
-						NameNode: &lib.SymbolCapture{
-							Query: "_",
-							Field: "name",
-						},
-					},
-				},
-			},
-			BodyNode: &lib.SymbolCapture{
-				Field: "body",
-				Query: "block",
-				Children: []*lib.SymbolCapture{
-					// FIXME: figure out return type of variables
-					{
-						Query: "expression_statement (assignment)",
-						Kind:  lib.SymbolKindVariable,
-						NameNode: &lib.SymbolCapture{
-							Field: "left",
-							Query: "identifier",
-						},
-						ContentNode: &lib.SymbolCapture{
-							Field: "right",
-							Query: "_",
-						},
-					},
-				},
-			},
-		},
-	},
+	SymbolsToCapture: symbols,
 }
 
 type pyAnalyzer struct {
 	*lib.ContextData
+}
+
+func (an *pyAnalyzer) FallbackSymbol() lib.Symbol {
+	return lib.Builtin("any")
 }
 
 func (an *pyAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {

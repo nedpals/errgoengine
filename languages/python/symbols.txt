@@ -1,0 +1,18 @@
+(import_statement
+	name: (_) @import.path) @import
+
+(function_definition
+	parameters: (parameters
+    	[
+        	(identifier) @parameter.name
+            (typed_parameter
+            	((identifier) @parameter.name)
+                type: (_) @parameter.return-type)
+        ]? @parameter) @parameters) @function
+  	(return_statement
+  		(_) @block.content)?
+
+(expression_statement
+	(assignment
+    	left: (identifier) @assignment.name
+        right: (identifier) @assignment.content) @assignment)

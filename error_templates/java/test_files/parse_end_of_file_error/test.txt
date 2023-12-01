@@ -7,4 +7,22 @@ EOF.java:4: error: reached end of file while parsing
 ===
 template: "Java.ParseEndOfFileError"
 ---
-The compiler was not able to compile your program because of an incomplete syntax
+# ParseEndOfFileError
+This error occurs when the compiler expects more code but encounters the end of the file.
+```
+        System.out.println("This is a sample program.");
+    }
+     ^
+
+```
+## Steps to fix
+### Complete the code
+Add the missing `}` in line 4
+```diff
+    public static void main(String[] args) {
+        System.out.println("This is a sample program.");
+-     }
++     }
++ }
+
+```
