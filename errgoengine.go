@@ -17,14 +17,13 @@ type ErrgoEngine struct {
 }
 
 func New() *ErrgoEngine {
-	filesystems := make([]fs.ReadFileFS, 2)
-	filesystems[0] = &RawFS{}
-
 	return &ErrgoEngine{
 		SharedStore:    NewEmptyStore(),
 		ErrorTemplates: ErrorTemplates{},
 		FS: &MultiReadFileFS{
-			FSs: filesystems,
+			FSs: []fs.ReadFileFS{
+				&RawFS{},
+			},
 		},
 		OutputGen: &OutputGenerator{},
 	}
@@ -39,7 +38,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// initial context data extraction
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
-	e.FS.FSs[1] = template.Language.stubFs
+	e.FS.Attach(template.Language.stubFs, 1)
 
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {

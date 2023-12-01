@@ -11,6 +11,30 @@ type MultiReadFileFS struct {
 	FSs []fs.ReadFileFS
 }
 
+func (mfs *MultiReadFileFS) LastAttachedIdx() int {
+	return len(mfs.FSs) - 1
+}
+
+func (mfs *MultiReadFileFS) Attach(fs fs.ReadFileFS, idx int) {
+	if idx < len(mfs.FSs) && idx >= 0 {
+		if mfs.FSs[idx] == fs {
+			return
+		}
+
+		mfs.FSs[idx] = fs
+		return
+	}
+
+	// check first if the fs is already attached
+	for _, f := range mfs.FSs {
+		if f == fs {
+			return
+		}
+	}
+
+	mfs.FSs = append(mfs.FSs, fs)
+}
+
 func (mfs *MultiReadFileFS) Open(name string) (fs.File, error) {
 	for _, fs := range mfs.FSs {
 		if fs == nil {
