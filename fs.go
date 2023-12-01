@@ -15,7 +15,7 @@ func (mfs *MultiReadFileFS) LastAttachedIdx() int {
 	return len(mfs.FSs) - 1
 }
 
-func (mfs *MultiReadFileFS) Attach(fs fs.ReadFileFS, idx int) {
+func (mfs *MultiReadFileFS) AttachOrReplace(fs fs.ReadFileFS, idx int) {
 	if idx < len(mfs.FSs) && idx >= 0 {
 		if mfs.FSs[idx] == fs {
 			return
@@ -25,14 +25,29 @@ func (mfs *MultiReadFileFS) Attach(fs fs.ReadFileFS, idx int) {
 		return
 	}
 
+	mfs.Attach(fs, idx)
+}
+
+func (mfs *MultiReadFileFS) Attach(instance fs.ReadFileFS, idx int) {
+	if idx < len(mfs.FSs) && idx >= 0 {
+		if mfs.FSs[idx] == instance {
+			return
+		}
+
+		mfs.FSs = append(
+			append(append([]fs.ReadFileFS{}, mfs.FSs[:idx]...), instance),
+			mfs.FSs[idx+1:]...)
+		return
+	}
+
 	// check first if the fs is already attached
 	for _, f := range mfs.FSs {
-		if f == fs {
+		if f == instance {
 			return
 		}
 	}
 
-	mfs.FSs = append(mfs.FSs, fs)
+	mfs.FSs = append(mfs.FSs, instance)
 }
 
 func (mfs *MultiReadFileFS) Open(name string) (fs.File, error) {
