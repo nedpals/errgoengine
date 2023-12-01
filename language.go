@@ -22,6 +22,7 @@ type LanguageAnalyzer interface {
 type Language struct {
 	isCompiled        bool
 	stackTraceRegex   *regexp.Regexp
+	stubFs            *StubFS
 	Name              string
 	FilePatterns      []string
 	SitterLanguage    *sitter.Language
@@ -30,6 +31,7 @@ type Language struct {
 	SymbolsToCapture  string
 	LocationConverter func(path, pos string) Location
 	AnalyzerFactory   func(cd *ContextData) LanguageAnalyzer
+	OnGenStubFS       func(fs *StubFS)
 }
 
 func (lang *Language) MatchPath(path string) bool {
@@ -56,6 +58,11 @@ func (lang *Language) Compile() {
 
 	if lang.AnalyzerFactory == nil {
 		panic(fmt.Sprintf("[Language -> %s] AnalyzerFactory must not be nil", lang.Name))
+	}
+
+	if lang.stubFs == nil {
+		lang.stubFs = &StubFS{}
+		lang.OnGenStubFS(lang.stubFs)
 	}
 
 	lang.isCompiled = true

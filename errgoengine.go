@@ -12,16 +12,21 @@ import (
 type ErrgoEngine struct {
 	SharedStore    *Store
 	ErrorTemplates ErrorTemplates
-	FS             fs.ReadFileFS
+	FS             *MultiReadFileFS
 	OutputGen      *OutputGenerator
 }
 
 func New() *ErrgoEngine {
+	filesystems := make([]fs.ReadFileFS, 2)
+	filesystems[0] = &RawFS{}
+
 	return &ErrgoEngine{
 		SharedStore:    NewEmptyStore(),
 		ErrorTemplates: ErrorTemplates{},
-		FS:             &RawFS{},
-		OutputGen:      &OutputGenerator{},
+		FS: &MultiReadFileFS{
+			FSs: filesystems,
+		},
+		OutputGen: &OutputGenerator{},
 	}
 }
 
@@ -34,6 +39,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// initial context data extraction
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
+	e.FS.FSs[1] = template.Language.stubFs
 
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
@@ -86,6 +92,11 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 		contents, err := e.FS.ReadFile(node.DocumentPath)
 		if err != nil {
 			return nil, nil, err
+		}
+
+		// Skip stub files
+		if len(contents) == 0 {
+			continue
 		}
 
 		var selectedLanguage *Language

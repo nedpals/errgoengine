@@ -4,7 +4,94 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"time"
 )
+
+type MultiReadFileFS struct {
+	FSs []fs.ReadFileFS
+}
+
+func (mfs *MultiReadFileFS) Open(name string) (fs.File, error) {
+	for _, fs := range mfs.FSs {
+		if fs == nil {
+			continue
+		}
+
+		if file, err := fs.Open(name); err == nil {
+			return file, nil
+		}
+	}
+	return nil, os.ErrNotExist
+}
+
+type stubFileInfo struct {
+	name string
+}
+
+func (*stubFileInfo) Name() string { return "" }
+
+func (*stubFileInfo) Size() int64 { return 0 }
+
+func (*stubFileInfo) Mode() fs.FileMode { return 0400 }
+
+func (*stubFileInfo) ModTime() time.Time { return time.Now() }
+
+func (*stubFileInfo) IsDir() bool { return false }
+
+func (*stubFileInfo) Sys() any { return nil }
+
+type StubFile struct {
+	Name string
+}
+
+func (*StubFile) Read(bt []byte) (int, error) { return 0, io.EOF }
+
+func (vf *StubFile) Stat() (fs.FileInfo, error) { return &stubFileInfo{vf.Name}, nil }
+
+func (*StubFile) Close() error { return nil }
+
+type StubFS struct {
+	Files []*StubFile
+}
+
+func (vfs *StubFS) StubFile(name string) *StubFile {
+	file := &StubFile{
+		Name: name,
+	}
+	vfs.Files = append(vfs.Files, file)
+	return file
+}
+
+func (vfs *StubFS) Open(name string) (fs.File, error) {
+	for _, file := range vfs.Files {
+		if file.Name == name {
+			return file, nil
+		}
+	}
+	return nil, os.ErrNotExist
+}
+
+func (vfs *StubFS) ReadFile(name string) ([]byte, error) {
+	for _, file := range vfs.Files {
+		if file.Name == name {
+			return make([]byte, 0), nil
+		}
+	}
+	return nil, os.ErrNotExist
+}
+
+func (mfs *MultiReadFileFS) ReadFile(name string) ([]byte, error) {
+	for _, fs := range mfs.FSs {
+		if fs == nil {
+			continue
+		}
+
+		if file, err := fs.Open(name); err == nil {
+			return io.ReadAll(file)
+		}
+	}
+	return nil, os.ErrNotExist
+}
 
 type RawFS struct{}
 
