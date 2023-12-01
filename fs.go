@@ -83,18 +83,18 @@ type StubFile struct {
 	Name string
 }
 
-func (*StubFile) Read(bt []byte) (int, error) { return 0, io.EOF }
+func (StubFile) Read(bt []byte) (int, error) { return 0, io.EOF }
 
-func (vf *StubFile) Stat() (fs.FileInfo, error) { return &stubFileInfo{vf.Name}, nil }
+func (vf StubFile) Stat() (fs.FileInfo, error) { return &stubFileInfo{vf.Name}, nil }
 
-func (*StubFile) Close() error { return nil }
+func (StubFile) Close() error { return nil }
 
 type StubFS struct {
-	Files []*StubFile
+	Files []StubFile
 }
 
-func (vfs *StubFS) StubFile(name string) *StubFile {
-	file := &StubFile{
+func (vfs *StubFS) StubFile(name string) StubFile {
+	file := StubFile{
 		Name: name,
 	}
 	vfs.Files = append(vfs.Files, file)
