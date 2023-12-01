@@ -60,7 +60,7 @@ func (lang *Language) Compile() {
 		panic(fmt.Sprintf("[Language -> %s] AnalyzerFactory must not be nil", lang.Name))
 	}
 
-	if lang.stubFs == nil {
+	if lang.stubFs == nil && lang.OnGenStubFS != nil {
 		lang.stubFs = &StubFS{}
 		lang.OnGenStubFS(lang.stubFs)
 	}
