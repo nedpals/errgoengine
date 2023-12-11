@@ -39,7 +39,10 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// initial context data extraction
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
-	e.FS.FSs[1] = template.Language.stubFs
+
+	if template.Language.stubFs != nil {
+		e.FS.FSs[1] = template.Language.stubFs
+	}
 
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {

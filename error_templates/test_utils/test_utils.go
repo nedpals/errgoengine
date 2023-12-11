@@ -171,7 +171,7 @@ func (cases TestCases) Execute(t *testing.T) {
 				}
 
 				t.Run(caseName, func(t *testing.T) {
-					cases.engine.FS = tCase.Files
+					cases.engine.FS.FSs[0] = tCase.Files
 					template, data, err := cases.engine.Analyze("", tCase.Input)
 					if err != nil {
 						t.Fatal(err)
