@@ -160,7 +160,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	return template, contextData, nil
 }
 
-func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) string {
+func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) (mainExp string, fullExp string) {
 	expGen := &ExplainGenerator{errorName: template.Name}
 	fixGen := &BugFixGenerator{}
 
@@ -170,5 +170,6 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 
 	output := e.OutputGen.Generate(contextData, expGen, fixGen)
 	defer e.OutputGen.Reset()
-	return output
+
+	return expGen.mainExp.String(), output
 }

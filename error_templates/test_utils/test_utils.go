@@ -183,7 +183,7 @@ func (cases TestCases) Execute(t *testing.T) {
 						)
 					}
 
-					output := cases.engine.Translate(template, data)
+					_, output := cases.engine.Translate(template, data)
 					if output != tCase.ExpectedOutput {
 						diff := dmp.DiffMain(escapeOutput(tCase.ExpectedOutput), escapeOutput(output), true)
 						t.Errorf("\n======== Expected ========\n%s\n=========== Got ===========\n%s\n=========== Diff===========\n%s", tCase.ExpectedOutput, output, dmp.DiffPrettyText(diff))
