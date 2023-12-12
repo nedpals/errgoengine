@@ -22,6 +22,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, SymbolNotFoundError)
 	errorTemplates.MustAdd(java.Language, NonStaticMethodAccessError)
 	errorTemplates.MustAdd(java.Language, UnclosedCharacterLiteralError)
+	errorTemplates.MustAdd(java.Language, OperatorCannotBeAppliedError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

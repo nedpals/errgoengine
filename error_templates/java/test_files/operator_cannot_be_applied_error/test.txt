@@ -1,0 +1,44 @@
+template: "Java.OperatorCannotBeAppliedError"
+---
+OperatorCannotBeApplied.java:7: error: bad operand types for binary operator '<'
+        if (text < number) {}
+                 ^
+  first type:  String
+  second type: int
+1 error
+===
+template: "Java.OperatorCannotBeAppliedError"
+---
+# OperatorCannotBeAppliedError
+This error occurs when you try to apply a binary operator to incompatible operand types, such as trying to use the '<' operator between a String and an int.
+```
+        // Operator '<' cannot be applied to String and int
+        if (text < number) {}
+                 ^
+    }
+}
+```
+## Steps to fix
+### 1. Use String's compareTo method
+Since you are comparing a String and an int, you need to use the `compareTo` method to compare their values.
+```diff
+
+        // Operator '<' cannot be applied to String and int
+-         if (text < number) {}
++         if (text.compareTo(String.valueOf(number)) < number) {}
+    }
+}
+```
+The `compareTo` method returns a negative integer if the calling string is lexicographically less than the argument string.
+
+### 2. Convert int to String for direct comparison
+If you want to compare them directly, convert the int to String using `String.valueOf()`.
+```diff
+
+        // Operator '<' cannot be applied to String and int
+-         if (text < number) {}
++         if (text.equals(String.valueOf(number))) {}
+    }
+}
+```
+This ensures both operands are of the same type for comparison.
