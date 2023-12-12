@@ -42,7 +42,7 @@ var BuiltinTypes = struct {
 }{
 	NullSymbol:    lib.Builtin("null"),
 	BooleanSymbol: lib.Builtin("boolean"),
-	StringSymbol:  lib.Builtin("string"),
+	StringSymbol:  lib.Builtin("String"),
 	Integral: struct {
 		ByteSymbol  lib.Symbol
 		ShortSymbol lib.Symbol
