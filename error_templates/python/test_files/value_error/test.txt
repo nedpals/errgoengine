@@ -7,4 +7,22 @@ ValueError: invalid literal for int() with base 10: 'abc'
 ===
 template: "Python.ValueError"
 ---
-The input provided is an alphabetical string which cannot be converted into an int
+# ValueError
+This error occurs when you try to convert a value to an integer, but the value is not a valid integer.
+
+## Steps to fix
+### 1. Use a valid integer string
+1. Make sure the value you're trying to convert is a valid integer string.
+```diff
+- value = int("abc")
++ value = int("123")  # Replace 'abc' with a valid integer string
+```
+
+### 2. Add error handling
+1. To handle non-integer inputs gracefully, you can use a try-except block.
+```diff
++ try:
++     value = int("abc")
++ except ValueError as e:
++     print(f"Error: {e}")
+```
