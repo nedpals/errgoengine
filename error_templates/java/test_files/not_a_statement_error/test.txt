@@ -1,0 +1,42 @@
+template: "Java.NotAStatementError"
+---
+NotAStatement.java:3: error: not a statement
+        "test";
+        ^
+1 error
+===
+template: "Java.NotAStatementError"
+---
+# NotAStatementError
+This error occurs when a line of code is written that is not a valid statement.
+```
+    public static void main(String[] args) {
+        "test";
+        ^^^^^^
+    }
+}
+```
+## Steps to fix
+### 1. Convert the `String` to a statement
+If you intended to use the `String` as a statement, you can print it or use it in a valid statement.
+```diff
+public class NotAStatement {
+    public static void main(String[] args) {
+-         "test";
++         System.out.println("test");
+    }
+}
+```
+This change makes the string part of a valid statement by printing it to the console.
+
+### 2. Assign the `String` to a variable
+Alternatively, you can assign the `String` to a variable to make it a valid statement.
+```diff
+public class NotAStatement {
+    public static void main(String[] args) {
+-         "test";
++         String test = "test";
+    }
+}
+```
+This way, the string is now part of a statement and can be used later in your code.
