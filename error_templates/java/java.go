@@ -23,6 +23,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, NonStaticMethodAccessError)
 	errorTemplates.MustAdd(java.Language, UnclosedCharacterLiteralError)
 	errorTemplates.MustAdd(java.Language, OperatorCannotBeAppliedError)
+	errorTemplates.MustAdd(java.Language, PrecisionLossError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

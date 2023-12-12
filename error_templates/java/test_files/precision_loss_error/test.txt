@@ -1,0 +1,42 @@
+template: "Java.PrecisionLossError"
+---
+PrecisionLoss.java:6: error: incompatible types: possible lossy conversion from double to float
+        float smallNumber = largeNumber;
+                            ^
+1 error
+===
+template: "Java.PrecisionLossError"
+---
+# PrecisionLossError
+This error occurs when you try to assign a value from a data type with higher precision (double) to a data type with lower precision (float), which may result in a loss of precision.
+```
+        // Potential loss of precision: Found double, required float
+        float smallNumber = largeNumber;
+                            ^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### 1. Explicitly cast to float
+To resolve the precision loss, explicitly cast the `largeNumber` to float.
+```diff
+
+        // Potential loss of precision: Found double, required float
+-         float smallNumber = largeNumber;
++         float smallNumber = (float) largeNumber;
+    }
+}
+```
+This casting informs the compiler about the potential loss of precision and allows the assignment.
+
+### 2. Use an 'f' suffix for the float literal
+Alternatively, you can use the 'f' suffix to specify that the literal is of type float.
+```diff
+
+        // Potential loss of precision: Found double, required float
+-         float smallNumber = largeNumber;
++         float smallNumber = 12345678901234567890.123456789f;
+    }
+}
+```
+This way, you directly define the float variable without the need for casting.
