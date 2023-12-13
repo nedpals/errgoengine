@@ -26,6 +26,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, PrecisionLossError)
 	errorTemplates.MustAdd(java.Language, NotAStatementError)
 	errorTemplates.MustAdd(java.Language, IncompatibleTypesError)
+	errorTemplates.MustAdd(java.Language, UninitializedVariableError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {
@@ -56,4 +57,17 @@ func getIdentifierNode(node lib.SyntaxNode) lib.SyntaxNode {
 		return currentNode
 	}
 	return currentNode
+}
+
+func getDefaultValueForType(sym lib.Symbol) string {
+	switch sym {
+	case java.BuiltinTypes.Integral.IntSymbol:
+		return "0"
+	case java.BuiltinTypes.Integral.LongSymbol:
+		return "0L"
+	case java.BuiltinTypes.Integral.ShortSymbol:
+		return "0"
+	default:
+		return "null"
+	}
 }

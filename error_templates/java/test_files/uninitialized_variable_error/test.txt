@@ -1,0 +1,43 @@
+template: "Java.UninitializedVariableError"
+---
+UninitializedVariable.java:6: error: variable number might not have been initialized
+        System.out.println(number);
+                           ^
+1 error
+===
+template: "Java.UninitializedVariableError"
+---
+# UninitializedVariableError
+This error occurs when you try to use a variable that has not been initialized with a value.
+```
+        // Variable 'number' might not have been initialized
+        System.out.println(number);
+                           ^^^^^^
+    }
+}
+```
+## Steps to fix
+### 1. Initialize the variable
+To resolve the uninitialized variable error, you need to initialize the `number` variable with a value.
+```diff
+public class UninitializedVariable {
+    public static void main(String[] args) {
+-         int number;
++         int number = 0;
+
+        // Variable 'number' might not have been initialized
+```
+This ensures that the variable has a valid initial value before it's used.
+
+### 2. Assign a value before using
+Alternatively, you can assign a value to the variable before using it.
+```diff
+public class UninitializedVariable {
+    public static void main(String[] args) {
+-         int number;
++         int number;
++         number = 0; // or any other valid value
+
+        // Variable 'number' might not have been initialized
+```
+This way, the variable is initialized with a value before it's used in the statement.

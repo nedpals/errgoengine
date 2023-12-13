@@ -40,6 +40,8 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		return BuiltinTypes.BooleanSymbol
 	case "void_type":
 		return BuiltinTypes.VoidSymbol
+	case "integral_type":
+		return BuiltinTypes.Integral.IntSymbol
 	// then expressions
 	case "null_literal":
 		return BuiltinTypes.NullSymbol

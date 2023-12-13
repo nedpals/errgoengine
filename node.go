@@ -44,6 +44,12 @@ func (n SyntaxNode) Child(idx int) SyntaxNode {
 	return WrapNode(n.Doc, cNode)
 }
 
+func (n SyntaxNode) NamedDescendantForPointRange(posRange Location) SyntaxNode {
+	sRange := posRange.Range()
+	cNode := n.Node.NamedDescendantForPointRange(sRange.StartPoint, sRange.EndPoint)
+	return WrapNode(n.Doc, cNode)
+}
+
 func (n SyntaxNode) StartPosition() Position {
 	p := n.Node.StartPoint()
 	return Position{
