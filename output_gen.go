@@ -192,7 +192,10 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					// show this only if the total is not negative
 					if startLine >= origStartLine && afterLine >= origAfterLine {
 						modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
-						for _, modifiedLine := range modified {
+						for i, modifiedLine := range modified {
+							if i == 0 && len(modified) == 1 && len(modifiedLine) == 0 {
+								continue
+							}
 							gen.write("+")
 							if len(modifiedLine) != 0 {
 								gen.write(" ")
