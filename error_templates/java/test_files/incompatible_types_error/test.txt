@@ -1,0 +1,42 @@
+template: "Java.IncompatibleTypesError"
+---
+IncompatibleTypes.java:7: error: incompatible types: int cannot be converted to String
+        text = number;
+               ^
+1 error
+===
+template: "Java.IncompatibleTypesError"
+---
+# IncompatibleTypesError
+This error occurs when you attempt to assign a value of one data type to a variable of a different, incompatible data type.
+```
+        // Incompatible types: Cannot convert int to String
+        text = number;
+               ^^^^^^
+    }
+}
+```
+## Steps to fix
+### 1. Convert int to String
+To resolve the incompatible types error, you need to explicitly convert the `int` to a `String`.
+```diff
+
+        // Incompatible types: Cannot convert int to String
+-         text = number;
++         text = String.valueOf(number);
+    }
+}
+```
+The `String.valueOf()` method converts the `int` to its string representation.
+
+### 2. Concatenate int with String
+Alternatively, you can concatenate the `int` with the existing `String`.
+```diff
+
+        // Incompatible types: Cannot convert int to String
+-         text = number;
++         text = text + number;
+    }
+}
+```
+This converts the `int` to a `String` and concatenates it with the existing `String`.
