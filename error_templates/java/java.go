@@ -27,6 +27,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, NotAStatementError)
 	errorTemplates.MustAdd(java.Language, IncompatibleTypesError)
 	errorTemplates.MustAdd(java.Language, UninitializedVariableError)
+	errorTemplates.MustAdd(java.Language, AlreadyDefinedError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

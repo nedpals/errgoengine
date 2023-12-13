@@ -1,0 +1,42 @@
+template: "Java.AlreadyDefinedError"
+---
+Main.java:5: error: variable x is already defined in method main(String[])
+        int x = 10;
+            ^
+1 error
+===
+template: "Java.AlreadyDefinedError"
+---
+# AlreadyDefinedError
+This error occurs when you try to declare a variable with a name that is already in use within the same scope.
+```
+        // Attempting to redeclare the variable 'x'
+        int x = 10;
+        ^^^^^^^^^^^
+        System.out.println(x);
+    }
+```
+## Steps to fix
+### 1. Remove redeclaration
+To resolve the already defined error, remove the attempt to redeclare the variable 'x'.
+```diff
+    public static void main(String[] args) {
+        int x = 5;
+        // Attempting to redeclare the variable 'x'
+-         int x = 10;
+        System.out.println(x);
+    }
+```
+Since 'x' is already declared earlier in the method, you don't need to declare it again.
+
+### 2. Assign a new value
+If you intended to change the value of 'x', you can simply assign a new value to the existing variable.
+```diff
+        int x = 5;
+        // Attempting to redeclare the variable 'x'
+-         int x = 10;
++         x = 10;
+        System.out.println(x);
+    }
+```
+This way, you update the value of 'x' without redeclaring it.
