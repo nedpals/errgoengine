@@ -1,0 +1,39 @@
+template: "Java.PrivateAccessError"
+---
+Main.java:5: error: privateVariable has private access in AnotherClass
+        int value = anotherClass.privateVariable;
+                                ^
+1 error
+===
+template: "Java.PrivateAccessError"
+---
+# AlreadyDefinedError
+This error occurs when you try to access a private variable from another class, which is not allowed.
+
+## Steps to fix
+### 1. Use a public accessor method
+1. To access a private variable from another class, create a public accessor method in `AnotherClass`.
+```diff
++ public int getPrivateVariable() {
++     return privateVariable;
++ }
+```
+2. Then, use this method to get the value in the `Main` class.
+```diff
+- int value = anotherClass.privateVariable;
++ int value = anotherClass.getPrivateVariable();
+```
+This way, you respect encapsulation by using a method to access the private variable.
+
+### 2. Make the variable public (not recommended)
+1. If you must access the variable directly, you can make it public, but this is generally not recommended for maintaining encapsulation.
+```diff
+- private int privateVariable = 10;
++ public int privateVariable = 10;
+```
+2. Access it directly in the `Main` class.
+```diff
+- int value = anotherClass.privateVariable;
++ int value = anotherClass.privateVariable;
+```
+Choose the fix that aligns with your design principles. Using an accessor method is a better practice for encapsulation.

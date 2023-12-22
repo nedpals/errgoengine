@@ -48,6 +48,7 @@ func NewSymbolKindFromString(str string) SymbolKind {
 
 const (
 	SymbolKindUnknown    SymbolKind = 0
+	SymbolKindUnresolved SymbolKind = iota
 	SymbolKindBuiltin    SymbolKind = iota
 	SymbolKindClass      SymbolKind = iota
 	SymbolKindFunction   SymbolKind = iota
@@ -218,6 +219,22 @@ func (sym ImportSymbol) Location() Location {
 		},
 	}
 }
+
+type unresolvedSymbol struct{}
+
+func (sym unresolvedSymbol) Name() string {
+	return "unresolved"
+}
+
+func (sym unresolvedSymbol) Kind() SymbolKind {
+	return SymbolKindUnresolved
+}
+
+func (sym unresolvedSymbol) Location() Location {
+	return Location{}
+}
+
+var UnresolvedSymbol Symbol = unresolvedSymbol{}
 
 // TODO:
 // func (sym ImportSymbol) Children() *SymbolTree {

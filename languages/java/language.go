@@ -74,6 +74,12 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 
 		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
 		if sym == nil {
+			if n.Type() == "type_identifier" {
+				an.ContextData.
+
+				// mark type as unresolved
+				return lib.UnresolvedSymbol
+			}
 			return BuiltinTypes.NullSymbol
 		}
 

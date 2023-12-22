@@ -24,10 +24,12 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, UnclosedCharacterLiteralError)
 	errorTemplates.MustAdd(java.Language, OperatorCannotBeAppliedError)
 	errorTemplates.MustAdd(java.Language, PrecisionLossError)
+	errorTemplates.MustAdd(java.Language, MissingReturnError)
 	errorTemplates.MustAdd(java.Language, NotAStatementError)
 	errorTemplates.MustAdd(java.Language, IncompatibleTypesError)
 	errorTemplates.MustAdd(java.Language, UninitializedVariableError)
 	errorTemplates.MustAdd(java.Language, AlreadyDefinedError)
+	errorTemplates.MustAdd(java.Language, PrivateAccessError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

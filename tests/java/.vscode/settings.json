@@ -1,3 +1,4 @@
 {
-  "bugbuddy.path": "/Users/nedpals/Documents/coding/bugbuddy-proto/server/cmd/bugbuddy"
+  "bugbuddy.path": "/Users/nedpals/Documents/coding/bugbuddy-proto/server/cmd/bugbuddy",
+  "java.debug.settings.onBuildFailureProceed": true
 }

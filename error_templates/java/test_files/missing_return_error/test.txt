@@ -1,0 +1,41 @@
+template: "Java.MissingReturnError"
+---
+MissingReturn.java:4: error: missing return statement
+    }
+    ^
+1 error
+===
+template: "Java.MissingReturnError"
+---
+# MissingReturnError
+This error occurs when a method is declared to return a value, but there is no return statement within the method.
+```
+        // Missing return statement
+    }
+    ^
+
+    public static void main(String[] args) {
+```
+## Steps to fix
+### 1. Provide a return statement
+Since the `addNumbers` method is declared to return an `int`, you need to provide a return statement with the result.
+```diff
+public class MissingReturn {
+    public int addNumbers(int a, int b) {
+-         // Missing return statement
++         // Missing return statement
++         return a;
+    }
+```
+This ensures that the method returns the sum of the two input numbers.
+
+### 2. Set the method return type to void
+If you don't intend to return a value from the `addNumbers` method, you can change its return type to `void`.
+```diff
+public class MissingReturn {
+-     public int addNumbers(int a, int b) {
++     public void addNumbers(int a, int b) {
+        // Missing return statement
+    }
+```
+This is appropriate if you're using the method for side effects rather than returning a value.
