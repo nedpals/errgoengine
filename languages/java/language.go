@@ -67,22 +67,22 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		return arrayIfy(typeSym, gotLen)
 	case "object_creation_expression":
 		return an.AnalyzeNode(n.ChildByFieldName("type"))
-	case "identifier", "type_identifier":
-		if n.Type() == "type_identifier" && n.Text() == "String" {
-			return BuiltinTypes.StringSymbol
+	case "type_identifier":
+		// check for builtin types first
+		builtinSym, found := builtinTypesStore.FindByName(n.Text())
+		if found {
+			return builtinSym
 		}
-
 		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
 		if sym == nil {
-			if n.Type() == "type_identifier" {
-				an.ContextData.
-
-				// mark type as unresolved
-				return lib.UnresolvedSymbol
-			}
+			return lib.UnresolvedSymbol
+		}
+		return sym
+	case "identifier":
+		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
+		if sym == nil {
 			return BuiltinTypes.NullSymbol
 		}
-
 		return sym
 	case "array_access":
 		sym := an.AnalyzeNode(n.ChildByFieldName("array"))

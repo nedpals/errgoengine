@@ -6,6 +6,30 @@ import (
 	lib "github.com/nedpals/errgoengine"
 )
 
+type javaBuiltinTypeStore struct {
+	typesSymbols map[string]lib.Symbol
+}
+
+func (store *javaBuiltinTypeStore) Builtin(name string) lib.Symbol {
+	if store.typesSymbols == nil {
+		store.typesSymbols = make(map[string]lib.Symbol)
+	} else if sym, ok := store.FindByName(name); ok {
+		return sym
+	}
+	store.typesSymbols[name] = lib.Builtin(name)
+	return store.typesSymbols[name]
+}
+
+func (store *javaBuiltinTypeStore) FindByName(name string) (lib.Symbol, bool) {
+	if store.typesSymbols == nil {
+		return nil, false
+	}
+	sym, ok := store.typesSymbols[name]
+	return sym, ok
+}
+
+var builtinTypesStore = &javaBuiltinTypeStore{}
+
 type ArraySymbol struct {
 	ValueSymbol lib.Symbol
 	Length      int
@@ -40,9 +64,9 @@ var BuiltinTypes = struct {
 	}
 	VoidSymbol lib.Symbol
 }{
-	NullSymbol:    lib.Builtin("null"),
-	BooleanSymbol: lib.Builtin("boolean"),
-	StringSymbol:  lib.Builtin("String"),
+	NullSymbol:    builtinTypesStore.Builtin("null"),
+	BooleanSymbol: builtinTypesStore.Builtin("boolean"),
+	StringSymbol:  builtinTypesStore.Builtin("String"),
 	Integral: struct {
 		ByteSymbol  lib.Symbol
 		ShortSymbol lib.Symbol
@@ -50,20 +74,20 @@ var BuiltinTypes = struct {
 		LongSymbol  lib.Symbol
 		CharSymbol  lib.Symbol
 	}{
-		ByteSymbol:  lib.Builtin("byte"),
-		ShortSymbol: lib.Builtin("short"),
-		IntSymbol:   lib.Builtin("int"),
-		LongSymbol:  lib.Builtin("long"),
-		CharSymbol:  lib.Builtin("char"),
+		ByteSymbol:  builtinTypesStore.Builtin("byte"),
+		ShortSymbol: builtinTypesStore.Builtin("short"),
+		IntSymbol:   builtinTypesStore.Builtin("int"),
+		LongSymbol:  builtinTypesStore.Builtin("long"),
+		CharSymbol:  builtinTypesStore.Builtin("char"),
 	},
 	FloatingPoint: struct {
 		FloatSymbol  lib.Symbol
 		DoubleSymbol lib.Symbol
 	}{
-		FloatSymbol:  lib.Builtin("float"),
-		DoubleSymbol: lib.Builtin("double"),
+		FloatSymbol:  builtinTypesStore.Builtin("float"),
+		DoubleSymbol: builtinTypesStore.Builtin("double"),
 	},
-	VoidSymbol: lib.Builtin("void"),
+	VoidSymbol: builtinTypesStore.Builtin("void"),
 }
 
 func arrayIfy(typ lib.Symbol, len int) lib.Symbol {
