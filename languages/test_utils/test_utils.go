@@ -55,7 +55,11 @@ func treeSexprBuilder(tree *lib.SymbolTree, sb *strings.Builder, level int) {
 		for _, sym := range tree.Symbols {
 			sb.WriteString(strings.Repeat("\t", level+1))
 			sb.WriteByte('(')
-			sb.WriteString(fmt.Sprintf("%s %s %s-%s", sym.Kind().String(), sym.Name(), sym.Location().StartPos, sym.Location().EndPos))
+			sb.WriteString(sym.Kind().String())
+			if sym, ok := sym.(lib.IReturnableSymbol); ok {
+				sb.WriteString(fmt.Sprintf(" %s", sym.ReturnType().Name()))
+			}
+			sb.WriteString(fmt.Sprintf(" %s %s-%s", sym.Name(), sym.Location().StartPos, sym.Location().EndPos))
 
 			if childSym, ok := sym.(lib.IChildrenSymbol); ok && childSym.Children() != nil {
 				sb.WriteByte('\n')

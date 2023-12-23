@@ -25,7 +25,7 @@ public class Test {
 		(tree [0,18 | 18]-[4,1 | 79]
 			(function main [1,1 | 21]-[3,2 | 77]
 				(tree [1,1 | 21]-[3,2 | 77]
-					(variable a [2,6 | 68]-[2,11 | 73]))))))
+					(variable int a [2,6 | 68]-[2,11 | 73]))))))
 			`,
 		},
 	}
