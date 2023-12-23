@@ -29,6 +29,24 @@ func New() *ErrgoEngine {
 	}
 }
 
+func (e *ErrgoEngine) AttachMainFS(instance fs.ReadFileFS) {
+	// remove existing documents
+	fs.WalkDir(e.FS.FSs[0], ".", func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
+		} else if _, ok := e.SharedStore.Documents[path]; !ok {
+			return nil
+		}
+
+		// delete document
+		delete(e.SharedStore.Documents, path)
+		return nil
+	})
+
+	// attach new fs
+	e.FS.Attach(instance, 0)
+}
+
 func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, *ContextData, error) {
 	template := e.ErrorTemplates.Match(msg)
 	if template == nil {
