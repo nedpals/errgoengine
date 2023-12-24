@@ -49,6 +49,10 @@ func (gen *BugFixSuggestion) AddStep(content string, d ...any) *BugFixStep {
 		gen.Steps = []*BugFixStep{}
 	}
 
+	if !strings.HasSuffix(content, ".") {
+		content += "."
+	}
+
 	gen.Steps = append(gen.Steps, &BugFixStep{
 		Content: fmt.Sprintf(content, d...),
 	})
