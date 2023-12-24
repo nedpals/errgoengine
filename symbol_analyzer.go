@@ -6,17 +6,67 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+type captureIterator struct {
+	idx         int
+	checkpoints []int
+	doc         *Document
+	captures    []sitter.QueryCapture
+}
+
+func (it *captureIterator) Get(idx int) sitter.QueryCapture {
+	return it.captures[idx]
+}
+
+func (it *captureIterator) Reset() {
+	it.checkpoints = []int{}
+	it.idx = 0
+}
+
+func (it *captureIterator) Next() bool {
+	if it.idx+1 >= len(it.captures) {
+		return false
+	}
+
+	it.idx++
+	return true
+}
+
+func (it *captureIterator) Current() sitter.QueryCapture {
+	return it.captures[it.idx]
+}
+
+func (it *captureIterator) CurrentNode() SyntaxNode {
+	return WrapNode(it.doc, it.Current().Node)
+}
+
+func (it *captureIterator) AddIdx(n int) {
+	it.idx += n
+}
+
+func (it *captureIterator) Rewind() {
+	if len(it.checkpoints) == 0 {
+		return
+	}
+	lastIdx := it.checkpoints[0]
+	it.checkpoints = it.checkpoints[1:]
+	it.idx = lastIdx
+}
+
+func (it *captureIterator) Save() {
+	it.checkpoints = append([]int{it.idx}, it.checkpoints...)
+}
+
 type SymbolAnalyzer struct {
 	ContextData *ContextData
 	doc         *Document
 }
 
-func (an *SymbolAnalyzer) analyzeImport(symbolTree *SymbolTree, captures []sitter.QueryCapture) {
+func (an *SymbolAnalyzer) analyzeImport(symbolTree *SymbolTree, it *captureIterator) {
 	if an.ContextData.Analyzer == nil {
 		panic("Node is nil")
 	}
 
-	node := WrapNode(an.doc, captures[0].Node)
+	node := it.CurrentNode()
 	resolvedImport := an.ContextData.Analyzer.AnalyzeImport(ImportParams{
 		Node:       node,
 		CurrentDir: an.ContextData.WorkingPath,
@@ -41,43 +91,49 @@ func (an *SymbolAnalyzer) analyzeImport(symbolTree *SymbolTree, captures []sitte
 	})
 }
 
-func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitter.Query, captures []sitter.QueryCapture) {
-	nodes := map[string]SyntaxNode{}
+func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
+	pNodes := []map[string]SyntaxNode{}
 
-	for i, c := range captures[1:] {
+	for it.Next() {
+		c := it.Current()
 		tag := query.CaptureNameForId(c.Index)
-		if tag == "parameter" {
-			if i == 0 {
-				continue
-			} else {
-				returnType := an.ContextData.Analyzer.FallbackSymbol()
-				if retTypeNode, ok := nodes["return-type"]; ok {
-					returnType = an.ContextData.Analyzer.AnalyzeNode(retTypeNode)
-				}
+		if tag == "parameters" {
+			continue
+		}
 
-				symbolTree.Add(&VariableSymbol{
-					Name_:       nodes["name"].Text(),
-					Location_:   nodes["name"].Parent().Location(),
-					ReturnType_: returnType,
-				})
-			}
+		if tag == "parameter" {
+			// start a new set of parameter node
+			pNodes = append(pNodes, map[string]SyntaxNode{})
+			continue
 		} else if !strings.HasPrefix(tag, "parameter.") {
 			break
 		}
 
 		tag = strings.TrimPrefix(tag, "parameter.")
-		node := WrapNode(an.doc, c.Node)
-		if tag == "name" || tag == "return-type" {
-			nodes[tag] = node
+		node := it.CurrentNode()
+		pNodes[len(pNodes)-1][tag] = node
+	}
+
+	for _, nodes := range pNodes {
+		returnType := an.ContextData.Analyzer.FallbackSymbol()
+		if retTypeNode, ok := nodes["return-type"]; ok {
+			returnType = an.ContextData.Analyzer.AnalyzeNode(retTypeNode)
 		}
+
+		symbolTree.Add(&VariableSymbol{
+			Name_:       nodes["name"].Text(),
+			Location_:   nodes["name"].Parent().Location(),
+			ReturnType_: returnType,
+		})
 	}
 }
 
-func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter.Query, captures []sitter.QueryCapture) {
+func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
 	nodes := map[string]SyntaxNode{}
 	nameNodes := []SyntaxNode{}
 
-	for _, c := range captures[1:] {
+	for it.Next() {
+		c := it.Current()
 		tag := query.CaptureNameForId(c.Index)
 		if tag == "variable" {
 			continue
@@ -86,7 +142,7 @@ func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter
 		}
 
 		tag = strings.TrimPrefix(tag, "variable.")
-		node := WrapNode(an.doc, c.Node)
+		node := it.CurrentNode()
 		if tag == "name" {
 			nameNodes = append(nameNodes, node)
 		} else {
@@ -110,11 +166,12 @@ func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter
 	}
 }
 
-func (an *SymbolAnalyzer) analyzeAssignment(symbolTree *SymbolTree, query *sitter.Query, captures []sitter.QueryCapture) {
+func (an *SymbolAnalyzer) analyzeAssignment(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
 	nameNodes := []SyntaxNode{}
 	contentNodes := []SyntaxNode{}
 
-	for _, c := range captures[1:] {
+	for it.Next() {
+		c := it.Current()
 		tag := query.CaptureNameForId(c.Index)
 		if tag == "assignment" {
 			continue
@@ -123,7 +180,7 @@ func (an *SymbolAnalyzer) analyzeAssignment(symbolTree *SymbolTree, query *sitte
 		}
 
 		tag = strings.TrimPrefix(tag, "assignment.")
-		node := WrapNode(an.doc, c.Node)
+		node := it.CurrentNode()
 		if tag == "name" {
 			nameNodes = append(nameNodes, node)
 		} else if tag == "content" {
@@ -143,24 +200,25 @@ func (an *SymbolAnalyzer) analyzeAssignment(symbolTree *SymbolTree, query *sitte
 	}
 }
 
-func (an *SymbolAnalyzer) analyzeFunction(symbolTree *SymbolTree, pre string, query *sitter.Query, captures []sitter.QueryCapture) {
-	parent := WrapNode(an.doc, captures[0].Node)
+func (an *SymbolAnalyzer) analyzeFunction(symbolTree *SymbolTree, pre string, query *sitter.Query, it *captureIterator) {
+	parent := it.CurrentNode()
 	childTree := symbolTree.CreateChildFromNode(parent)
 	nodes := map[string]SyntaxNode{}
 	prefix := pre + "."
 
-	for i, c := range captures[1:] {
+	for it.Next() {
+		c := it.Current()
 		tag := query.CaptureNameForId(c.Index)
 		if !strings.HasPrefix(tag, prefix) {
 			if tag == "parameters" {
-				an.analyzeParameters(childTree, query, captures[i+1:])
+				an.analyzeParameters(childTree, query, it)
+				continue
 			} else {
 				break
 			}
 		}
-
 		tag = strings.TrimPrefix(tag, prefix)
-		node := WrapNode(an.doc, c.Node)
+		node := it.CurrentNode()
 
 		switch tag {
 		case "name":
@@ -176,27 +234,22 @@ func (an *SymbolAnalyzer) analyzeFunction(symbolTree *SymbolTree, pre string, qu
 	})
 }
 
-func (an *SymbolAnalyzer) analyzeClass(symbolTree *SymbolTree, query *sitter.Query, captures []sitter.QueryCapture) {
-	parent := WrapNode(an.doc, captures[0].Node)
+func (an *SymbolAnalyzer) analyzeClass(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
+	parent := it.CurrentNode()
 	nodes := map[string]SyntaxNode{}
 	var childTree *SymbolTree
 
-	for i, c := range captures[1:] {
+	for it.Next() {
+		c := it.Current()
 		tag := query.CaptureNameForId(c.Index)
 
 		if !strings.HasPrefix(tag, "class.") {
-			switch tag {
-			case "method":
-				an.analyzeFunction(childTree, "method", query, captures[i+1:])
-			case "variable":
-				an.analyzeVariables(childTree, query, captures[i+1:])
-			}
-
+			an.analyzeUnknown(childTree, query, it)
 			break
 		}
 
 		tag = strings.TrimPrefix(tag, "class.")
-		node := WrapNode(an.doc, c.Node)
+		node := it.CurrentNode()
 
 		switch tag {
 		case "name":
@@ -214,27 +267,41 @@ func (an *SymbolAnalyzer) analyzeClass(symbolTree *SymbolTree, query *sitter.Que
 	})
 }
 
-func (an *SymbolAnalyzer) analyzeBlock(symbolTree *SymbolTree, query *sitter.Query, captures []sitter.QueryCapture) {
+func (an *SymbolAnalyzer) analyzeBlock(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
 	nodes := map[string]SyntaxNode{}
-	for i, c := range captures[1:] {
+
+	for it.Next() {
+		c := it.Current()
 		tag := query.CaptureNameForId(c.Index)
 
 		if !strings.HasPrefix(tag, "block.") {
-			switch tag {
-			case "assignment":
-				an.analyzeAssignment(symbolTree, query, captures[i:])
-			case "variable":
-				an.analyzeVariables(symbolTree, query, captures[i:])
-			}
-
-			break
+			an.analyzeUnknown(symbolTree, query, it)
+			continue
 		}
 
 		tag = strings.TrimPrefix(tag, "block.")
-		node := WrapNode(an.doc, c.Node)
+		node := it.CurrentNode()
 		if tag == "content" {
 			nodes[tag] = node
 		}
+	}
+}
+
+func (an *SymbolAnalyzer) analyzeUnknown(nearest *SymbolTree, query *sitter.Query, it *captureIterator) {
+	tag := query.CaptureNameForId(it.Current().Index)
+	switch tag {
+	case "import":
+		an.analyzeImport(nearest, it)
+	case "class":
+		an.analyzeClass(nearest, query, it)
+	case "function", "method":
+		an.analyzeFunction(nearest, tag, query, it)
+	case "assignment":
+		an.analyzeAssignment(nearest, query, it)
+	case "block":
+		an.analyzeBlock(nearest, query, it)
+	case "variable":
+		an.analyzeVariables(nearest, query, it)
 	}
 }
 
@@ -250,23 +317,12 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode SyntaxN
 			return true
 		}
 
-		tag := ctx.Query.CaptureNameForId(ctx.Match.Captures[0].Index)
-		switch tag {
-		case "import":
-			an.analyzeImport(parent, ctx.Match.Captures)
-		case "class":
-			an.analyzeClass(parent, ctx.Query, ctx.Match.Captures)
-		case "function":
-			an.analyzeFunction(parent, "function", ctx.Query, ctx.Match.Captures)
-		case "assignment":
-			nearest := parent.GetNearestScopedTree(int(ctx.Match.Captures[0].Node.StartByte()))
-			an.analyzeAssignment(nearest, ctx.Query, ctx.Match.Captures)
-		case "variable":
-			an.analyzeVariables(parent, ctx.Query, ctx.Match.Captures)
-		case "block":
-			nearest := parent.GetNearestScopedTree(int(ctx.Match.Captures[0].Node.StartByte()))
-			an.analyzeBlock(nearest, ctx.Query, ctx.Match.Captures)
-		}
+		it := &captureIterator{doc: an.doc, captures: ctx.Match.Captures}
+		it.Reset()
+
+		nearest := parent.GetNearestScopedTree(int(it.Get(0).Node.StartByte()))
+		an.analyzeUnknown(nearest, ctx.Query, it)
+
 		return true
 	})
 }

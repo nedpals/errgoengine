@@ -11,6 +11,11 @@ type SymbolTree struct {
 }
 
 func (tree *SymbolTree) CreateChildFromNode(n SyntaxNode) *SymbolTree {
+	nearest := tree.GetNearestScopedTree(n.StartPosition().Index)
+	if nearest.StartPos.Eq(n.StartPosition()) && nearest.EndPos.Eq(n.EndPosition()) {
+		return nearest
+	}
+
 	return &SymbolTree{
 		Parent:       tree,
 		StartPos:     n.StartPosition(),

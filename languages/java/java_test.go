@@ -16,16 +16,27 @@ func TestJava(t *testing.T) {
 public class Test {
 	public static void main(String[] args) {
 		int a = 1;
+		double c = 0.0d;
+	}
+
+	public int add(int a, int b) {
+		return a + b;
 	}
 }
 			`,
 			Expected: `
-(tree [0,0 | 0]-[4,1 | 79]
-	(class Test [0,0 | 0]-[4,1 | 79]
-		(tree [0,18 | 18]-[4,1 | 79]
-			(function main [1,1 | 21]-[3,2 | 77]
-				(tree [1,1 | 21]-[3,2 | 77]
-					(variable int a [2,6 | 68]-[2,11 | 73]))))))
+(tree [0,0 | 0]-[9,1 | 150]
+	(class Test [0,0 | 0]-[9,1 | 150]
+		(tree [0,18 | 18]-[9,1 | 150]
+			(function main [1,1 | 21]-[4,2 | 96]
+				(tree [1,1 | 21]-[4,2 | 96]
+					(variable String[] args [1,25 | 45]-[1,38 | 58])
+					(variable int a [2,6 | 68]-[2,11 | 73])
+					(variable double c [3,9 | 84]-[3,17 | 92])))
+			(function add [6,1 | 99]-[8,2 | 148]
+				(tree [6,1 | 99]-[8,2 | 148]
+					(variable int a [6,16 | 114]-[6,21 | 119])
+					(variable int b [6,23 | 121]-[6,28 | 126]))))))
 			`,
 		},
 	}
