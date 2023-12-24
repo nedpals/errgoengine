@@ -19,12 +19,12 @@
         	name: (identifier) @variable.name
           value: (_)? @variable.content) @variable.declaration) @variable
     (method_declaration
-        type: (void_type) @method.return-type
+        type: (_) @method.return-type
         name: (identifier) @method.name
         parameters: (formal_parameters
         	(formal_parameter
             type: (_) @parameter.return-type
-            name: (identifier) @parameter.name)* @parameter) @parameters) @method
+            name: (identifier) @parameter.name)? @parameter) @parameters) @method
   ]) @class.body) @class
   
 (block
