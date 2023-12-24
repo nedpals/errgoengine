@@ -44,12 +44,19 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		elNode := n.ChildByFieldName("element")
 		elSym := an.AnalyzeNode(elNode)
 		return arrayIfy(elSym, len)
-	case "boolean_type":
-		return BuiltinTypes.BooleanSymbol
 	case "void_type":
 		return BuiltinTypes.VoidSymbol
-	case "integral_type":
-		return BuiltinTypes.Integral.IntSymbol
+	case "type_identifier", "boolean_type", "integral_type", "floating_point_type":
+		// check for builtin types first
+		builtinSym, found := builtinTypesStore.FindByName(n.Text())
+		if found {
+			return builtinSym
+		}
+		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
+		if sym == nil {
+			return lib.UnresolvedSymbol
+		}
+		return sym
 	// then expressions
 	case "null_literal":
 		return BuiltinTypes.NullSymbol
@@ -75,17 +82,6 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		return arrayIfy(typeSym, gotLen)
 	case "object_creation_expression":
 		return an.AnalyzeNode(n.ChildByFieldName("type"))
-	case "type_identifier":
-		// check for builtin types first
-		builtinSym, found := builtinTypesStore.FindByName(n.Text())
-		if found {
-			return builtinSym
-		}
-		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
-		if sym == nil {
-			return lib.UnresolvedSymbol
-		}
-		return sym
 	case "identifier":
 		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
 		if sym == nil {
