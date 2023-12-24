@@ -1,0 +1,29 @@
+template: "Java.IllegalExpressionStartError"
+---
+Main.java:4: error: illegal start of expression
+        int x = (int) + * 5;
+                        ^
+1 error
+===
+template: "Java.IllegalExpressionStartError"
+---
+# IllegalExpressionStartError
+This error occurs when the compiler encounters an expression that is not valid.
+```
+        // Attempting to use an illegal expression start
+        int x = (int) + * 5;
+                        ^
+        System.out.println(x);
+    }
+```
+## Steps to fix
+### Correct the expression
+Ensure a valid expression by fixing the incorrect use of operators.
+```diff
+    public static void main(String[] args) {
+        // Attempting to use an illegal expression start
+-         int x = (int) + * 5;
++         int x = (int) (5 * 5);
+        System.out.println(x);
+    }
+```
