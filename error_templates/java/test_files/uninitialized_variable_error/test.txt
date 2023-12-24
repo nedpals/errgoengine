@@ -34,8 +34,7 @@ Alternatively, you can assign a value to the variable before using it.
 ```diff
 public class UninitializedVariable {
     public static void main(String[] args) {
--         int number;
-+         int number;
+        int number;
 +         number = 0; // or any other valid value
 
         // Variable 'number' might not have been initialized

@@ -21,12 +21,11 @@ The error indicates that the compiler cannot find the method `displayArray(int[]
 ```
 ## Steps to fix
 ### Define the missing method.
-Add the missing method `displayArray` to the `Test` class
+Add the missing method `displayArray` to the `Test` class.
 ```diff
         int[] numbers = {1, 2, 3, 4, 5};
         displayArray(numbers);
--     }
-+     }
+    }
 +
 +     private static void displayArray(int[] a) {
 +         // Add code here

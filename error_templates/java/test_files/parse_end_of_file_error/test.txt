@@ -17,12 +17,11 @@ This error occurs when the compiler expects more code but encounters the end of 
 ```
 ## Steps to fix
 ### Complete the code
-Add the missing `}` in line 4
+Add the missing `}` in line 4.
 ```diff
     public static void main(String[] args) {
         System.out.println("This is a sample program.");
--     }
-+     }
+    }
 + }
 
 ```

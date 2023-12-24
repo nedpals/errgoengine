@@ -17,7 +17,7 @@ public class Right {
 ```
 ## Steps to fix
 ### 1. Rename your file
-Rename the file to "Right.java" to match the class
+Rename the file to "Right.java" to match the class.
 
 ### 2. Rename the public class
 The filename should match the name of the public class in the file. To resolve this, change the class name to match the filename.
