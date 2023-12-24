@@ -1,0 +1,27 @@
+template: "Java.NegativeArraySizeException"
+---
+Exception in thread "main" java.lang.NegativeArraySizeException: -5
+	at Main.main(Main.java:4)
+===
+template: "Java.NegativeArraySizeException"
+---
+# NegativeArraySizeException
+This error occurs when you try to create an array with a negative size.
+```
+        // Attempting to create an array with a negative size
+        int[] array = new int[-5];
+                              ^^
+        System.out.println(array.length);
+    }
+```
+## Steps to fix
+### Ensure a non-negative array size
+Make sure the array size is non-negative.
+```diff
+    public static void main(String[] args) {
+        // Attempting to create an array with a negative size
+-         int[] array = new int[-5];
++         int[] array = new int[5];
+        System.out.println(array.length);
+    }
+```
