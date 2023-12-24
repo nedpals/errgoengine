@@ -52,7 +52,11 @@ func treeSexprBuilder(tree *lib.SymbolTree, sb *strings.Builder, level int) {
 	sb.WriteString(fmt.Sprintf("tree %s-%s", tree.StartPos, tree.EndPos))
 	if len(tree.Symbols) > 0 {
 		sb.WriteByte('\n')
+		i := 0
 		for _, sym := range tree.Symbols {
+			if i != 0 && i < len(tree.Symbols) {
+				sb.WriteByte('\n')
+			}
 			sb.WriteString(strings.Repeat("\t", level+1))
 			sb.WriteByte('(')
 			sb.WriteString(sym.Kind().String())
@@ -67,6 +71,7 @@ func treeSexprBuilder(tree *lib.SymbolTree, sb *strings.Builder, level int) {
 			}
 
 			sb.WriteByte(')')
+			i++
 		}
 	}
 	sb.WriteByte(')')
