@@ -152,7 +152,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						}
 
 						// do not adjust position if the current fix is above the previous fix position
-						if fIdx-1 >= 0 && step.Fixes[fIdx-1].StartPosition.Line < fix.StartPosition.Line {
+						if fIdx-1 >= 0 && step.Fixes[fIdx-1].StartPosition.Line <= fix.StartPosition.Line {
 							changeset = changeset.Add(diffPosition)
 						}
 
