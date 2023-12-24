@@ -131,13 +131,7 @@ func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(QueryNodeCtx
 
 	for i := 0; ; i++ {
 		m, ok := queryCursor.NextMatch()
-		if !ok {
-			break
-		} else if len(m.Captures) == 0 {
-			continue
-		}
-
-		if !callback(QueryNodeCtx{m, q, queryCursor}) {
+		if !ok || !callback(QueryNodeCtx{m, q, queryCursor}) {
 			break
 		}
 	}
