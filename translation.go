@@ -3,6 +3,7 @@ package errgoengine
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 type GenExplainFn func(*ContextData, *ExplainGenerator)
@@ -49,7 +50,7 @@ func (gen *BugFixSuggestion) AddStep(content string, d ...any) *BugFixStep {
 		gen.Steps = []*BugFixStep{}
 	}
 
-	if !strings.HasSuffix(content, ".") {
+	if !strings.HasSuffix(content, ".") && (len(content) > 0 && !unicode.IsPunct(rune(content[len(content)-1]))) {
 		content += "."
 	}
 
