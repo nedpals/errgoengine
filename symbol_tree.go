@@ -25,6 +25,22 @@ func (tree *SymbolTree) CreateChildFromNode(n SyntaxNode) *SymbolTree {
 	}
 }
 
+func (tree *SymbolTree) FindSymbolsByClause(findFn func(sym Symbol) bool) []Symbol {
+	symbols := []Symbol{}
+
+	for _, sym := range tree.Symbols {
+		if findFn(sym) {
+			symbols = append(symbols, sym)
+		}
+	}
+
+	if tree.Parent != nil {
+		symbols = append(symbols, tree.Parent.FindSymbolsByClause(findFn)...)
+	}
+
+	return symbols
+}
+
 func (tree *SymbolTree) Find(name string) Symbol {
 	for _, sym := range tree.Symbols {
 		if sym.Name() == name {

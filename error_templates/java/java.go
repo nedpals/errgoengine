@@ -70,6 +70,8 @@ func getDefaultValueForType(sym lib.Symbol) string {
 		return "0L"
 	case java.BuiltinTypes.Integral.ShortSymbol:
 		return "0"
+	case java.BuiltinTypes.FloatingPoint.DoubleSymbol:
+		return "0.0"
 	default:
 		return "null"
 	}

@@ -24,8 +24,9 @@ public class MissingReturn {
     public int addNumbers(int a, int b) {
 -         // Missing return statement
 +         // Missing return statement
-+         return a;
++         return b;
     }
+
 ```
 This ensures that the method returns the sum of the two input numbers.
 

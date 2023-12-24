@@ -33,7 +33,6 @@ var MissingReturnError = lib.ErrorTemplate{
 			}
 			return true
 		})
-		fmt.Println(mCtx.NearestMethod.Text())
 		m.Context = mCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
@@ -52,12 +51,29 @@ var MissingReturnError = lib.ErrorTemplate{
 				lastEndPosInBlock = bodyNode.LastNamedChild().EndPosition()
 			}
 
+			expectedTypeNode := ctx.NearestMethod.ChildByFieldName("type")
+			expectedTypeSym := cd.Analyzer.AnalyzeNode(expectedTypeNode)
+			nearestScope := cd.InitOrGetSymbolTree(cd.MainDocumentPath()).GetNearestScopedTree(lastEndPosInBlock.Index)
+			symbolsForReturn := nearestScope.FindSymbolsByClause(func(sym lib.Symbol) bool {
+				if sym, ok := sym.(lib.IReturnableSymbol); ok {
+					return sym.ReturnType() == expectedTypeSym
+				}
+				return false
+			})
+
+			// nearest sym will be at the last
+			valueToReturn := getDefaultValueForType(expectedTypeSym)
+			if len(symbolsForReturn) != 0 {
+				nearestSym := symbolsForReturn[len(symbolsForReturn)-1]
+				valueToReturn = nearestSym.Name()
+			}
+
 			s.AddStep(
-				"Since the `%s` method is declared to return an `%s`, you need to provide a return statement with the result",
+				"Since the `%s` method is declared to return an `%s`, you need to provide a return statement with the result.",
 				ctx.NearestMethod.ChildByFieldName("name").Text(),
 				ctx.NearestMethod.ChildByFieldName("type").Text(),
 			).AddFix(lib.FixSuggestion{
-				NewText:       "\n" + cd.MainError.Document.LineAt(lastStartPosInBlock.Line)[:lastStartPosInBlock.Column] + fmt.Sprintf("return %s;", ctx.NearestMethod.ChildByFieldName("type").Text()),
+				NewText:       "\n" + cd.MainError.Document.LineAt(lastStartPosInBlock.Line)[:lastStartPosInBlock.Column] + fmt.Sprintf("return %s;", valueToReturn),
 				StartPosition: lastEndPosInBlock,
 				EndPosition:   lastEndPosInBlock,
 				Description:   "This ensures that the method returns the sum of the two input numbers.",
