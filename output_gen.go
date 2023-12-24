@@ -145,12 +145,18 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					origAfterLine := step.Fixes[0].EndPosition.Line
 
 					for fIdx, fix := range step.Fixes {
-						diffPosition = diffPosition.addUnsafe(editedDoc.Apply(Changeset{
+						changeset := Changeset{
 							NewText:  fix.NewText,
 							StartPos: fix.StartPosition,
 							EndPos:   fix.EndPosition,
-						}.Add(diffPosition)))
+						}
 
+						// do not adjust position if the current fix is above the previous fix position
+						if fIdx-1 >= 0 && step.Fixes[fIdx-1].StartPosition.Line < fix.StartPosition.Line {
+							changeset = changeset.Add(diffPosition)
+						}
+
+						diffPosition = diffPosition.addUnsafe(editedDoc.Apply(changeset))
 						origStartLine = min(origStartLine, fix.StartPosition.Line)
 						origAfterLine = max(origAfterLine, fix.EndPosition.Line)
 
@@ -183,17 +189,32 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						gen.writeLines(editedDoc.LinesAt(origStartLine+deduct, origStartLine-1)...)
 					}
 
+					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
 					original := editedDoc.LinesAt(origStartLine, origAfterLine)
-					for _, origLine := range original {
-						gen.write("- ")
+					for i, origLine := range original {
+						if i >= len(modified) || modified[i] != origLine {
+							gen.write("- ")
+						}
 						gen.writeln(origLine)
 					}
 
 					// show this only if the total is not negative
 					if startLine >= origStartLine && afterLine >= origAfterLine {
+						// TODO: redundant
 						modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
+						// TODO: merge with previous `original` variable
+						originalLines := doc.LinesAt(origStartLine, min(origAfterLine+diffPosition.Line, doc.TotalLines()))
 						for i, modifiedLine := range modified {
 							if i == 0 && len(modified) == 1 && len(modifiedLine) == 0 {
+								continue
+							}
+							// skip marking as "addition" if the lines are the same
+							if i < len(originalLines) && modifiedLine == originalLines[i] {
+								// write only if the line is not the last line
+								if startLine+i < origAfterLine {
+									gen.write(modifiedLine)
+									gen._break()
+								}
 								continue
 							}
 							gen.write("+")
