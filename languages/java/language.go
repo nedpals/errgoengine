@@ -35,7 +35,15 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 	// types first
 	case "array_type":
 		// TODO: types
-		return BuiltinTypes.VoidSymbol
+		dimNode := n.ChildByFieldName("dimensions")
+		len := 0
+		if dimNode.NamedChildCount() != 0 {
+			len, _ = fmt.Sscanf(dimNode.FirstNamedChild().Text(), "%d", &len)
+		}
+
+		elNode := n.ChildByFieldName("element")
+		elSym := an.AnalyzeNode(elNode)
+		return arrayIfy(elSym, len)
 	case "boolean_type":
 		return BuiltinTypes.BooleanSymbol
 	case "void_type":
@@ -87,7 +95,7 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 	case "array_access":
 		sym := an.AnalyzeNode(n.ChildByFieldName("array"))
 		if aSym, ok := sym.(ArraySymbol); ok {
-			return aSym.ValueSymbol
+			return aSym.ItemSymbol
 		} else {
 			return BuiltinTypes.VoidSymbol
 		}

@@ -31,12 +31,15 @@ func (store *javaBuiltinTypeStore) FindByName(name string) (lib.Symbol, bool) {
 var builtinTypesStore = &javaBuiltinTypeStore{}
 
 type ArraySymbol struct {
-	ValueSymbol lib.Symbol
-	Length      int
+	ItemSymbol lib.Symbol
+	Length     int
 }
 
 func (sym ArraySymbol) Name() string {
-	return fmt.Sprintf("[%d]%s", sym.Length, sym.ValueSymbol.Name())
+	if sym.IsFixed() {
+		return fmt.Sprintf("%s[%d]", sym.ItemSymbol.Name(), sym.Length)
+	}
+	return fmt.Sprintf("%s[]", sym.ItemSymbol.Name())
 }
 
 func (sym ArraySymbol) Kind() lib.SymbolKind {
@@ -44,7 +47,11 @@ func (sym ArraySymbol) Kind() lib.SymbolKind {
 }
 
 func (sym ArraySymbol) Location() lib.Location {
-	return sym.ValueSymbol.Location()
+	return sym.ItemSymbol.Location()
+}
+
+func (sym ArraySymbol) IsFixed() bool {
+	return sym.Length != -1
 }
 
 var BuiltinTypes = struct {
@@ -91,8 +98,11 @@ var BuiltinTypes = struct {
 }
 
 func arrayIfy(typ lib.Symbol, len int) lib.Symbol {
+	if len == 0 {
+		len = -1
+	}
 	return ArraySymbol{
-		ValueSymbol: typ,
-		Length:      len,
+		ItemSymbol: typ,
+		Length:     len,
 	}
 }
