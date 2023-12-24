@@ -1,7 +1,6 @@
 package java
 
 import (
-	"fmt"
 	"strings"
 
 	lib "github.com/nedpals/errgoengine"
@@ -32,7 +31,6 @@ var IllegalExpressionStartError = lib.ErrorTemplate{
 		if parent.Type() == "unary_expression" {
 			firstChild := parent.Child(0)
 			operand := parent.ChildByFieldName("operand")
-			fmt.Println(firstChild.Text())
 
 			gen.Add("Correct the expression", func(s *lib.BugFixSuggestion) {
 				s.AddStep("Ensure a valid expression by fixing the incorrect use of operators").
