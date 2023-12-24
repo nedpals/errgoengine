@@ -1,0 +1,29 @@
+template: "Java.UnclosedStringLiteralError"
+---
+Main.java:4: error: unclosed string literal
+        String message = "Hello, World!;
+                         ^
+1 error
+===
+template: "Java.UnclosedStringLiteralError"
+---
+# UnclosedStringLiteralError
+This error occurs when there is an unclosed string literal in the code.
+```
+        // Unclosed string literal
+        String message = "Hello, World!;
+                         ^^^^^^^^^^^^^^^
+        System.out.println(message);
+    }
+```
+## Steps to fix
+### Close the string literal
+Ensure that the string literal is properly closed with a double-quote.
+```diff
+    public static void main(String[] args) {
+        // Unclosed string literal
+-         String message = "Hello, World!;
++         String message = "Hello, World!";
+        System.out.println(message);
+    }
+```

@@ -32,6 +32,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, AlreadyDefinedError)
 	errorTemplates.MustAdd(java.Language, PrivateAccessError)
 	errorTemplates.MustAdd(java.Language, IllegalExpressionStartError)
+	errorTemplates.MustAdd(java.Language, UnclosedStringLiteralError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {
