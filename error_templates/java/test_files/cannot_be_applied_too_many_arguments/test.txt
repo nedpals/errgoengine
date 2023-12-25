@@ -1,0 +1,33 @@
+name: "TooManyArguments"
+template: "Java.CannotBeAppliedError"
+---
+CannotBeApplied.java:6: error: method charAt in class String cannot be applied to given types;
+        char firstChar = text.charAt(0, 1);
+                             ^
+  required: int
+  found:    int,int
+  reason: actual and formal argument lists differ in length
+1 error
+===
+template: "Java.CannotBeAppliedError"
+---
+# CannotBeAppliedError
+This error occurs when there is an attempt to apply a method with an incorrect number of arguments.
+```
+        // Method 'charAt' cannot be applied to String with arguments
+        char firstChar = text.charAt(0, 1);
+                                        ^
+    }
+}
+```
+## Steps to fix
+### Use the correct number of arguments
+Modify the `charAt` method call to use only one argument.
+```diff
+
+        // Method 'charAt' cannot be applied to String with arguments
+-         char firstChar = text.charAt(0, 1);
++         char firstChar = text.charAt(0);
+    }
+}
+```
