@@ -33,6 +33,8 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, PrivateAccessError)
 	errorTemplates.MustAdd(java.Language, IllegalExpressionStartError)
 	errorTemplates.MustAdd(java.Language, UnclosedStringLiteralError)
+	errorTemplates.MustAdd(java.Language, CannotBeAppliedError)
+	errorTemplates.MustAdd(java.Language, BracketMismatchError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {
@@ -77,5 +79,40 @@ func getDefaultValueForType(sym lib.Symbol) string {
 		return "0.0"
 	default:
 		return "null"
+	}
+}
+
+func symbolToValueNodeType(sym lib.Symbol) []string {
+	switch sym {
+	case java.BuiltinTypes.Integral.IntSymbol:
+		return []string{"decimal_integer_literal"}
+	case java.BuiltinTypes.FloatingPoint.DoubleSymbol:
+		return []string{"decimal_floating_point_literal"}
+	case java.BuiltinTypes.BooleanSymbol:
+		return []string{"true", "false"}
+	case java.BuiltinTypes.Integral.CharSymbol:
+		return []string{"character_literal"}
+	case java.BuiltinTypes.StringSymbol:
+		return []string{"string_literal"}
+	case java.BuiltinTypes.VoidSymbol, java.BuiltinTypes.NullSymbol:
+		return []string{"null_literal"}
+	default:
+		return []string{}
+	}
+}
+
+func castValueNode(node lib.SyntaxNode, targetSym lib.Symbol) string {
+	switch targetSym {
+	case java.BuiltinTypes.Integral.IntSymbol:
+		switch node.Type() {
+		case "character_literal", "decimal_floating_point_literal":
+			return fmt.Sprintf("(int) '%s'", node.Text())
+		case "string_literal":
+			return fmt.Sprintf("Integer.parseInt(%s)", node.Text())
+		default:
+			return node.Text()
+		}
+	default:
+		return node.Text()
 	}
 }

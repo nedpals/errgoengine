@@ -10,4 +10,23 @@ CannotBeApplied.java:3: error: method addValues in class CannotBeApplied cannot 
 ===
 template: "Java.CannotBeAppliedError"
 ---
-aa
+# CannotBeAppliedError
+This error occurs when there is an attempt to apply a method with arguments that do not match the method signature.
+```
+    public static void main(String[] args) {
+        int result = addValues("5", 10); // Attempting to add a string and an integer
+                               ^^^
+    }
+    
+```
+## Steps to fix
+### Use the correct argument types
+Provide the correct argument types when calling the `addValues` method.
+```diff
+public class CannotBeApplied {
+    public static void main(String[] args) {
+-         int result = addValues("5", 10); // Attempting to add a string and an integer
++         int result = addValues(Integer.parseInt("5"), 10); // Attempting to add a string and an integer
+    }
+    
+```
