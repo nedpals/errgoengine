@@ -30,6 +30,11 @@ func (an *javaAnalyzer) FallbackSymbol() lib.Symbol {
 	return BuiltinTypes.VoidSymbol
 }
 
+func (an *javaAnalyzer) FindSymbol(name string) lib.Symbol {
+	sym, _ := builtinTypesStore.FindByName(name)
+	return sym
+}
+
 func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 	switch n.Type() {
 	// types first
@@ -52,7 +57,7 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		if found {
 			return builtinSym
 		}
-		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
+		sym := an.ContextData.FindSymbol(n.Text(), int(n.StartByte()))
 		if sym == nil {
 			return lib.UnresolvedSymbol
 		}
@@ -83,7 +88,7 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 	case "object_creation_expression":
 		return an.AnalyzeNode(n.ChildByFieldName("type"))
 	case "identifier":
-		sym := an.FindSymbol(n.Text(), int(n.StartByte()))
+		sym := an.ContextData.FindSymbol(n.Text(), int(n.StartByte()))
 		if sym == nil {
 			return BuiltinTypes.NullSymbol
 		}

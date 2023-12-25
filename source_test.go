@@ -33,6 +33,10 @@ func (an *testAnalyzer) FallbackSymbol() Symbol {
 	return Builtin("any")
 }
 
+func (an *testAnalyzer) FindSymbol(name string) Symbol {
+	return nil
+}
+
 func (an *testAnalyzer) AnalyzeNode(n SyntaxNode) Symbol {
 	// TODO:
 	return Builtin("void")

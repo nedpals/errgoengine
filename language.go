@@ -15,6 +15,7 @@ type NodeValueAnalyzer interface {
 
 type LanguageAnalyzer interface {
 	FallbackSymbol() Symbol
+	FindSymbol(name string) Symbol
 	AnalyzeNode(SyntaxNode) Symbol
 	AnalyzeImport(ImportParams) ResolvedImport
 }

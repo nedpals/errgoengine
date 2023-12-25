@@ -30,6 +30,11 @@ func (an *pyAnalyzer) FallbackSymbol() lib.Symbol {
 	return lib.Builtin("any")
 }
 
+func (an *pyAnalyzer) FindSymbol(name string) lib.Symbol {
+	// TODO:
+	return nil
+}
+
 func (an *pyAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 	// TODO:
 	return lib.Builtin("void")

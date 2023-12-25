@@ -39,7 +39,11 @@ func (data *ContextData) MainDocumentPath() string {
 
 func (data *ContextData) FindSymbol(name string, pos int) Symbol {
 	path := data.MainDocumentPath()
-	return data.Store.FindSymbol(path, name, pos)
+	sym := data.Store.FindSymbol(path, name, pos)
+	if sym == nil {
+		return data.Analyzer.FindSymbol(name)
+	}
+	return sym
 }
 
 func (data *ContextData) AddVariable(name string, value string) {

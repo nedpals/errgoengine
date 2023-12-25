@@ -13,6 +13,8 @@ func (TestAnalyzer) FallbackSymbol() lib.Symbol {
 	return nil
 }
 
+func (TestAnalyzer) FindSymbol(string) lib.Symbol { return nil }
+
 func (TestAnalyzer) AnalyzeNode(lib.SyntaxNode) lib.Symbol {
 	return nil
 }
