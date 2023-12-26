@@ -10,14 +10,14 @@ func (kind SymbolKind) String() string {
 		return "builtin"
 	case SymbolKindClass:
 		return "class"
+	case SymbolKindType:
+		return "type"
 	case SymbolKindFunction:
 		return "function"
 	case SymbolKindVariable:
 		return "variable"
 	case SymbolKindAssignment:
 		return "assignment"
-	case SymbolKindArray:
-		return "array"
 	case SymbolKindImport:
 		return "import"
 	default:
@@ -38,7 +38,7 @@ func NewSymbolKindFromString(str string) SymbolKind {
 	case "assignment":
 		return SymbolKindAssignment
 	case "array":
-		return SymbolKindArray
+		return SymbolKindType
 	case "import":
 		return SymbolKindImport
 	default:
@@ -54,7 +54,7 @@ const (
 	SymbolKindFunction   SymbolKind = iota
 	SymbolKindVariable   SymbolKind = iota
 	SymbolKindAssignment SymbolKind = iota
-	SymbolKindArray      SymbolKind = iota
+	SymbolKindType       SymbolKind = iota
 	SymbolKindImport     SymbolKind = iota
 )
 

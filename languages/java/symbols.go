@@ -43,7 +43,7 @@ func (sym ArraySymbol) Name() string {
 }
 
 func (sym ArraySymbol) Kind() lib.SymbolKind {
-	return lib.SymbolKindArray
+	return lib.SymbolKindType
 }
 
 func (sym ArraySymbol) Location() lib.Location {
