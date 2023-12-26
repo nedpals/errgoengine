@@ -241,3 +241,8 @@ var UnresolvedSymbol Symbol = unresolvedSymbol{}
 // 	// TODO:
 // 	return nil
 // }
+
+// Collection types
+type ICollectionTypeSymbol interface {
+	IsFixed() bool
+}

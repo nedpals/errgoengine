@@ -8,4 +8,19 @@ NameError: name 'test' is not defined
 ===
 template: "Python.NameError"
 ---
-Your program tried to access the 'test' variable which was not found on your program.
+# NameError
+This error occurs when trying to use a variable (`test`) or name that has not been defined in the current scope.
+```
+print(test)
+      ^^^^
+
+```
+## Steps to fix
+### Define the variable before using it
+Make sure to define the variable `test` before using it.
+```diff
+- print(test)
++ test = "Hello!"
++ print(test)
+
+```
