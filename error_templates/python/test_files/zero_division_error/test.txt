@@ -8,4 +8,18 @@ ZeroDivisionError: division by zero
 ===
 template: "Python.ZeroDivisionError"
 ---
-The number has been divided by zero
+# ZeroDivisionError
+This error occurs when there is an attempt to divide a number by zero.
+```
+print(1 / 0)
+          ^
+
+```
+## Steps to fix
+### Avoid division by zero
+Ensure that the denominator in a division operation is not zero.
+```diff
+- print(1 / 0)
++ print(1 / 2)
+
+```
