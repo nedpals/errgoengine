@@ -7,4 +7,21 @@ IndentationError: unindent does not match any outer indentation level
 ===
 template: "Python.IndentationError"
 ---
-The code is not indented properly
+# IndentationError
+This error occurs when there is a mismatch in the indentation levels in the code.
+```
+    print("Hello, world!")
+  print("This line is indented with two spaces instead of four.")
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+```
+## Steps to fix
+### Correct the indentation
+Ensure consistent indentation by using the correct spacing for each level of indentation.
+```diff
+def my_function():
+    print("Hello, world!")
+-   print("This line is indented with two spaces instead of four.")
++     print("This line is indented with two spaces instead of four.")
+
+```

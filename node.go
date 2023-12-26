@@ -49,6 +49,11 @@ func (n SyntaxNode) PrevSibling() SyntaxNode {
 	return WrapNode(n.Doc, cNode)
 }
 
+func (n SyntaxNode) PrevNamedSibling() SyntaxNode {
+	cNode := n.Node.PrevNamedSibling()
+	return WrapNode(n.Doc, cNode)
+}
+
 func (n SyntaxNode) NamedDescendantForPointRange(posRange Location) SyntaxNode {
 	sRange := posRange.Range()
 	cNode := n.Node.NamedDescendantForPointRange(sRange.StartPoint, sRange.EndPoint)
