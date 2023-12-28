@@ -1,0 +1,29 @@
+template: "Java.InvalidMethodDeclarationError"
+---
+InvalidMethodExample.java:8: error: invalid method declaration; return type required
+    addNumbers(int a, int b) {
+    ^
+1 error
+===
+template: "Java.InvalidMethodDeclarationError"
+---
+# InvalidMethodDeclarationError
+This error occurs when there is an invalid method declaration, and a return type is missing.
+```
+    // Invalid method declaration with missing return type
+    addNumbers(int a, int b) {
+    ^^^^^^^^^^
+        return a + b;
+    }
+```
+## Steps to fix
+### Add the return type to the method declaration
+Specify the return type of the `addNumbers` method.
+```diff
+
+    // Invalid method declaration with missing return type
+-     addNumbers(int a, int b) {
++     int addNumbers(int a, int b) {
+        return a + b;
+    }
+```
