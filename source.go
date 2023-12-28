@@ -35,10 +35,12 @@ func (pos Position) addUnsafe(pos2 Position) Position {
 	}
 }
 
+func (a Position) Eq2(b Position) bool {
+	return a.Column == b.Column && a.Line == b.Line
+}
+
 func (a Position) Eq(b Position) bool {
-	return a.Column == b.Column &&
-		a.Line == b.Line &&
-		a.Index == b.Index
+	return a.Eq2(b) && a.Index == b.Index
 }
 
 func (pos Position) String() string {
@@ -240,12 +242,16 @@ func applyOperation(op string, doc *EditableDocument, changeset Changeset) Posit
 	case "delete":
 		return applyDeleteOperation(doc, changeset)
 	case "replace":
-		deleteDiff := applyDeleteOperation(doc, Changeset{
-			NewText:  "",
-			Id:       changeset.Id,
-			StartPos: changeset.StartPos,
-			EndPos:   changeset.EndPos,
-		})
+		deleteDiff := Position{}
+
+		if !changeset.StartPos.Eq2(changeset.EndPos) {
+			deleteDiff = applyDeleteOperation(doc, Changeset{
+				NewText:  "",
+				Id:       changeset.Id,
+				StartPos: changeset.StartPos,
+				EndPos:   changeset.EndPos,
+			})
+		}
 
 		insertDiff := applyInsertOperation(doc, Changeset{
 			NewText:  changeset.NewText,
