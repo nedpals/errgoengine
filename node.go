@@ -8,11 +8,16 @@ import (
 
 type SyntaxNode struct {
 	*sitter.Node
-	Doc  *Document
-	text string
+	isTextCached bool
+	Doc          *Document
+	text         string
 }
 
 func (n SyntaxNode) Text() string {
+	if !n.isTextCached {
+		n.isTextCached = true
+		n.text = n.Content([]byte(n.Doc.Contents))
+	}
 	return n.text
 }
 
@@ -92,9 +97,10 @@ func (n SyntaxNode) RawNode() *sitter.Node {
 
 func WrapNode(doc *Document, n *sitter.Node) SyntaxNode {
 	return SyntaxNode{
-		text: n.Content([]byte(doc.Contents)),
-		Doc:  doc,
-		Node: n,
+		isTextCached: false,
+		text:         "",
+		Doc:          doc,
+		Node:         n,
 	}
 }
 
