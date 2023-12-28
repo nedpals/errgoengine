@@ -19,7 +19,7 @@ var AlreadyDefinedError = lib.ErrorTemplate{
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		aCtx := alreadyDefinedErrorCtx{}
-		rootNode := lib.WrapNode(m.Document, m.Document.Tree.RootNode())
+		rootNode := m.Document.RootNode()
 		rawQuery := parseSymbolSignature(cd.Variables["symbolSignature"])
 		pos := m.ErrorNode.StartPos
 

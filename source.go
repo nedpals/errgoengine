@@ -476,6 +476,10 @@ type Document struct {
 	Tree        *sitter.Tree
 }
 
+func (doc *Document) RootNode() SyntaxNode {
+	return WrapNode(doc, doc.Tree.RootNode())
+}
+
 func (doc *Document) Editable() *EditableDocument {
 	return NewEditableDocument(doc)
 }

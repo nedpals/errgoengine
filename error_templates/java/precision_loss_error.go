@@ -59,13 +59,10 @@ var PrecisionLossError = lib.ErrorTemplate{
 				return
 			}
 
-			involvedVariablePos := involvedVariable.Location().Range()
-			node := cd.MainError.Document.Tree.RootNode().NamedDescendantForPointRange(
-				involvedVariablePos.StartPoint,
-				involvedVariablePos.EndPoint,
-			)
+			node := cd.MainError.Document.RootNode().
+				NamedDescendantForPointRange(involvedVariable.Location())
 
-			involvedVariableValueNode := lib.WrapNode(cd.MainError.Document, node.ChildByFieldName("value"))
+			involvedVariableValueNode := node.ChildByFieldName("value")
 
 			s.AddStep(
 				"Alternatively, you can use the 'f' suffix to specify that the literal is of type %s.",

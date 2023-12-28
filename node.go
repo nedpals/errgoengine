@@ -14,7 +14,7 @@ type SyntaxNode struct {
 }
 
 func (n SyntaxNode) Text() string {
-	if !n.isTextCached {
+	if !n.isTextCached && !n.IsNull() {
 		n.isTextCached = true
 		n.text = n.Content([]byte(n.Doc.Contents))
 	}

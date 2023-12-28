@@ -30,7 +30,7 @@ var UninitializedVariableError = lib.ErrorTemplate{
 		})
 
 		// get symbol and declaration node
-		rootTree := lib.WrapNode(cd.MainError.Document, cd.MainError.Document.Tree.RootNode())
+		rootTree := cd.MainError.Document.RootNode()
 		nearestTree := cd.InitOrGetSymbolTree(cd.MainDocumentPath()).GetNearestScopedTree(cd.MainError.Nearest.StartPosition().Index)
 		declaredVariableSym := nearestTree.GetSymbolByNode(cd.MainError.Nearest)
 		declNode := rootTree.NamedDescendantForPointRange(declaredVariableSym.Location())

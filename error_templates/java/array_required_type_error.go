@@ -43,12 +43,12 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 
 		gen.Add("Convert variable to an array", func(s *lib.BugFixSuggestion) {
 			declSym := tree.GetSymbolByNode(getIdentifierNode(varNode))
-			declNode := lib.WrapNode(
-				cd.MainError.Document,
-				cd.MainError.Document.Tree.RootNode().NamedDescendantForPointRange(
-					declSym.Location().Point(),
-					declSym.Location().Point(),
-				)).Parent()
+			declNode := cd.MainError.Document.RootNode().NamedDescendantForPointRange(
+				lib.Location{
+					StartPos: declSym.Location().StartPos,
+					EndPos:   declSym.Location().StartPos,
+				},
+			).Parent()
 
 			valueNode := declNode.ChildByFieldName("value")
 			declNode = declNode.Parent()

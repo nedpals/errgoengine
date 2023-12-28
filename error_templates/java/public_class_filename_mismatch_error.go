@@ -30,7 +30,7 @@ var PublicClassFilenameMismatchError = lib.ErrorTemplate{
 		}
 
 		query := fmt.Sprintf(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s"))`, className)
-		rootNode := lib.WrapNode(m.Nearest.Doc, m.Nearest.Doc.Tree.RootNode())
+		rootNode := m.Nearest.Doc.RootNode()
 
 		lib.QueryNode(rootNode, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
 			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))

@@ -18,7 +18,7 @@ var MissingReturnError = lib.ErrorTemplate{
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		// get nearest method declaration
 		mCtx := missingReturnErrorCtx{}
-		rootNode := lib.WrapNode(m.Document, m.Document.Tree.RootNode())
+		rootNode := m.Document.RootNode()
 		pos := m.ErrorNode.StartPos
 		lib.QueryNode(rootNode, strings.NewReader("(method_declaration) @method"), func(ctx lib.QueryNodeCtx) bool {
 			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))

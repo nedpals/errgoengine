@@ -18,7 +18,7 @@ var PrivateAccessError = lib.ErrorTemplate{
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		pCtx := privateAccessErrorCtx{}
 		className := cd.Variables["class"]
-		rootNode := lib.WrapNode(m.Nearest.Doc, m.Nearest.Doc.Tree.RootNode())
+		rootNode := m.Nearest.Doc.RootNode()
 
 		// locate the right node first
 		query := fmt.Sprintf(`((field_access (identifier) . (identifier) @field-name) @field (#eq? @field-name "%s"))`, cd.Variables["field"])
@@ -105,17 +105,15 @@ var PrivateAccessError = lib.ErrorTemplate{
 			targetLoc := lib.Location{}
 			if gotSym := classDeclScope.Find(cd.Variables["field"]); gotSym != nil {
 				// get the node within that position
-				rawDescendantNode := cd.MainError.Document.Tree.RootNode().NamedDescendantForPointRange(
-					gotSym.Location().Range().StartPoint,
-					gotSym.Location().Range().EndPoint,
+				rawDescendantNode := cd.MainError.Document.RootNode().NamedDescendantForPointRange(
+					gotSym.Location(),
 				)
 
 				if rawDescendantNode.Type() == "variable_declarator" {
 					rawDescendantNode = rawDescendantNode.Parent()
 				}
 
-				rawFirstChild := rawDescendantNode.NamedChild(0)
-				if firstChild := lib.WrapNode(cd.MainError.Document, rawFirstChild); firstChild.Type() == "modifiers" {
+				if firstChild := rawDescendantNode.NamedChild(0); firstChild.Type() == "modifiers" {
 					targetLoc = firstChild.Location()
 				} else {
 					targetLoc.StartPos = firstChild.StartPosition()
