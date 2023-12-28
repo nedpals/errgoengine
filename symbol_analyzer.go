@@ -66,6 +66,10 @@ func (it *captureIterator) Rewind() {
 	it.idx = lastIdx
 }
 
+func (it *captureIterator) GoBack() {
+	it.idx--
+}
+
 func (it *captureIterator) Save() {
 	it.checkpoints = append([]int{it.idx}, it.checkpoints...)
 }
@@ -120,6 +124,7 @@ func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitte
 			pNodes = append(pNodes, map[string]SyntaxNode{})
 			continue
 		} else if !strings.HasPrefix(tag, "parameter.") {
+			it.GoBack()
 			break
 		}
 
@@ -220,6 +225,7 @@ func (an *SymbolAnalyzer) analyzeFunction(pre string, symbolTree *SymbolTree, qu
 	childTree := symbolTree.CreateChildFromNode(parent)
 	nodes := map[string]SyntaxNode{}
 	prefix := pre + "."
+	returnType := an.ContextData.Analyzer.FallbackSymbol()
 
 	for it.Next() {
 		c := it.Current()
@@ -227,6 +233,9 @@ func (an *SymbolAnalyzer) analyzeFunction(pre string, symbolTree *SymbolTree, qu
 		if !strings.HasPrefix(tag, prefix) {
 			if tag == "parameters" {
 				an.analyzeParameters(childTree, query, it)
+				continue
+			} else if tag == "block" {
+				returnType = an.analyzeBlock(childTree, query, it)
 				continue
 			} else {
 				break
@@ -242,10 +251,12 @@ func (an *SymbolAnalyzer) analyzeFunction(pre string, symbolTree *SymbolTree, qu
 	}
 
 	symbolTree.Add(&TopLevelSymbol{
-		Name_:     nodes["name"].Text(),
-		Kind_:     SymbolKindFunction,
-		Location_: parent.Location(),
-		Children_: childTree,
+		Name_:        nodes["name"].Text(),
+		Kind_:        SymbolKindFunction,
+		Location_:    parent.Location(),
+		Children_:    childTree,
+		IsReturnable: true,
+		ReturnType_:  returnType,
 	})
 }
 
@@ -282,7 +293,7 @@ func (an *SymbolAnalyzer) analyzeClass(symbolTree *SymbolTree, query *sitter.Que
 	})
 }
 
-func (an *SymbolAnalyzer) analyzeBlock(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
+func (an *SymbolAnalyzer) analyzeBlock(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) Symbol {
 	nodes := map[string]SyntaxNode{}
 
 	for it.Next() {
@@ -300,6 +311,13 @@ func (an *SymbolAnalyzer) analyzeBlock(symbolTree *SymbolTree, query *sitter.Que
 			nodes[tag] = node
 		}
 	}
+
+	if contentNode, ok := nodes["content"]; ok {
+		return an.ContextData.Analyzer.AnalyzeNode(
+			WithSymbolTree(symbolTree), contentNode)
+	}
+
+	return an.ContextData.Analyzer.FallbackSymbol()
 }
 
 func (an *SymbolAnalyzer) analyzeUnknown(nearest *SymbolTree, query *sitter.Query, it *captureIterator) {

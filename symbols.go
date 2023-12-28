@@ -148,10 +148,12 @@ func (sym VariableSymbol) ReturnType() Symbol {
 }
 
 type TopLevelSymbol struct {
-	Name_     string
-	Kind_     SymbolKind
-	Location_ Location
-	Children_ *SymbolTree
+	Name_        string
+	Kind_        SymbolKind
+	Location_    Location
+	Children_    *SymbolTree
+	IsReturnable bool
+	ReturnType_  Symbol
 }
 
 func (sym TopLevelSymbol) Name() string {
@@ -168,6 +170,13 @@ func (sym TopLevelSymbol) Location() Location {
 
 func (sym TopLevelSymbol) Children() *SymbolTree {
 	return sym.Children_
+}
+
+func (sym TopLevelSymbol) ReturnType() Symbol {
+	if sym.IsReturnable {
+		return sym.ReturnType_
+	}
+	return sym
 }
 
 type BuiltinSymbol struct {
@@ -245,4 +254,16 @@ var UnresolvedSymbol Symbol = unresolvedSymbol{}
 // Collection types
 type ICollectionTypeSymbol interface {
 	IsFixed() bool
+}
+
+func UnwrapReturnType(sym Symbol) Symbol {
+	if sym == nil {
+		return UnresolvedSymbol
+	}
+
+	returnableSym, ok := sym.(IReturnableSymbol)
+	if !ok {
+		return sym
+	}
+	return returnableSym.ReturnType()
 }

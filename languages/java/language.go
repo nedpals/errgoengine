@@ -127,6 +127,13 @@ func (an *javaAnalyzer) AnalyzeNode(ctx context.Context, n lib.SyntaxNode) lib.S
 		if parent := n.Parent(); parent.Type() == "method_declaration" {
 			return an.AnalyzeNode(ctx, parent.ChildByFieldName("type"))
 		}
+	case "binary_expression":
+		leftSym := lib.UnwrapReturnType(an.AnalyzeNode(ctx, n.ChildByFieldName("left")))
+		rightSym := lib.UnwrapReturnType(an.AnalyzeNode(ctx, n.ChildByFieldName("right")))
+		if leftSym == rightSym {
+			return leftSym
+		}
+		return BuiltinTypes.VoidSymbol
 	}
 	return BuiltinTypes.VoidSymbol
 }
