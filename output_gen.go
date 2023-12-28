@@ -195,7 +195,11 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						if i >= len(modified) || modified[i] != origLine {
 							gen.write("- ")
 						}
-						gen.writeln(origLine)
+						if len(origLine) == 0 {
+							gen._break()
+						} else {
+							gen.writeln(origLine)
+						}
 					}
 
 					// show this only if the total is not negative
