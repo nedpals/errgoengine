@@ -200,7 +200,7 @@ func (an *SymbolAnalyzer) analyzeAssignment(symbolTree *SymbolTree, query *sitte
 	}
 }
 
-func (an *SymbolAnalyzer) analyzeFunction(symbolTree *SymbolTree, pre string, query *sitter.Query, it *captureIterator) {
+func (an *SymbolAnalyzer) analyzeFunction(pre string, symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
 	parent := it.CurrentNode()
 	childTree := symbolTree.CreateChildFromNode(parent)
 	nodes := map[string]SyntaxNode{}
@@ -295,7 +295,7 @@ func (an *SymbolAnalyzer) analyzeUnknown(nearest *SymbolTree, query *sitter.Quer
 	case "class":
 		an.analyzeClass(nearest, query, it)
 	case "function", "method":
-		an.analyzeFunction(nearest, tag, query, it)
+		an.analyzeFunction(tag, nearest, query, it)
 	case "assignment":
 		an.analyzeAssignment(nearest, query, it)
 	case "block":
