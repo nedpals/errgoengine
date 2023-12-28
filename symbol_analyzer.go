@@ -1,10 +1,24 @@
 package errgoengine
 
 import (
+	"context"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
+
+type symbolTreeKey struct{}
+
+func WithSymbolTree(tree *SymbolTree) context.Context {
+	return context.WithValue(context.Background(), symbolTreeKey{}, tree)
+}
+
+func GetSymbolTreeCtx(ctx context.Context) *SymbolTree {
+	if tree, ok := ctx.Value(symbolTreeKey{}).(*SymbolTree); ok {
+		return tree
+	}
+	return nil
+}
 
 type captureIterator struct {
 	idx         int
@@ -117,7 +131,7 @@ func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitte
 	for _, nodes := range pNodes {
 		returnType := an.ContextData.Analyzer.FallbackSymbol()
 		if retTypeNode, ok := nodes["return-type"]; ok {
-			returnType = an.ContextData.Analyzer.AnalyzeNode(retTypeNode)
+			returnType = an.ContextData.Analyzer.AnalyzeNode(WithSymbolTree(symbolTree), retTypeNode)
 		}
 
 		symbolTree.Add(&VariableSymbol{
@@ -153,7 +167,7 @@ func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter
 	if len(nameNodes) > 0 {
 		returnType := an.ContextData.Analyzer.FallbackSymbol()
 		if retTypeNode, ok := nodes["return-type"]; ok {
-			returnType = an.ContextData.Analyzer.AnalyzeNode(retTypeNode)
+			returnType = an.ContextData.Analyzer.AnalyzeNode(WithSymbolTree(symbolTree), retTypeNode)
 		}
 
 		for _, nameNode := range nameNodes {
@@ -191,10 +205,11 @@ func (an *SymbolAnalyzer) analyzeAssignment(symbolTree *SymbolTree, query *sitte
 	if len(nameNodes) > 0 {
 		for idx, nameNode := range nameNodes {
 			symbolTree.Add(&AssignmentSymbol{
-				Variable:          symbolTree.Find(nameNode.Text()),
-				FallbackName:      nameNode.Text(),
-				Location_:         nameNode.Location(),
-				ContentReturnType: an.ContextData.Analyzer.AnalyzeNode(contentNodes[idx]),
+				Variable:     symbolTree.Find(nameNode.Text()),
+				FallbackName: nameNode.Text(),
+				Location_:    nameNode.Location(),
+				ContentReturnType: an.ContextData.Analyzer.AnalyzeNode(
+					context.Background(), contentNodes[idx]),
 			})
 		}
 	}

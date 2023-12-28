@@ -1,6 +1,7 @@
 package java
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 
@@ -35,7 +36,9 @@ func (an *javaAnalyzer) FindSymbol(name string) lib.Symbol {
 	return sym
 }
 
-func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
+func (an *javaAnalyzer) AnalyzeNode(ctx context.Context, n lib.SyntaxNode) lib.Symbol {
+	symbolTree := lib.GetSymbolTreeCtx(ctx)
+
 	switch n.Type() {
 	// types first
 	case "array_type":
@@ -47,7 +50,7 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		}
 
 		elNode := n.ChildByFieldName("element")
-		elSym := an.AnalyzeNode(elNode)
+		elSym := an.AnalyzeNode(ctx, elNode)
 		return arrayIfy(elSym, len)
 	case "void_type":
 		return BuiltinTypes.VoidSymbol
@@ -81,27 +84,31 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		return BuiltinTypes.FloatingPoint.DoubleSymbol
 	case "array_creation_expression":
 		var gotLen int
-		typeSym := an.AnalyzeNode(n.ChildByFieldName("type"))
+		typeSym := an.AnalyzeNode(ctx, n.ChildByFieldName("type"))
 		rawLen := n.ChildByFieldName("dimensions").LastNamedChild().Text()
 		fmt.Sscanf(rawLen, "%d", &gotLen)
 		return arrayIfy(typeSym, gotLen)
 	case "object_creation_expression":
-		return an.AnalyzeNode(n.ChildByFieldName("type"))
+		return an.AnalyzeNode(ctx, n.ChildByFieldName("type"))
 	case "identifier":
 		sym := an.ContextData.FindSymbol(n.Text(), int(n.StartByte()))
+		if sym == nil && symbolTree != nil {
+			sym = symbolTree.Find(n.Text())
+		}
 		if sym == nil {
 			return BuiltinTypes.NullSymbol
 		}
+
 		return sym
 	case "array_access":
-		sym := an.AnalyzeNode(n.ChildByFieldName("array"))
+		sym := an.AnalyzeNode(ctx, n.ChildByFieldName("array"))
 		if aSym, ok := sym.(ArraySymbol); ok {
 			return aSym.ItemSymbol
 		} else {
 			return BuiltinTypes.VoidSymbol
 		}
 	case "field_access", "method_invocation":
-		if objNodeSym := an.AnalyzeNode(n.ChildByFieldName("object")); objNodeSym != nil {
+		if objNodeSym := an.AnalyzeNode(ctx, n.ChildByFieldName("object")); objNodeSym != nil {
 			if objNodeSym == BuiltinTypes.NullSymbol {
 				return objNodeSym
 			}
@@ -118,7 +125,7 @@ func (an *javaAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 		return BuiltinTypes.VoidSymbol
 	case "block":
 		if parent := n.Parent(); parent.Type() == "method_declaration" {
-			return an.AnalyzeNode(parent.ChildByFieldName("type"))
+			return an.AnalyzeNode(ctx, parent.ChildByFieldName("type"))
 		}
 	}
 	return BuiltinTypes.VoidSymbol

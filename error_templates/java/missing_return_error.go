@@ -1,6 +1,7 @@
 package java
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -52,7 +53,7 @@ var MissingReturnError = lib.ErrorTemplate{
 			}
 
 			expectedTypeNode := ctx.NearestMethod.ChildByFieldName("type")
-			expectedTypeSym := cd.Analyzer.AnalyzeNode(expectedTypeNode)
+			expectedTypeSym := cd.Analyzer.AnalyzeNode(context.Background(), expectedTypeNode)
 			nearestScope := cd.InitOrGetSymbolTree(cd.MainDocumentPath()).GetNearestScopedTree(lastEndPosInBlock.Index)
 			symbolsForReturn := nearestScope.FindSymbolsByClause(func(sym lib.Symbol) bool {
 				if sym, ok := sym.(lib.IReturnableSymbol); ok {

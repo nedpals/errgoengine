@@ -1,6 +1,7 @@
 package python
 
 import (
+	"context"
 	_ "embed"
 
 	lib "github.com/nedpals/errgoengine"
@@ -35,7 +36,7 @@ func (an *pyAnalyzer) FindSymbol(name string) lib.Symbol {
 	return sym
 }
 
-func (an *pyAnalyzer) analyzeTypeNode(n lib.SyntaxNode) lib.Symbol {
+func (an *pyAnalyzer) analyzeTypeNode(ctx context.Context, n lib.SyntaxNode) lib.Symbol {
 	switch n.Type() {
 	case "identifier":
 		builtinSym, found := builtinTypesStore.FindByName(n.Text())
@@ -51,7 +52,7 @@ func (an *pyAnalyzer) analyzeTypeNode(n lib.SyntaxNode) lib.Symbol {
 		valueNode := n.ChildByFieldName("value")
 		_, validCollectionType := strToBuiltinCollectionTypeSyms[valueNode.Text()]
 		if !validCollectionType {
-			baseTypeSym := an.analyzeTypeNode(valueNode)
+			baseTypeSym := an.analyzeTypeNode(ctx, valueNode)
 			// TODO: inject value syms
 			return baseTypeSym
 		}
@@ -59,7 +60,7 @@ func (an *pyAnalyzer) analyzeTypeNode(n lib.SyntaxNode) lib.Symbol {
 		// get value syms
 		valueSyms := make([]lib.Symbol, n.NamedChildCount()-1)
 		for i := 1; i < int(n.NamedChildCount()); i++ {
-			valueSyms[i-1] = an.AnalyzeNode(n.NamedChild(i))
+			valueSyms[i-1] = an.AnalyzeNode(ctx, n.NamedChild(i))
 		}
 
 		if cSym, err := collectionIfy(valueNode.Text(), valueSyms...); err != nil {
@@ -74,10 +75,10 @@ func (an *pyAnalyzer) analyzeTypeNode(n lib.SyntaxNode) lib.Symbol {
 	return BuiltinTypes.AnySymbol
 }
 
-func (an *pyAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
+func (an *pyAnalyzer) AnalyzeNode(ctx context.Context, n lib.SyntaxNode) lib.Symbol {
 	switch n.Type() {
 	case "type":
-		return an.analyzeTypeNode(n.NamedChild(0))
+		return an.analyzeTypeNode(ctx, n.NamedChild(0))
 	case "true", "false":
 		return BuiltinTypes.BooleanSymbol
 	case "string":
@@ -108,7 +109,7 @@ func (an *pyAnalyzer) AnalyzeNode(n lib.SyntaxNode) lib.Symbol {
 	// 		return BuiltinTypes.VoidSymbol
 	// 	}
 	case "attribute":
-		if objNodeSym := an.AnalyzeNode(n.ChildByFieldName("object")); objNodeSym != nil {
+		if objNodeSym := an.AnalyzeNode(ctx, n.ChildByFieldName("object")); objNodeSym != nil {
 			if objNodeSym == BuiltinTypes.AnySymbol {
 				return objNodeSym
 			}

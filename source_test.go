@@ -1,6 +1,7 @@
 package errgoengine
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -37,7 +38,7 @@ func (an *testAnalyzer) FindSymbol(name string) Symbol {
 	return nil
 }
 
-func (an *testAnalyzer) AnalyzeNode(n SyntaxNode) Symbol {
+func (an *testAnalyzer) AnalyzeNode(_ context.Context, n SyntaxNode) Symbol {
 	// TODO:
 	return Builtin("void")
 }

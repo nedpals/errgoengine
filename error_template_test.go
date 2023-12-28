@@ -1,6 +1,7 @@
 package errgoengine_test
 
 import (
+	"context"
 	"testing"
 
 	lib "github.com/nedpals/errgoengine"
@@ -15,7 +16,7 @@ func (TestAnalyzer) FallbackSymbol() lib.Symbol {
 
 func (TestAnalyzer) FindSymbol(string) lib.Symbol { return nil }
 
-func (TestAnalyzer) AnalyzeNode(lib.SyntaxNode) lib.Symbol {
+func (TestAnalyzer) AnalyzeNode(context.Context, lib.SyntaxNode) lib.Symbol {
 	return nil
 }
 

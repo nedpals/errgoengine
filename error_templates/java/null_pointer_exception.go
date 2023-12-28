@@ -1,6 +1,8 @@
 package java
 
 import (
+	"context"
+
 	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/languages/java"
 )
@@ -41,7 +43,7 @@ var NullPointerException = lib.ErrorTemplate{
 				// check if this is just simple printing
 				if objNode.Text() == "System.out" {
 					ctx.kind = fromSystemOut
-				} else if retType := cd.Analyzer.AnalyzeNode(exprNode); retType == java.BuiltinTypes.NullSymbol {
+				} else if retType := cd.Analyzer.AnalyzeNode(context.Background(), exprNode); retType == java.BuiltinTypes.NullSymbol {
 					cd.MainError.Nearest = exprNode
 					ctx.kind = fromMethodInvocation
 				}
@@ -54,7 +56,7 @@ var NullPointerException = lib.ErrorTemplate{
 					arguments := exprNode.ChildByFieldName("arguments")
 					for i := 0; i < int(arguments.NamedChildCount()); i++ {
 						argNode := arguments.NamedChild(i)
-						retType := cd.Analyzer.AnalyzeNode(argNode)
+						retType := cd.Analyzer.AnalyzeNode(context.Background(), argNode)
 
 						if retType == java.BuiltinTypes.NullSymbol || argNode.Type() == "array_access" {
 							cd.MainError.Nearest = argNode

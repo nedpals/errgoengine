@@ -1,6 +1,7 @@
 package java
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -27,7 +28,7 @@ var NotAStatementError = lib.ErrorTemplate{
 		gen.Add("This error occurs when a line of code is written that is not a valid statement.")
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
-		nodeType := cd.Analyzer.AnalyzeNode(cd.MainError.Nearest)
+		nodeType := cd.Analyzer.AnalyzeNode(context.Background(), cd.MainError.Nearest)
 
 		gen.Add(fmt.Sprintf("Convert the `%s` to a statement", nodeType.Name()), func(s *lib.BugFixSuggestion) {
 			s.AddStep(
