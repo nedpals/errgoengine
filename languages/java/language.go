@@ -118,6 +118,42 @@ func (an *javaAnalyzer) AnalyzeNode(ctx context.Context, n lib.SyntaxNode) lib.S
 				if sym := lib.GetFromSymbol(lib.CastChildrenSymbol(objNodeSym), fieldNode.Text()); sym != nil {
 					return sym
 				}
+			} else if n.Type() == "method_invocation" {
+				nameNode := n.ChildByFieldName("name")
+				sym := lib.GetFromSymbol(lib.CastChildrenSymbol(objNodeSym), nameNode.Text())
+				if sym == nil {
+					return BuiltinTypes.VoidSymbol
+				}
+
+				methodSym, ok := sym.(*lib.TopLevelSymbol)
+				if !ok || sym.Kind() != lib.SymbolKindFunction {
+					return BuiltinTypes.VoidSymbol
+				}
+
+				// input to parameter type check
+				argumentsNode := n.ChildByFieldName("arguments")
+				argsIdx := 0
+
+				for _, paramSym := range methodSym.Children().Symbols {
+					if argsIdx >= int(argumentsNode.NamedChildCount()) {
+						break
+					}
+
+					paramSym, ok := paramSym.(*lib.VariableSymbol)
+					if !ok || !paramSym.IsParam() {
+						continue
+					}
+
+					argNode := argumentsNode.NamedChild(argsIdx)
+					argSym := lib.UnwrapReturnType(an.AnalyzeNode(ctx, argNode))
+					if argSym != paramSym.ReturnType() {
+						return BuiltinTypes.VoidSymbol
+					}
+
+					argsIdx++
+				}
+
+				return methodSym.ReturnType()
 			}
 		}
 	case "this":
