@@ -168,7 +168,6 @@ func (c *QueryNodeCursor) NextMatch() bool {
 		// to avoid overhead of calling FilterPredicates if there are no predicates
 		if c.hasPredicate {
 			match := c.ctx.Cursor.FilterPredicates(m, []byte(c.doc.Contents))
-			fmt.Println(c.rawQuery, match, m)
 			m = match
 		}
 
