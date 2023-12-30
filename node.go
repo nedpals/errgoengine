@@ -26,6 +26,10 @@ func (n SyntaxNode) Text() string {
 	return n.text
 }
 
+func (n SyntaxNode) IsNull() bool {
+	return n.Node == nil || n.Node.IsNull()
+}
+
 func (n SyntaxNode) ChildByFieldName(field string) SyntaxNode {
 	cNode := n.Node.ChildByFieldName(field)
 	return WrapNode(n.Doc, cNode)
