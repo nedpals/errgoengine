@@ -14,6 +14,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, ArrayIndexOutOfBoundsException)
 	errorTemplates.MustAdd(java.Language, ArithmeticException)
 	errorTemplates.MustAdd(java.Language, NegativeArraySizeException)
+	errorTemplates.MustAdd(java.Language, ClassCastException)
 
 	// Compile time
 	errorTemplates.MustAdd(java.Language, PublicClassFilenameMismatchError)
@@ -36,6 +37,8 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, CannotBeAppliedError)
 	errorTemplates.MustAdd(java.Language, BracketMismatchError)
 	errorTemplates.MustAdd(java.Language, InvalidMethodDeclarationError)
+	errorTemplates.MustAdd(java.Language, IllegalStartOfTypeError)
+	errorTemplates.MustAdd(java.Language, ExpectedError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {

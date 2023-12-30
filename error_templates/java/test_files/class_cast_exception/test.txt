@@ -1,0 +1,23 @@
+template: "Java.ClassCastException"
+---
+Exception in thread "main" java.lang.ClassCastException: class java.lang.String cannot be cast to class java.lang.Integer (java.lang.String and java.lang.Integer are in module java.base of loader 'bootstrap')
+	at Main.main(Main.java:5)
+===
+template: "Java.ClassCastException"
+---
+# ClassCastException
+This error occurs when there is an attempt to cast an object to a type that it is not compatible with.
+```
+        Integer number = (Integer) obj;
+    }
+    ^
+}
+
+```
+## Steps to fix
+### Use the correct type for casting
+Ensure that the casting is done to the correct type. In this case, you should cast to `String` instead of `Integer`.
+```diff
+- Integer number = (Integer) obj;
++ String text = (String) obj; // Change the type to String
+```

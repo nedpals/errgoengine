@@ -1,0 +1,24 @@
+template: "Java.IllegalStartOfTypeError"
+---
+Rand.java:5: error: illegal start of type
+        return countA ;
+        ^
+Rand.java:5: error: <identifier> expected
+        return countA ;
+                     ^
+Rand.java:7: error: class, interface, enum, or record expected
+}
+^
+3 errors
+===
+template: "Java.IllegalStartOfTypeError"
+---
+# IllegalStartOfTypeError
+```
+        }
+        return countA ;
+        ^^^^^^^^^^^^^^^
+    }
+}
+```
+This error occurs when there is an illegal start of a type, typically due to a misplaced return statement.
