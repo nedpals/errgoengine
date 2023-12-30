@@ -345,19 +345,17 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode SyntaxN
 		panic("Parent is null")
 	}
 
-	QueryNode(rootNode, strings.NewReader(symbolCaptures), func(ctx QueryNodeCtx) bool {
-		if len(ctx.Match.Captures) <= 1 || ctx.Match.Captures == nil {
-			return true
+	for q := rootNode.Query(symbolCaptures); q.NextMatch(); {
+		if q.Len() <= 1 {
+			continue
 		}
 
-		it := &captureIterator{doc: an.doc, captures: ctx.Match.Captures}
+		it := &captureIterator{doc: an.doc, captures: q.Match().Captures()}
 		it.Reset()
 
 		nearest := parent.GetNearestScopedTree(int(it.Get(0).Node.StartByte()))
-		an.analyzeUnknown(nearest, ctx.Query, it)
-
-		return true
-	})
+		an.analyzeUnknown(nearest, q.Query(), it)
+	}
 }
 
 func (an *SymbolAnalyzer) Analyze(doc *Document) {

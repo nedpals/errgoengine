@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -18,17 +17,13 @@ var PrecisionLossError = lib.ErrorTemplate{
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		pCtx := precisionLossCtx{}
 		targetType := cd.Variables["targetType"]
-		query := fmt.Sprintf(`((local_variable_declaration type: (_) @target-type) (#eq? @target-type "%s"))`, targetType)
-		lib.QueryNode(m.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				pCtx.Parent = node.Parent()
-				m.Nearest = pCtx.Parent.ChildByFieldName("declarator").ChildByFieldName("value")
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query(`((local_variable_declaration type: (_) @target-type) (#eq? @target-type "%s"))`, targetType); q.Next(); {
+			node := q.CurrentNode()
+			pCtx.Parent = node.Parent()
+			m.Nearest = pCtx.Parent.ChildByFieldName("declarator").ChildByFieldName("value")
+			break
+		}
+
 		m.Context = pCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {

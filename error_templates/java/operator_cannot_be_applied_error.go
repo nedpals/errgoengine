@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -18,17 +17,13 @@ var OperatorCannotBeAppliedError = lib.ErrorTemplate{
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		oCtx := opCannotBeAppliedCtx{}
 		operator := cd.Variables["operator"]
-		query := fmt.Sprintf(`((binary_expression) @binary_expr (#eq @binary_expr "%s"))`, operator)
-		lib.QueryNode(m.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				oCtx.Parent = node
-				m.Nearest = node.Child(1)
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query(`((binary_expression) @binary_expr (#eq @binary_expr "%s"))`, operator); q.Next(); {
+			node := q.CurrentNode()
+			oCtx.Parent = node
+			m.Nearest = node.Child(1)
+			break
+		}
+
 		m.Context = oCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
@@ -45,7 +40,6 @@ var OperatorCannotBeAppliedError = lib.ErrorTemplate{
 		right := ctx.Parent.ChildByFieldName("right")
 
 		gen.Add(fmt.Sprintf("Use %s's compareTo method", cd.Variables["firstType"]), func(s *lib.BugFixSuggestion) {
-
 			s.AddStep(
 				"Since you are comparing a %s and an %s, you need to use the `compareTo` method to compare their values.",
 				cd.Variables["firstType"],

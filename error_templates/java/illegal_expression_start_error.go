@@ -1,8 +1,6 @@
 package java
 
 import (
-	"strings"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -11,16 +9,12 @@ var IllegalExpressionStartError = lib.ErrorTemplate{
 	Pattern:           comptimeErrorPattern(`illegal start of expression`),
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
-		lib.QueryNode(m.Nearest, strings.NewReader("(ERROR) @error"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				// aCtx.NearestClass = node
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query("(ERROR) @error"); q.Next(); {
+			node := q.CurrentNode()
+			m.Nearest = node
+			// aCtx.NearestClass = node
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs when the compiler encounters an expression that is not valid.")

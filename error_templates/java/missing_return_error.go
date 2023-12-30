@@ -3,7 +3,6 @@ package java
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -21,19 +20,17 @@ var MissingReturnError = lib.ErrorTemplate{
 		mCtx := missingReturnErrorCtx{}
 		rootNode := m.Document.RootNode()
 		pos := m.ErrorNode.StartPos
-		lib.QueryNode(rootNode, strings.NewReader("(method_declaration) @method"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				pointA := c.Node.StartPoint()
-				pointB := c.Node.EndPoint()
-				if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
-					node := lib.WrapNode(m.Nearest.Doc, c.Node)
-					mCtx.NearestMethod = node
-					return false
-				}
+
+		for q := rootNode.Query("(method_declaration) @method"); q.Next(); {
+			node := q.CurrentNode()
+			pointA := node.StartPoint()
+			pointB := node.EndPoint()
+			if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
+				mCtx.NearestMethod = node
+				break
 			}
-			return true
-		})
+		}
+
 		m.Context = mCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {

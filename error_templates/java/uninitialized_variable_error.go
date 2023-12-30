@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -18,22 +17,17 @@ var UninitializedVariableError = lib.ErrorTemplate{
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		uCtx := uninitializedVariableErrCtx{}
-		query := strings.NewReader(fmt.Sprintf(`((identifier) @variable (#eq? @variable "%s"))`, cd.Variables["variable"]))
-		lib.QueryNode(cd.MainError.Nearest, query, func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(cd.MainError.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(cd.MainError.Nearest.Doc, c.Node)
-				m.Nearest = node
-				return false
-			}
-			return true
-		})
+		q := m.Nearest.Query(`((identifier) @variable (#eq? @variable "%s"))`, cd.Variables["variable"])
+		for q.Next() {
+			m.Nearest = q.CurrentNode()
+			break
+		}
 
 		// get symbol and declaration node
-		rootTree := cd.MainError.Document.RootNode()
-		nearestTree := cd.InitOrGetSymbolTree(cd.MainDocumentPath()).GetNearestScopedTree(cd.MainError.Nearest.StartPosition().Index)
-		declaredVariableSym := nearestTree.GetSymbolByNode(cd.MainError.Nearest)
-		declNode := rootTree.NamedDescendantForPointRange(declaredVariableSym.Location())
+		root := m.Document.RootNode()
+		nearestTree := cd.InitOrGetSymbolTree(cd.MainDocumentPath()).GetNearestScopedTree(m.Nearest.StartPosition().Index)
+		declaredVariableSym := nearestTree.GetSymbolByNode(m.Nearest)
+		declNode := root.NamedDescendantForPointRange(declaredVariableSym.Location())
 
 		uCtx.DeclarationSym = declaredVariableSym
 
@@ -61,7 +55,6 @@ var UninitializedVariableError = lib.ErrorTemplate{
 		})
 
 		gen.Add("Assign a value before using", func(s *lib.BugFixSuggestion) {
-			fmt.Println(cd.MainError.Document.LineAt(ctx.DeclarationNode.StartPosition().Line))
 			spaces := cd.MainError.Document.LineAt(ctx.DeclarationNode.StartPosition().Line)[:ctx.DeclarationNode.StartPosition().Column]
 
 			s.AddStep("Alternatively, you can assign a value to the variable before using it.").AddFix(lib.FixSuggestion{

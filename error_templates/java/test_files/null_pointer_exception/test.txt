@@ -7,24 +7,28 @@ template: "Java.NullPointerException"
 ---
 # NullPointerException
 This error occurs because the program is trying to access a method or property of a null object, in this case, trying to invoke the `toUpperCase()` method on a `null` string.
-
+```
+        String test = null;
+        System.out.println(test.toUpperCase());
+                           ^^^^
+    }
+}
+```
 ## Steps to fix
-1. Check for the variable that is being used as `null` and causing the issue.
+### 1. Wrap with an if statement
+Check for the variable that is being used as `null`.
 ```diff
     String test = null;
 -   System.out.println(test.toUpperCase());
 +   if (test != null) {
 +       System.out.println(test.toUpperCase());
-+   } else {
-+       System.out.println("The string is null.");
 +   }
 ```
 
-2. An alternative fix is to initialize the `test` variable with a non-null value before calling the `toUpperCase()` method.
+### 2. Initialize the variable
+An alternative fix is to initialize the `test` variable with a non-null value before calling the method.
 ```diff
 -   String test = null;
 +   String test = "example"; // Assign a non-null value
     System.out.println(test.toUpperCase());
 ```
-
-Both proposed solutions help to avoid the `NullPointerException`. The first one checks if the variable is `null` before invoking the `toUpperCase()` method. The second one ensures the variable is initialized with a non-null value to prevent the error.

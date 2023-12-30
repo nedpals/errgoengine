@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -24,14 +23,11 @@ var UnclosedCharacterLiteralError = lib.ErrorTemplate{
 			return
 		}
 
-		lib.QueryNode(err.Nearest, strings.NewReader("(character_literal) @literal"), func(ctx lib.QueryNodeCtx) bool {
-			for _, c := range ctx.Match.Captures {
-				node := lib.WrapNode(err.Document, c.Node)
-				err.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := err.Nearest.Query(`(character_literal) @literal`); q.Next(); {
+			node := q.CurrentNode()
+			err.Nearest = node
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs when there's an attempt to define a character literal with more than one character, or if the character literal is not closed properly.")

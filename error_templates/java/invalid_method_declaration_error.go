@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -20,20 +19,16 @@ var InvalidMethodDeclarationError = lib.ErrorTemplate{
 		iCtx := invalidMethodDeclarationErrorCtx{}
 		pos := m.ErrorNode.StartPos
 
-		lib.QueryNode(m.Document.RootNode(), strings.NewReader("(constructor_declaration) @method"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				pointA := c.Node.StartPoint()
-				pointB := c.Node.EndPoint()
-				if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
-					node := lib.WrapNode(m.Nearest.Doc, c.Node)
-					iCtx.declNode = node
-					m.Nearest = node.ChildByFieldName("name")
-					return false
-				}
+		for q := m.Document.RootNode().Query("(constructor_declaration) @method"); q.Next(); {
+			node := q.CurrentNode()
+			pointA := node.StartPoint()
+			pointB := node.EndPoint()
+			if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
+				iCtx.declNode = node
+				m.Nearest = node.ChildByFieldName("name")
+				break
 			}
-			return true
-		})
+		}
 
 		iCtx.returnTypeToAdd = lib.UnwrapReturnType(cd.FindSymbol(m.Nearest.Text(), m.Nearest.StartPosition().Index))
 		m.Context = iCtx

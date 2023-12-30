@@ -1,7 +1,6 @@
 package java
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -29,18 +28,11 @@ var PublicClassFilenameMismatchError = lib.ErrorTemplate{
 			expectedClassFilename: className + ".java",                                  // the expected filename to be renamed
 		}
 
-		query := fmt.Sprintf(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s"))`, className)
-		rootNode := m.Nearest.Doc.RootNode()
-
-		lib.QueryNode(rootNode, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Doc.RootNode().Query(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s"))`, className); q.Next(); {
+			node := q.CurrentNode()
+			m.Nearest = node
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add(`This error occurs because the name of the Java file does not match the name of the public class within it.`)

@@ -2,7 +2,6 @@ package python
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -11,15 +10,10 @@ var NameError = lib.ErrorTemplate{
 	Name:    "NameError",
 	Pattern: `NameError: name '(?P<variable>\S+)' is not defined`,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
-		lib.QueryNode(m.Nearest, strings.NewReader(fmt.Sprintf(`((identifier) @name (#eq? @name "%s"))`, cd.Variables["variable"])), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query(`((identifier) @name (#eq? @name "%s"))`, cd.Variables["variable"]); q.Next(); {
+			m.Nearest = q.CurrentNode()
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs when trying to use a variable (`%s`) or name that has not been defined in the current scope.", cd.Variables["variable"])

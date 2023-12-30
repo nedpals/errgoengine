@@ -24,30 +24,21 @@ var AlreadyDefinedError = lib.ErrorTemplate{
 		pos := m.ErrorNode.StartPos
 
 		// get the nearest class declaration first based on error location
-		lib.QueryNode(rootNode, strings.NewReader("(class_declaration) @class"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				pointA := c.Node.StartPoint()
-				pointB := c.Node.EndPoint()
-				if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
-					node := lib.WrapNode(m.Nearest.Doc, c.Node)
-					aCtx.NearestClass = node
-					return false
-				}
+		for q := rootNode.Query("(class_declaration) @class"); q.Next(); {
+			classNode := q.CurrentNode()
+			pointA := classNode.StartPoint()
+			pointB := classNode.EndPoint()
+			if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
+				aCtx.NearestClass = classNode
+				break
 			}
-			return true
-		})
+		}
 
 		// get the nearest method declaration based on symbol signature
-		lib.QueryNode(aCtx.NearestClass, strings.NewReader(rawQuery), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				aCtx.NearestMethod = node
-				return false
-			}
-			return true
-		})
+		for q := aCtx.NearestClass.Query(rawQuery); q.Next(); {
+			aCtx.NearestMethod = q.CurrentNode()
+			break
+		}
 
 		m.Context = aCtx
 	},

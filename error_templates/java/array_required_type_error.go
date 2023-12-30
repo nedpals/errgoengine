@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -12,16 +11,10 @@ var ArrayRequiredTypeError = lib.ErrorTemplate{
 	Pattern:           comptimeErrorPattern(`array required, but (?P<foundType>\S+) found`),
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, err *lib.MainError) {
-		query := strings.NewReader("(array_access array: (identifier) index: ((_) @index (#eq? @index \"0\")))")
-		lib.QueryNode(cd.MainError.Nearest, query, func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(cd.MainError.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(cd.MainError.Nearest.Doc, c.Node)
-				err.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := cd.MainError.Nearest.Query("(array_access array: (identifier) index: ((_) @index (#eq? @index \"0\")))"); q.Next(); {
+			err.Nearest = q.CurrentNode()
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		parent := cd.MainError.Nearest.Parent()

@@ -85,20 +85,15 @@ var CannotBeAppliedError = lib.ErrorTemplate{
 			argumentNodeTypesToLook += nTypesStr
 		}
 
-		rawQuery := fmt.Sprintf(`((method_invocation name: (identifier) @name arguments: (argument_list %s)) @call (#eq? @name "%s"))`, argumentNodeTypesToLook, cd.Variables["method"])
-
-		lib.QueryNode(m.Nearest, strings.NewReader(rawQuery), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Document, c.Node)
-				fmt.Println(node.Text())
-				cCtx.callExprNode = node
-				argNode := node.ChildByFieldName("arguments").NamedChild(cCtx.invalidIdx)
-				m.Nearest = argNode
-				return false
-			}
-			return true
-		})
+		for q := cd.MainError.Nearest.Query(
+			`((method_invocation name: (identifier) @name arguments: (argument_list %s)) @call (#eq? @name "%s"))`,
+			argumentNodeTypesToLook, cd.Variables["method"],
+		); q.Next(); {
+			node := q.CurrentNode()
+			cCtx.callExprNode = node
+			m.Nearest = node.ChildByFieldName("arguments").NamedChild(cCtx.invalidIdx)
+			break
+		}
 
 		m.Context = cCtx
 	},

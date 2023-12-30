@@ -33,17 +33,11 @@ var ValueError = lib.ErrorTemplate{
 			vCtx.kind = valueErrorKindUnknown
 		}
 
-		if len(query) != 0 {
-			lib.QueryNode(m.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-				match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-				for _, c := range match.Captures {
-					node := lib.WrapNode(m.Nearest.Doc, c.Node)
-					vCtx.callNode = node
-					m.Nearest = node.ChildByFieldName("arguments").FirstNamedChild()
-					return false
-				}
-				return true
-			})
+		for q := m.Nearest.Query(query); q.Next(); {
+			node := q.CurrentNode()
+			vCtx.callNode = node
+			m.Nearest = node.ChildByFieldName("arguments").FirstNamedChild()
+			break
 		}
 
 		m.Context = vCtx

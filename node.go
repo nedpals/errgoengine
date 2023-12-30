@@ -1,7 +1,8 @@
 package errgoengine
 
 import (
-	"io"
+	"fmt"
+	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -11,6 +12,10 @@ type SyntaxNode struct {
 	isTextCached bool
 	Doc          *Document
 	text         string
+}
+
+func (n SyntaxNode) Debug() {
+	fmt.Println("[SyntaxNode.DEBUG]", n, n.Text())
 }
 
 func (n SyntaxNode) Text() string {
@@ -95,6 +100,10 @@ func (n SyntaxNode) RawNode() *sitter.Node {
 	return n.Node
 }
 
+func (n SyntaxNode) Query(q string, d ...any) *QueryNodeCursor {
+	return queryNode2(n, fmt.Sprintf(q, d...))
+}
+
 func WrapNode(doc *Document, n *sitter.Node) SyntaxNode {
 	return SyntaxNode{
 		isTextCached: false,
@@ -124,31 +133,133 @@ func nearestNodeFromPos(cursor *sitter.TreeCursor, pos Position) *sitter.Node {
 }
 
 type QueryNodeCtx struct {
-	Match  *sitter.QueryMatch
 	Query  *sitter.Query
 	Cursor *sitter.QueryCursor
 }
 
-func QueryNode(rootNode SyntaxNode, queryR io.Reader, callback func(QueryNodeCtx) bool) {
-	query, err := io.ReadAll(queryR)
-	if err != nil {
-		panic(err)
+type QueryNodeCursor struct {
+	ctx          QueryNodeCtx
+	doc          *Document
+	cursor       *sitter.TreeCursor
+	matchCursor  *QueryMatchIterator
+	rawQuery     string
+	hasPredicate bool
+}
+
+func (c *QueryNodeCursor) Next() bool {
+	if c.matchCursor == nil || c.matchCursor.ReachedEnd() {
+		if !c.NextMatch() {
+			c.cursor.Close()
+			return false
+		}
+	}
+	return c.matchCursor.Next()
+}
+
+func (c *QueryNodeCursor) NextMatch() bool {
+	// use for loop to avoid stack overflow
+	for {
+		m, ok := c.ctx.Cursor.NextMatch()
+		if !ok {
+			c.matchCursor = nil
+			return false
+		}
+
+		// to avoid overhead of calling FilterPredicates if there are no predicates
+		if c.hasPredicate {
+			match := c.ctx.Cursor.FilterPredicates(m, []byte(c.doc.Contents))
+			fmt.Println(c.rawQuery, match, m)
+			m = match
+		}
+
+		// if there are no captures, skip to the next match
+		if len(m.Captures) == 0 {
+			continue
+		}
+
+		if c.matchCursor == nil {
+			c.matchCursor = &QueryMatchIterator{-1, m}
+		} else {
+			// reuse the same match cursor
+			c.matchCursor.match = m
+			c.matchCursor.idx = -1
+		}
+		return true
+	}
+}
+
+func (c *QueryNodeCursor) Match() *QueryMatchIterator {
+	return c.matchCursor
+}
+
+func (c *QueryNodeCursor) CurrentNode() SyntaxNode {
+	return WrapNode(c.doc, c.matchCursor.Current().Node)
+}
+
+func (c *QueryNodeCursor) Query() *sitter.Query {
+	return c.ctx.Query
+}
+
+func (c *QueryNodeCursor) Len() int {
+	if c.matchCursor == nil {
+		if !c.NextMatch() {
+			return 0
+		}
+	}
+	return len(c.matchCursor.Captures())
+}
+
+type QueryMatchIterator struct {
+	idx   int
+	match *sitter.QueryMatch
+}
+
+func (it *QueryMatchIterator) Next() bool {
+	if it.idx+1 >= len(it.match.Captures) {
+		return false
 	}
 
-	q, err := sitter.NewQuery(query, rootNode.Doc.Language.SitterLanguage)
+	it.idx++
+	return true
+}
+
+func (it *QueryMatchIterator) Current() sitter.QueryCapture {
+	return it.match.Captures[it.idx]
+}
+
+func (it *QueryMatchIterator) Captures() []sitter.QueryCapture {
+	return it.match.Captures
+}
+
+func (it *QueryMatchIterator) ReachedEnd() bool {
+	return it.idx+1 >= len(it.match.Captures)
+}
+
+func queryNode2(node SyntaxNode, queryR string) *QueryNodeCursor {
+	q, err := sitter.NewQuery([]byte(queryR), node.Doc.Language.SitterLanguage)
 	if err != nil {
 		panic(err)
 	}
 
 	queryCursor := sitter.NewQueryCursor()
-	defer queryCursor.Close()
+	queryCursor.Exec(q, node.Node)
 
-	queryCursor.Exec(q, rootNode.Node)
-
-	for i := 0; ; i++ {
-		m, ok := queryCursor.NextMatch()
-		if !ok || !callback(QueryNodeCtx{m, q, queryCursor}) {
-			break
-		}
+	// check if queryR has predicates. usually predicates are used to filter
+	// out matches that are not needed and the syntax for predicates starts
+	// with "(#" (eg. (#eq? @name "int"), (#match? @name "int"))
+	hasPredicate := false
+	if strings.Contains(queryR, "(#") {
+		hasPredicate = true
 	}
+
+	cursor := &QueryNodeCursor{
+		ctx:          QueryNodeCtx{q, queryCursor},
+		hasPredicate: hasPredicate,
+		doc:          node.Doc,
+		cursor:       sitter.NewTreeCursor(node.Node),
+		rawQuery:     queryR,
+	}
+
+	cursor.NextMatch()
+	return cursor
 }

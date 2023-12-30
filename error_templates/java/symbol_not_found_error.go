@@ -34,32 +34,21 @@ var SymbolNotFoundError = lib.ErrorTemplate{
 			nodeTypeToFind = "type_identifier"
 		}
 
-		query := fmt.Sprintf("((%s) @symbol (#eq? @symbol \"%s\"))", nodeTypeToFind, symbolName)
-		lib.QueryNode(m.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				errorCtx.rootNode = m.Nearest
-				errorCtx.parentNode = node.Parent()
-				m.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query("((%s) @symbol (#eq? @symbol \"%s\"))", nodeTypeToFind, symbolName); q.Next(); {
+			node := q.CurrentNode()
+			errorCtx.rootNode = m.Nearest
+			errorCtx.parentNode = node.Parent()
+			m.Nearest = node
+			break
+		}
 
 		// locate the location node
-		locationQuery := fmt.Sprintf(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s"))`, errorCtx.locationClass)
-		rootNode := lib.WrapNode(m.Nearest.Doc, m.Nearest.Doc.Tree.RootNode())
-
-		lib.QueryNode(rootNode, strings.NewReader(locationQuery), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node.Parent())
-				errorCtx.locationNode = node
-				return false
-			}
-			return true
-		})
+		rootNode := m.Nearest.Doc.RootNode()
+		for q := rootNode.Query(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s"))`, errorCtx.locationClass); q.Next(); {
+			node := q.CurrentNode().Parent()
+			errorCtx.locationNode = node
+			break
+		}
 
 		m.Context = errorCtx
 	},

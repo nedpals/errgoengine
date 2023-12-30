@@ -107,6 +107,12 @@ var NullPointerException = lib.ErrorTemplate{
 		gen.Add("Your program try to access or manipulate an object reference that is currently pointing to `null`, meaning it doesn't refer to any actual object in memory. This typically happens when you forget to initialize an object before using it, or when you try to access an object that hasn't been properly assigned a value. ")
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
+		gen.Add("Wrap with an if statement", func(s *lib.BugFixSuggestion) {
+			s.AddDescription("Check for the variable that is being used as `null`.")
+		})
 
+		gen.Add("Initialize the variable", func(s *lib.BugFixSuggestion) {
+			s.AddDescription("An alternative fix is to initialize the `test` variable with a non-null value before calling the method.")
+		})
 	},
 }

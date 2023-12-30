@@ -2,7 +2,6 @@ package java
 
 import (
 	"fmt"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -29,18 +28,14 @@ var NonStaticMethodAccessError = lib.ErrorTemplate{
 			}
 		}
 
-		m.Context = nCtx
+		for q := m.Nearest.Query(`(method_invocation name: (identifier) @method arguments: (argument_list))`); q.Next(); {
+			node := q.CurrentNode()
+			m.Nearest = node
+			nCtx.method = node.Text()
+			break
+		}
 
-		lib.QueryNode(m.Nearest, strings.NewReader("(method_invocation name: (identifier) @method arguments: (argument_list))"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				nCtx.method = node.Text()
-				return false
-			}
-			return true
-		})
+		m.Context = nCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs when trying to access a non-static method from a static context. In Java, a non-static method belongs to an instance of the class and needs an object to be called upon.")

@@ -3,7 +3,6 @@ package java
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 )
@@ -12,15 +11,11 @@ var ArrayIndexOutOfBoundsException = lib.ErrorTemplate{
 	Name:    "ArrayIndexOutOfBoundsException",
 	Pattern: runtimeErrorPattern("java.lang.ArrayIndexOutOfBoundsException", `Index (?P<index>\d+) out of bounds for length (?P<length>\d+)`),
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
-		lib.QueryNode(m.Nearest, strings.NewReader("(array_access index: (_) @index)"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query(`(array_access index: (_) @index)`); q.Next(); {
+			node := q.CurrentNode()
+			m.Nearest = node
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs because the code is trying to access index %s that is beyond the bounds of the array which only has %s items.", cd.Variables["index"], cd.Variables["length"])

@@ -1,8 +1,6 @@
 package java
 
 import (
-	"strings"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -15,16 +13,13 @@ var UnclosedStringLiteralError = lib.ErrorTemplate{
 		if !m.Nearest.IsError() {
 			m.Nearest = m.Nearest.Parent()
 		}
-		lib.QueryNode(m.Nearest, strings.NewReader("(ERROR) @error"), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				// aCtx.NearestClass = node
-				return false
-			}
-			return true
-		})
+
+		for q := m.Nearest.Query(`(ERROR) @error`); q.Next(); {
+			node := q.CurrentNode()
+			m.Nearest = node
+			// aCtx.NearestClass = node
+			break
+		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs when there is an unclosed string literal in the code.")

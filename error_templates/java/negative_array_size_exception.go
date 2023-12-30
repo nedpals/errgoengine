@@ -1,8 +1,6 @@
 package java
 
 import (
-	"strings"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -16,16 +14,13 @@ var NegativeArraySizeException = lib.ErrorTemplate{
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		nCtx := negativeArraySizeExceptionCtx{}
 		query := "(array_creation_expression dimensions: (dimensions_expr (unary_expression operand: (decimal_integer_literal)))) @array"
-		lib.QueryNode(m.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				nCtx.ArrayExprNode = node
-				m.Nearest = node.ChildByFieldName("dimensions").NamedChild(0)
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query(query); q.Next(); {
+			node := q.CurrentNode()
+			nCtx.ArrayExprNode = node
+			m.Nearest = node.ChildByFieldName("dimensions").NamedChild(0)
+			break
+		}
+
 		m.Context = nCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {

@@ -21,28 +21,18 @@ var PrivateAccessError = lib.ErrorTemplate{
 		rootNode := m.Nearest.Doc.RootNode()
 
 		// locate the right node first
-		query := fmt.Sprintf(`((field_access (identifier) . (identifier) @field-name) @field (#eq? @field-name "%s"))`, cd.Variables["field"])
-		lib.QueryNode(rootNode, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				m.Nearest = node
-				return false
-			}
-			return true
-		})
+		for q := m.Nearest.Query(`((field_access (identifier) . (identifier) @field-name) @field (#eq? @field-name "%s"))`, cd.Variables["field"]); q.Next(); {
+			node := q.CurrentNode()
+			m.Nearest = node
+			break
+		}
 
 		// get class declaration node
-		classQuery := fmt.Sprintf(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s")) @class`, className)
-		lib.QueryNode(rootNode, strings.NewReader(classQuery), func(ctx lib.QueryNodeCtx) bool {
-			match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(m.Nearest.Doc.Contents))
-			for _, c := range match.Captures {
-				node := lib.WrapNode(m.Nearest.Doc, c.Node)
-				pCtx.ClassDeclarationNode = node
-				return false
-			}
-			return true
-		})
+		for q := rootNode.Query(`(class_declaration name: (identifier) @class-name (#eq? @class-name "%s")) @class`, className); q.Next(); {
+			node := q.CurrentNode()
+			pCtx.ClassDeclarationNode = node
+			break
+		}
 
 		m.Context = pCtx
 	},

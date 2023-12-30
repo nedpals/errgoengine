@@ -1,8 +1,6 @@
 package java
 
 import (
-	"strings"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -38,15 +36,10 @@ var ArithmeticException = lib.ErrorTemplate{
 		}
 
 		if len(query) != 0 {
-			lib.QueryNode(cd.MainError.Nearest, strings.NewReader(query), func(ctx lib.QueryNodeCtx) bool {
-				match := ctx.Cursor.FilterPredicates(ctx.Match, []byte(cd.MainError.Nearest.Doc.Contents))
-				for _, c := range match.Captures {
-					node := lib.WrapNode(cd.MainError.Nearest.Doc, c.Node)
-					err.Nearest = node
-					return false
-				}
-				return true
-			})
+			for q := err.Nearest.Query(query); q.Next(); {
+				err.Nearest = q.CurrentNode()
+				break
+			}
 		}
 
 		err.Context = ctx
