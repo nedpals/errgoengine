@@ -30,7 +30,7 @@ var ArithmeticException = lib.ErrorTemplate{
 			query = "(_) \"/\" ((decimal_integer_literal) @literal (#eq? @literal \"0\"))"
 		case "Non-terminating decimal expansion; no exact representable decimal result.":
 			ctx.kind = nonTerminatingDecimal
-			query = "(method_invocation) @methodCall (#eq? @methodCall \".divide\")"
+			query = "((method_invocation) @methodCall (#eq? @methodCall \".divide\"))"
 		default:
 			ctx.kind = unknown
 		}
