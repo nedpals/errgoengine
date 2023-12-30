@@ -18,11 +18,8 @@ func TestTraceStack(t *testing.T) {
 		SymbolName: "a",
 		Location: Location{
 			DocumentPath: "a",
-			StartPos: Position{
-				Line:   1,
-				Column: 1,
-				Index:  0,
-			},
+			StartPos:     Position{1, 1, 0},
+			EndPos:       Position{1, 1, 0},
 		},
 	})
 
@@ -36,11 +33,8 @@ func TestTraceStack(t *testing.T) {
 		SymbolName: "bbb",
 		Location: Location{
 			DocumentPath: "ab/aa",
-			StartPos: Position{
-				Line:   1,
-				Column: 1,
-				Index:  0,
-			},
+			StartPos:     Position{1, 1, 0},
+			EndPos:       Position{1, 1, 0},
 		},
 	})
 
