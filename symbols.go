@@ -82,7 +82,7 @@ type IChildrenSymbol interface {
 }
 
 func GetFromSymbol(sym IChildrenSymbol, field string) Symbol {
-	if sym.Children() != nil {
+	if sym != nil && sym.Children() != nil {
 		for symName, sym := range sym.Children().Symbols {
 			if symName == field {
 				return sym
