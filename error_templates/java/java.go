@@ -78,6 +78,8 @@ func getDefaultValueForType(sym lib.Symbol) string {
 		return "0"
 	case java.BuiltinTypes.FloatingPoint.DoubleSymbol:
 		return "0.0"
+	case java.BuiltinTypes.StringSymbol:
+		return "\"example\""
 	default:
 		return "null"
 	}

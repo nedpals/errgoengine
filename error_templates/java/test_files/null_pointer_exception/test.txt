@@ -6,7 +6,7 @@ Exception in thread "main" java.lang.NullPointerException
 template: "Java.NullPointerException"
 ---
 # NullPointerException
-This error occurs because the program is trying to access a method or property of a null object, in this case, trying to invoke the `toUpperCase()` method on a `null` string.
+The error occurs due to your program tried to execute the "toUpperCase" method from "test" which is a null.
 ```
         String test = null;
         System.out.println(test.toUpperCase());
@@ -18,17 +18,23 @@ This error occurs because the program is trying to access a method or property o
 ### 1. Wrap with an if statement
 Check for the variable that is being used as `null`.
 ```diff
-    String test = null;
--   System.out.println(test.toUpperCase());
-+   if (test != null) {
-+       System.out.println(test.toUpperCase());
-+   }
+    public static void main(String args[]) {
+        String test = null;
+-         System.out.println(test.toUpperCase());
++         if (test != null) {
++                 System.out.println(test.toUpperCase());
++         }
+    }
+}
 ```
 
 ### 2. Initialize the variable
 An alternative fix is to initialize the `test` variable with a non-null value before calling the method.
 ```diff
--   String test = null;
-+   String test = "example"; // Assign a non-null value
-    System.out.println(test.toUpperCase());
+public class ShouldBeNull {
+    public static void main(String args[]) {
+-         String test = null;
++         String test = "example";
+        System.out.println(test.toUpperCase());
+    }
 ```
