@@ -208,6 +208,11 @@ func (c *QueryNodeCursor) Len() int {
 	return len(c.matchCursor.Captures())
 }
 
+func (c *QueryNodeCursor) CurrentTagName() string {
+	capture := c.matchCursor.Current()
+	return c.ctx.Query.CaptureNameForId(capture.Index)
+}
+
 type QueryMatchIterator struct {
 	idx   int
 	match *sitter.QueryMatch
