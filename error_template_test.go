@@ -145,7 +145,7 @@ func TestStackTraceRegex(t *testing.T) {
 		}()
 
 		errorTemplates := lib.ErrorTemplates{}
-		errLang := &lib.Language{Name: "Err", StackTracePattern: "aa"}
+		errLang := &lib.Language{Name: "Err", StackTracePattern: "aa", AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer { return nil }}
 		errLang.Compile()
 
 		lib.SetTemplateStackTraceRegex(errLang, nil)
