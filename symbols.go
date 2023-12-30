@@ -126,9 +126,19 @@ func (sym AssignmentSymbol) ReturnType() Symbol {
 }
 
 type VariableSymbol struct {
-	Name_       string
-	Location_   Location
-	ReturnType_ Symbol
+	Name_             string
+	Location_         Location
+	ReturnType_       Symbol
+	contentReturnType Symbol
+	isParam           bool
+}
+
+func (sym VariableSymbol) IsParam() bool {
+	return sym.isParam
+}
+
+func (sym VariableSymbol) ContentReturnType() Symbol {
+	return sym.contentReturnType
 }
 
 func (sym VariableSymbol) Name() string {
@@ -266,4 +276,12 @@ func UnwrapReturnType(sym Symbol) Symbol {
 		return sym
 	}
 	return returnableSym.ReturnType()
+}
+
+func UnwrapActualReturnType(sym Symbol) Symbol {
+	if varSym, ok := sym.(*VariableSymbol); ok {
+		return varSym.ContentReturnType()
+	}
+
+	return UnwrapReturnType(sym)
 }

@@ -143,6 +143,7 @@ func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitte
 			Name_:       nodes["name"].Text(),
 			Location_:   nodes["name"].Parent().Location(),
 			ReturnType_: returnType,
+			isParam:     true,
 		})
 	}
 }
@@ -150,6 +151,7 @@ func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitte
 func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
 	nodes := map[string]SyntaxNode{}
 	nameNodes := []SyntaxNode{}
+	var contentReturnType Symbol = an.ContextData.Analyzer.FallbackSymbol()
 
 	for it.Next() {
 		c := it.Current()
@@ -164,6 +166,8 @@ func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter
 		node := it.CurrentNode()
 		if tag == "name" {
 			nameNodes = append(nameNodes, node)
+		} else if tag == "content" {
+			contentReturnType = an.ContextData.Analyzer.AnalyzeNode(context.Background(), node)
 		} else {
 			nodes[tag] = node
 		}
@@ -177,9 +181,10 @@ func (an *SymbolAnalyzer) analyzeVariables(symbolTree *SymbolTree, query *sitter
 
 		for _, nameNode := range nameNodes {
 			symbolTree.Add(&VariableSymbol{
-				Name_:       nameNode.Text(),
-				Location_:   nameNode.Parent().Location(),
-				ReturnType_: returnType,
+				Name_:             nameNode.Text(),
+				Location_:         nameNode.Parent().Location(),
+				ReturnType_:       returnType,
+				contentReturnType: contentReturnType,
 			})
 		}
 	}
