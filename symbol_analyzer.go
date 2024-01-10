@@ -256,12 +256,11 @@ func (an *SymbolAnalyzer) analyzeFunction(pre string, symbolTree *SymbolTree, qu
 	}
 
 	symbolTree.Add(&TopLevelSymbol{
-		Name_:        nodes["name"].Text(),
-		Kind_:        SymbolKindFunction,
-		Location_:    parent.Location(),
-		Children_:    childTree,
-		IsReturnable: true,
-		ReturnType_:  returnType,
+		Name_:       nodes["name"].Text(),
+		Kind_:       SymbolKindFunction,
+		Location_:   parent.Location(),
+		Children_:   childTree,
+		ReturnType_: returnType,
 	})
 }
 

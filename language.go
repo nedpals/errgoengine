@@ -2,7 +2,9 @@ package errgoengine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/fs"
 	"regexp"
 	"strings"
 
@@ -24,7 +26,7 @@ type LanguageAnalyzer interface {
 type Language struct {
 	isCompiled        bool
 	stackTraceRegex   *regexp.Regexp
-	stubFs            *StubFS
+	externSymbols     map[string]*SymbolTree
 	Name              string
 	FilePatterns      []string
 	SitterLanguage    *sitter.Language
@@ -33,7 +35,7 @@ type Language struct {
 	SymbolsToCapture  string
 	LocationConverter func(path, pos string) Location
 	AnalyzerFactory   func(cd *ContextData) LanguageAnalyzer
-	OnGenStubFS       func(fs *StubFS)
+	ExternFS          fs.ReadFileFS
 }
 
 func (lang *Language) MatchPath(path string) bool {
@@ -62,12 +64,51 @@ func (lang *Language) Compile() {
 		panic(fmt.Sprintf("[Language -> %s] AnalyzerFactory must not be nil", lang.Name))
 	}
 
-	if lang.stubFs == nil && lang.OnGenStubFS != nil {
-		lang.stubFs = &StubFS{}
-		lang.OnGenStubFS(lang.stubFs)
+	if err := lang.compileExternSymbols(); err != nil {
+		panic(err)
 	}
 
 	lang.isCompiled = true
+}
+
+func (lang *Language) compileExternSymbols() error {
+	if lang.isCompiled || lang.ExternFS == nil {
+		return nil
+	}
+
+	lang.externSymbols = make(map[string]*SymbolTree)
+
+	matches, err := fs.Glob(lang.ExternFS, "**/*.json")
+	if err != nil {
+		return err
+	}
+
+	for _, match := range matches {
+		if err := lang.compileExternSymbol(match); err != nil {
+			return err
+		}
+	}
+}
+
+func (lang *Language) compileExternSymbol(path string) error {
+	if lang.isCompiled || lang.ExternFS == nil {
+		return nil
+	}
+
+	file, err := lang.ExternFS.Open(path)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	var symTree SymbolTree
+	if err := json.NewDecoder(file).Decode(&symTree); err != nil {
+		return err
+	}
+
+	lang.externSymbols[path] = &symTree
+	return nil
 }
 
 // SetTemplateStackTraceRegex sets the language's regex pattern directly. for testing purposes only

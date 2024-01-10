@@ -2,6 +2,7 @@ package java
 
 import (
 	"context"
+	"embed"
 	_ "embed"
 	"fmt"
 
@@ -12,6 +13,9 @@ import (
 //go:embed symbols.txt
 var symbols string
 
+//go:embed externs/**/*.json
+var externs embed.FS
+
 var Language = &lib.Language{
 	Name:              "Java",
 	FilePatterns:      []string{".java"},
@@ -21,6 +25,7 @@ var Language = &lib.Language{
 		return &javaAnalyzer{cd}
 	},
 	SymbolsToCapture: symbols,
+	ExternFS:         externs,
 }
 
 type javaAnalyzer struct {

@@ -1,0 +1,97 @@
+{
+    "name": "String",
+    "package": "java.lang",
+    "description": "Represents a sequence of characters.",
+    "constructors": [
+        {
+            "name": "String",
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "char[]",
+                    "description": "The character array that is the initial value of the string."
+                }
+            ]
+        },
+        {
+            "name": "String",
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "String",
+                    "description": "The string that is the initial value of the string."
+                }
+            ]
+        }
+    ],
+    "methods": [
+        {
+            "name": "length",
+            "returnType": "int",
+            "description": "Returns the length of the string."
+        },
+        {
+            "name": "charAt",
+            "returnType": "char",
+            "parameters": [
+                {
+                    "name": "index",
+                    "type": "int",
+                    "description": "The index of the character to return."
+                }
+            ],
+            "description": "Returns the character at the specified index."
+        },
+        {
+            "name": "substring",
+            "returnType": "String",
+            "parameters": [
+                {
+                    "name": "start",
+                    "type": "int",
+                    "description": "The starting index of the substring."
+                },
+                {
+                    "name": "end",
+                    "type": "int",
+                    "description": "The ending index of the substring."
+                }
+            ],
+            "description": "Returns a substring of the string."
+        },
+        {
+            "name": "concat",
+            "returnType": "String",
+            "parameters": [
+                {
+                    "name": "str",
+                    "type": "String",
+                    "description": "The string to concatenate."
+                }
+            ],
+            "description": "Concatenates the specified string to the end of this string."
+        },
+        {
+            "name": "equals",
+            "returnType": "boolean",
+            "parameters": [
+                {
+                    "name": "obj",
+                    "type": "Object",
+                    "description": "The object to compare to."
+                }
+            ],
+            "description": "Compares this string to the specified object."
+        },
+        {
+            "name": "hashCode",
+            "returnType": "int",
+            "description": "Returns the hash code of this string."
+        },
+        {
+            "name": "toString",
+            "returnType": "String",
+            "description": "Returns a string representation of this string."
+        }
+    ]
+}

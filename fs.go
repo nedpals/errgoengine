@@ -64,45 +64,45 @@ func (mfs *MultiReadFileFS) Open(name string) (fs.File, error) {
 	return nil, os.ErrNotExist
 }
 
-type stubFileInfo struct {
+type virtualFileInfo struct {
 	name string
 }
 
-func (*stubFileInfo) Name() string { return "" }
+func (f *virtualFileInfo) Name() string { return f.name }
 
-func (*stubFileInfo) Size() int64 { return 0 }
+func (*virtualFileInfo) Size() int64 { return 0 }
 
-func (*stubFileInfo) Mode() fs.FileMode { return 0400 }
+func (*virtualFileInfo) Mode() fs.FileMode { return 0400 }
 
-func (*stubFileInfo) ModTime() time.Time { return time.Now() }
+func (*virtualFileInfo) ModTime() time.Time { return time.Now() }
 
-func (*stubFileInfo) IsDir() bool { return false }
+func (*virtualFileInfo) IsDir() bool { return false }
 
-func (*stubFileInfo) Sys() any { return nil }
+func (*virtualFileInfo) Sys() any { return nil }
 
-type StubFile struct {
+type VirtualFile struct {
 	Name string
 }
 
-func (StubFile) Read(bt []byte) (int, error) { return 0, io.EOF }
+func (VirtualFile) Read(bt []byte) (int, error) { return 0, io.EOF }
 
-func (vf StubFile) Stat() (fs.FileInfo, error) { return &stubFileInfo{vf.Name}, nil }
+func (vf VirtualFile) Stat() (fs.FileInfo, error) { return &virtualFileInfo{vf.Name}, nil }
 
-func (StubFile) Close() error { return nil }
+func (VirtualFile) Close() error { return nil }
 
-type StubFS struct {
-	Files []StubFile
+type VirtualFS struct {
+	Files []VirtualFile
 }
 
-func (vfs *StubFS) StubFile(name string) StubFile {
-	file := StubFile{
+func (vfs *VirtualFS) StubFile(name string) VirtualFile {
+	file := VirtualFile{
 		Name: name,
 	}
 	vfs.Files = append(vfs.Files, file)
 	return file
 }
 
-func (vfs *StubFS) Open(name string) (fs.File, error) {
+func (vfs *VirtualFS) Open(name string) (fs.File, error) {
 	for _, file := range vfs.Files {
 		if file.Name == name {
 			return file, nil
@@ -111,7 +111,7 @@ func (vfs *StubFS) Open(name string) (fs.File, error) {
 	return nil, os.ErrNotExist
 }
 
-func (vfs *StubFS) ReadFile(name string) ([]byte, error) {
+func (vfs *VirtualFS) ReadFile(name string) ([]byte, error) {
 	for _, file := range vfs.Files {
 		if file.Name == name {
 			return make([]byte, 0), nil

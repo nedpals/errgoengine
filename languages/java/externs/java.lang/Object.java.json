@@ -1,0 +1,38 @@
+{
+    "name": "Object",
+    "package": "java.lang",
+    "description": "The root class of the Java class hierarchy.",
+    "constructors": [
+        {
+            "name": "Object",
+            "parameters": [],
+            "description": "Creates a new instance of the Object class."
+        }
+    ],
+    "methods": [
+        {
+            "name": "equals",
+            "returnType": "boolean",
+            "parameters": [
+                {
+                    "name": "obj",
+                    "type": "Object",
+                    "description": "The object to compare to."
+                }
+            ],
+            "description": "Indicates whether some other object is \"equal to\" this one."
+        },
+        {
+            "name": "hashCode",
+            "returnType": "int",
+            "parameters": [],
+            "description": "Returns a hash code value for this object."
+        },
+        {
+            "name": "toString",
+            "returnType": "String",
+            "parameters": [],
+            "description": "Returns a string representation of this object."
+        }
+    ]
+}

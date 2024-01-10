@@ -1,13 +1,11 @@
 package errgoengine
 
 type SymbolTree struct {
-	Parent       *SymbolTree
-	StartPos     Position
-	EndPos       Position
-	DocumentPath string
-	Symbols      map[string]Symbol
-	scopeIdxs    map[*SymbolTree]int
-	Scopes       []*SymbolTree
+	Parent   *SymbolTree
+	StartPos Position
+	EndPos   Position
+	Symbols  map[string]Symbol
+	Scopes   []*SymbolTree
 }
 
 func (tree *SymbolTree) CreateChildFromNode(n SyntaxNode) *SymbolTree {
@@ -17,11 +15,10 @@ func (tree *SymbolTree) CreateChildFromNode(n SyntaxNode) *SymbolTree {
 	}
 
 	return &SymbolTree{
-		Parent:       tree,
-		StartPos:     n.StartPosition(),
-		EndPos:       n.EndPosition(),
-		DocumentPath: tree.DocumentPath,
-		Symbols:      map[string]Symbol{},
+		Parent:   tree,
+		StartPos: n.StartPosition(),
+		EndPos:   n.EndPosition(),
+		Symbols:  map[string]Symbol{},
 	}
 }
 
@@ -92,16 +89,7 @@ func (tree *SymbolTree) Add(sym Symbol) {
 			tree.Scopes = []*SymbolTree{}
 		}
 
-		if tree.scopeIdxs == nil {
-			tree.scopeIdxs = make(map[*SymbolTree]int)
-		}
-
-		if _, ok := tree.scopeIdxs[cSym.Children()]; ok {
-			return
-		}
-
 		tree.Scopes = append(tree.Scopes, cSym.Children())
-		tree.scopeIdxs[cSym.Children()] = len(tree.Scopes) - 1
 		cSym.Children().Parent = tree
 
 		if cSym.Children().StartPos.Index < tree.StartPos.Index {

@@ -70,8 +70,7 @@ func (store *Store) InitOrGetSymbolTree(docPath string) *SymbolTree {
 
 	if store.Symbols[docPath] == nil {
 		store.Symbols[docPath] = &SymbolTree{
-			DocumentPath: docPath,
-			Symbols:      make(map[string]Symbol),
+			Symbols: make(map[string]Symbol),
 		}
 	}
 

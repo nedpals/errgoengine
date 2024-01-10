@@ -1,0 +1,127 @@
+{
+    "name": "BigDecimal",
+    "package": "java.math",
+    "description": "Represents a decimal number with arbitrary precision.",
+    "constructors": [
+        {
+            "name": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "String",
+                    "description": "The string representation of the decimal number."
+                }
+            ],
+            "description": "Creates a new instance of the BigDecimal class with the specified string representation."
+        },
+        {
+            "name": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "double",
+                    "description": "The double value of the decimal number."
+                }
+            ],
+            "description": "Creates a new instance of the BigDecimal class with the specified double value."
+        }
+    ],
+    "methods": [
+        {
+            "name": "add",
+            "returnType": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "augend",
+                    "type": "BigDecimal",
+                    "description": "The decimal number to add to this instance."
+                }
+            ],
+            "description": "Returns the sum of this instance and the specified decimal number."
+        },
+        {
+            "name": "subtract",
+            "returnType": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "subtrahend",
+                    "type": "BigDecimal",
+                    "description": "The decimal number to subtract from this instance."
+                }
+            ],
+            "description": "Returns the difference between this instance and the specified decimal number."
+        },
+        {
+            "name": "multiply",
+            "returnType": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "multiplicand",
+                    "type": "BigDecimal",
+                    "description": "The decimal number to multiply this instance by."
+                }
+            ],
+            "description": "Returns the product of this instance and the specified decimal number."
+        },
+        {
+            "name": "divide",
+            "returnType": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "divisor",
+                    "type": "BigDecimal",
+                    "description": "The decimal number to divide this instance by."
+                }
+            ],
+            "description": "Returns the quotient of this instance and the specified decimal number."
+        },
+        {
+            "name": "remainder",
+            "returnType": "BigDecimal",
+            "parameters": [
+                {
+                    "name": "divisor",
+                    "type": "BigDecimal",
+                    "description": "The decimal number to divide this instance by."
+                }
+            ],
+            "description": "Returns the remainder of this instance divided by the specified decimal number."
+        },
+        {
+            "name": "compareTo",
+            "returnType": "int",
+            "parameters": [
+                {
+                    "name": "other",
+                    "type": "BigDecimal",
+                    "description": "The decimal number to compare this instance to."
+                }
+            ],
+            "description": "Compares this instance to the specified decimal number."
+        },
+        {
+            "name": "equals",
+            "returnType": "boolean",
+            "parameters": [
+                {
+                    "name": "other",
+                    "type": "Object",
+                    "description": "The object to compare to."
+                }
+            ],
+            "description": "Indicates whether some other object is \"equal to\" this one."
+        },
+        {
+            "name": "hashCode",
+            "returnType": "int",
+            "parameters": [],
+            "description": "Returns a hash code value for this object."
+        },
+        {
+            "name": "toString",
+            "returnType": "String",
+            "parameters": [],
+            "description": "Returns a string representation of this object."
+        }
+    ]
+}

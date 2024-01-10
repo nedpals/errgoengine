@@ -158,12 +158,11 @@ func (sym VariableSymbol) ReturnType() Symbol {
 }
 
 type TopLevelSymbol struct {
-	Name_        string
-	Kind_        SymbolKind
-	Location_    Location
-	Children_    *SymbolTree
-	IsReturnable bool
-	ReturnType_  Symbol
+	Name_       string      `json:"name"`
+	Kind_       SymbolKind  `json:"kind"`
+	Location_   Location    `json:"location"`
+	Children_   *SymbolTree `json:"children"`
+	ReturnType_ Symbol      `json:"returnType"`
 }
 
 func (sym TopLevelSymbol) Name() string {
@@ -183,7 +182,7 @@ func (sym TopLevelSymbol) Children() *SymbolTree {
 }
 
 func (sym TopLevelSymbol) ReturnType() Symbol {
-	if sym.IsReturnable {
+	if sym.ReturnType_ != nil {
 		return sym.ReturnType_
 	}
 	return sym
