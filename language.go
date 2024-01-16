@@ -2,7 +2,6 @@ package errgoengine
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"regexp"
@@ -64,52 +63,52 @@ func (lang *Language) Compile() {
 		panic(fmt.Sprintf("[Language -> %s] AnalyzerFactory must not be nil", lang.Name))
 	}
 
-	if err := lang.compileExternSymbols(); err != nil {
-		panic(err)
-	}
+	// if err := lang.compileExternSymbols(); err != nil {
+	// 	panic(err)
+	// }
 
 	lang.isCompiled = true
 }
 
-func (lang *Language) compileExternSymbols() error {
-	if lang.isCompiled || lang.ExternFS == nil {
-		return nil
-	}
+// func (lang *Language) compileExternSymbols() error {
+// 	if lang.isCompiled || lang.ExternFS == nil {
+// 		return nil
+// 	}
 
-	lang.externSymbols = make(map[string]*SymbolTree)
+// 	lang.externSymbols = make(map[string]*SymbolTree)
 
-	matches, err := fs.Glob(lang.ExternFS, "**/*.json")
-	if err != nil {
-		return err
-	}
+// 	matches, err := fs.Glob(lang.ExternFS, "**/*.json")
+// 	if err != nil {
+// 		return err
+// 	}
 
-	for _, match := range matches {
-		if err := lang.compileExternSymbol(match); err != nil {
-			return err
-		}
-	}
-}
+// 	for _, match := range matches {
+// 		if err := lang.compileExternSymbol(match); err != nil {
+// 			return err
+// 		}
+// 	}
+// }
 
-func (lang *Language) compileExternSymbol(path string) error {
-	if lang.isCompiled || lang.ExternFS == nil {
-		return nil
-	}
+// func (lang *Language) compileExternSymbol(path string) error {
+// 	if lang.isCompiled || lang.ExternFS == nil {
+// 		return nil
+// 	}
 
-	file, err := lang.ExternFS.Open(path)
-	if err != nil {
-		return err
-	}
+// 	file, err := lang.ExternFS.Open(path)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	defer file.Close()
+// 	defer file.Close()
 
-	var symTree SymbolTree
-	if err := json.NewDecoder(file).Decode(&symTree); err != nil {
-		return err
-	}
+// 	var symTree SymbolTree
+// 	if err := json.NewDecoder(file).Decode(&symTree); err != nil {
+// 		return err
+// 	}
 
-	lang.externSymbols[path] = &symTree
-	return nil
-}
+// 	lang.externSymbols[path] = &symTree
+// 	return nil
+// }
 
 // SetTemplateStackTraceRegex sets the language's regex pattern directly. for testing purposes only
 func SetTemplateStackTraceRegex(lang *Language, pattern *regexp.Regexp) {

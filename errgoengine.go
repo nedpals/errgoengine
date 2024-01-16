@@ -107,7 +107,9 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	for _, node := range contextData.TraceStack {
 		contents, err := e.FS.ReadFile(node.DocumentPath)
 		if err != nil {
-			return nil, nil, err
+			// return nil, nil, err
+			// Do not return error if file not found
+			continue
 		}
 
 		// Skip stub files

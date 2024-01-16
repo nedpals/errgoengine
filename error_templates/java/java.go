@@ -14,6 +14,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, ArrayIndexOutOfBoundsException)
 	errorTemplates.MustAdd(java.Language, ArithmeticException)
 	errorTemplates.MustAdd(java.Language, NegativeArraySizeException)
+	errorTemplates.MustAdd(java.Language, StringIndexOutOfBoundsException)
 
 	// Compile time
 	errorTemplates.MustAdd(java.Language, PublicClassFilenameMismatchError)
@@ -118,4 +119,31 @@ func castValueNode(node lib.SyntaxNode, targetSym lib.Symbol) string {
 	default:
 		return node.Text()
 	}
+}
+
+func wrapWithIfStatement(s *lib.BugFixStep, d *lib.Document, cond string, loc lib.Location) {
+	spaces := d.LineAt(loc.StartPos.Line)[:loc.StartPos.Column]
+	if len(spaces) == 0 {
+		// do not create if statement if it is inside an expression
+		return
+	}
+
+	indent := spaces
+	if len(indent) > 4 {
+		indent = spaces[:4]
+	}
+
+	s.AddFix(lib.FixSuggestion{
+		NewText: spaces + fmt.Sprintf("if (%s) {\n", cond) + indent,
+		StartPosition: lib.Position{
+			Line: loc.StartPos.Line,
+		},
+		EndPosition: lib.Position{
+			Line: loc.StartPos.Line,
+		},
+	}).AddFix(lib.FixSuggestion{
+		NewText:       "\n" + spaces + "}",
+		StartPosition: loc.EndPos,
+		EndPosition:   loc.EndPos,
+	})
 }
