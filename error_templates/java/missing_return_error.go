@@ -71,7 +71,7 @@ var MissingReturnError = lib.ErrorTemplate{
 				ctx.NearestMethod.ChildByFieldName("name").Text(),
 				ctx.NearestMethod.ChildByFieldName("type").Text(),
 			).AddFix(lib.FixSuggestion{
-				NewText:       "\n" + cd.MainError.Document.LineAt(lastStartPosInBlock.Line)[:lastStartPosInBlock.Column] + fmt.Sprintf("return %s;", valueToReturn),
+				NewText:       "\n" + getSpaceFromBeginning(cd.MainError.Document, lastStartPosInBlock.Line, lastStartPosInBlock.Column) + fmt.Sprintf("return %s;", valueToReturn),
 				StartPosition: lastEndPosInBlock,
 				EndPosition:   lastEndPosInBlock,
 				Description:   "This ensures that the method returns the sum of the two input numbers.",

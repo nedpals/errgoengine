@@ -43,7 +43,7 @@ var NonStaticMethodAccessError = lib.ErrorTemplate{
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		ctx := cd.MainError.Context.(nonStaticMethodAccessErrorCtx)
 		startPos := ctx.parent.StartPosition()
-		spacing := cd.MainError.Document.LineAt(startPos.Line)[:startPos.Column]
+		spacing := getSpaceFromBeginning(cd.MainError.Document, startPos.Line, startPos.Column)
 
 		gen.Add("Instantiate and call the method", func(s *lib.BugFixSuggestion) {
 			s.AddStep("Create an instance of the class to access the non-static method").

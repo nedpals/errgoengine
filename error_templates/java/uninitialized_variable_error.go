@@ -55,7 +55,8 @@ var UninitializedVariableError = lib.ErrorTemplate{
 		})
 
 		gen.Add("Assign a value before using", func(s *lib.BugFixSuggestion) {
-			spaces := cd.MainError.Document.LineAt(ctx.DeclarationNode.StartPosition().Line)[:ctx.DeclarationNode.StartPosition().Column]
+			startPos := ctx.DeclarationNode.StartPosition()
+			spaces := getSpaceFromBeginning(cd.MainError.Document, startPos.Line, startPos.Column)
 
 			s.AddStep("Alternatively, you can assign a value to the variable before using it.").AddFix(lib.FixSuggestion{
 				NewText:       "\n" + spaces + fmt.Sprintf("%s = %s; // or any other valid value", cd.Variables["variable"], getDefaultValueForType(ctx.DeclarationSym.(*lib.VariableSymbol).ReturnType())),

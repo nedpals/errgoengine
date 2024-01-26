@@ -63,7 +63,7 @@ var PrivateAccessError = lib.ErrorTemplate{
 			if !lastNamedChild.IsNull() {
 				targetPos := lastNamedChild.StartPosition()
 				// get the last named child and use the space as its base
-				space = cd.MainError.Document.LineAt(targetPos.Line)[:targetPos.Column]
+				space = getSpaceFromBeginning(cd.MainError.Document, targetPos.Line, targetPos.Column)
 				methodCreatorSb.WriteString("\n\n" + space)
 			}
 

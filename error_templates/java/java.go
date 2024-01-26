@@ -3,6 +3,7 @@ package java
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/languages/java"
@@ -121,29 +122,111 @@ func castValueNode(node lib.SyntaxNode, targetSym lib.Symbol) string {
 	}
 }
 
-func wrapWithIfStatement(s *lib.BugFixStep, d *lib.Document, cond string, loc lib.Location) {
-	spaces := d.LineAt(loc.StartPos.Line)[:loc.StartPos.Column]
-	if len(spaces) == 0 {
-		// do not create if statement if it is inside an expression
-		return
+func wrapWithCondStatement(s *lib.BugFixStep, d *lib.Document, condType string, cond string, loc lib.Location, withNewLine bool) {
+	if len(condType) == 0 {
+		condType = "if"
 	}
 
+	line := d.LineAt(loc.StartPos.Line)
+	startCol, endCol := getSpaceBoundary(line, loc.StartPos.Column, loc.StartPos.Column, true)
+	spaces := line[startCol:endCol]
+
+	opening := fmt.Sprintf("%s (%s)", condType, cond)
+	if condType == "else" || len(cond) == 0 {
+		if startCol == loc.StartPos.Column && condType == "else" {
+			opening = " else"
+		} else {
+			opening = condType
+		}
+	}
+
+	s.AddFix(lib.FixSuggestion{
+		NewText: spaces + opening + " {\n" + getIndent(spaces, 1),
+		StartPosition: lib.Position{
+			Line:   loc.StartPos.Line,
+			Column: startCol,
+		},
+		EndPosition: lib.Position{
+			Line:   loc.StartPos.Line,
+			Column: startCol,
+		},
+	})
+
+	// get spaces from the first index to the non-space boundary
+	// in order to get the correct indentation
+	if len(spaces) == 0 {
+		// get spaces from the start line
+		startCol, endCol := getSpaceBoundary(line, 0, len(line), false)
+		spaces = line[startCol:endCol]
+	}
+
+	closing := "\n" + spaces + "}"
+	if withNewLine {
+		closing += "\n"
+	}
+
+	s.AddFix(lib.FixSuggestion{
+		NewText:       closing,
+		StartPosition: loc.EndPos,
+		EndPosition:   loc.EndPos,
+	})
+}
+
+func getSpaceBoundary(line string, from int, to int, reverse bool) (int, int) {
+	boundaryCol := from
+	if reverse {
+		boundaryCol = to
+
+		for i := to - 1; i >= 0; i-- {
+			if !unicode.IsSpace(rune(line[i])) {
+				break
+			}
+			boundaryCol--
+		}
+	} else {
+		for i := from; i < to; i++ {
+			if !unicode.IsSpace(rune(line[i])) {
+				break
+			}
+			boundaryCol++
+		}
+	}
+
+	if reverse {
+		return boundaryCol, from
+	}
+
+	return from, boundaryCol
+}
+
+func getSpace(doc *lib.Document, line int, from int, to int, reverse bool) string {
+	startCol, endCol := getSpaceBoundary(doc.LineAt(from), from, to, reverse)
+	if startCol > endCol {
+		startCol, endCol = endCol, startCol
+	}
+
+	lineStr := doc.LineAt(line)
+	return lineStr[startCol:endCol]
+}
+
+func getSpaceFromBeginning(doc *lib.Document, line int, to int) string {
+	return getSpace(doc, line, 0, to, true)
+}
+
+func getIndent(spaces string, by int) string {
 	indent := spaces
 	if len(indent) > 4 {
 		indent = spaces[:4]
 	}
 
-	s.AddFix(lib.FixSuggestion{
-		NewText: spaces + fmt.Sprintf("if (%s) {\n", cond) + indent,
-		StartPosition: lib.Position{
-			Line: loc.StartPos.Line,
-		},
-		EndPosition: lib.Position{
-			Line: loc.StartPos.Line,
-		},
-	}).AddFix(lib.FixSuggestion{
-		NewText:       "\n" + spaces + "}",
-		StartPosition: loc.EndPos,
-		EndPosition:   loc.EndPos,
-	})
+	if by == 1 {
+		return indent
+	}
+
+	return strings.Repeat(indent, by)
+}
+
+func indentSpace(spaces string, by int) string {
+	indent := getIndent(spaces, by)
+	return spaces + indent
 }

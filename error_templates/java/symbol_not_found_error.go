@@ -68,13 +68,13 @@ var SymbolNotFoundError = lib.ErrorTemplate{
 		switch ctx.symbolType {
 		case "variable":
 			affectedStatementPosition := ctx.rootNode.StartPosition()
-			lineAffected := cd.MainError.Document.LineAt(affectedStatementPosition.Line)
+			space := getSpaceFromBeginning(cd.MainError.Document, affectedStatementPosition.Line, affectedStatementPosition.Column)
 
 			gen.Add("Create a variable.", func(s *lib.BugFixSuggestion) {
 				s.AddStep("Create a variable named \"%s\". For example:", ctx.symbolName).
 					// TODO: use variable type from the inferred parameter
 					AddFix(lib.FixSuggestion{
-						NewText:       lineAffected[:affectedStatementPosition.Column] + fmt.Sprintf("String %s = \"\";\n", ctx.symbolName),
+						NewText:       space + fmt.Sprintf("String %s = \"\";\n", ctx.symbolName),
 						StartPosition: lib.Position{Line: affectedStatementPosition.Line, Column: 0},
 						EndPosition:   lib.Position{Line: affectedStatementPosition.Line, Column: 0},
 					})
