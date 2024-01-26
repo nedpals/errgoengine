@@ -8,7 +8,7 @@ Exception in thread "main" java.lang.StringIndexOutOfBoundsException: String ind
 template: "Java.StringIndexOutOfBoundsException"
 ---
 # StringIndexOutOfBoundsException
-This error occurs when attempting to access an index beyond the length of a string.
+This error occurs because the code is trying to access index 20 that is beyond the length of the string.
 ```
         // Attempting to access an index beyond the string's length
         char character = text.charAt(20);
@@ -17,13 +17,18 @@ This error occurs when attempting to access an index beyond the length of a stri
     }
 ```
 ## Steps to fix
-### 1. Ensure the index is within the string length
-1. Check that the index used for accessing the character is within the valid range of the string length.
+### Ensure the index is within the string length
+Check that the index used for accessing the character is within the valid range of the string length.
 ```diff
-+ if (index < text.length()) {
-    char character = text.charAt(20);
-    System.out.println(character);
-+ } else {
-+    System.out.println("Index out of range.");
-+ }
+        String text = "Hello, World!";
+        // Attempting to access an index beyond the string's length
+-         char character = text.charAt(20);
++         if (20 < text.length()) {
++             char character = text.charAt(20);
++         } else {
++             System.out.println("Index out of range.")
++         }
++
+        System.out.println(character);
+    }
 ```

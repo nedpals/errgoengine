@@ -39,7 +39,7 @@ var StringIndexOutOfBoundsException = lib.ErrorTemplate{
 		m.Context = ctx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
-		gen.Add("This error occurs because the code is trying to access index %s that is beyond the bounds of the array which only has %s items.", cd.Variables["index"], cd.Variables["length"])
+		gen.Add("This error occurs because the code is trying to access index %s that is beyond the length of the string.", cd.Variables["index"])
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
 		ctx := cd.MainError.Context.(stringIndexOutOfBoundsExceptionCtx)
@@ -52,16 +52,42 @@ var StringIndexOutOfBoundsException = lib.ErrorTemplate{
 		gen.Add("Ensure the index is within the string length", func(s *lib.BugFixSuggestion) {
 			obj := ctx.parentNode.ChildByFieldName("object")
 			step := s.AddStep("Check that the index used for accessing the character is within the valid range of the string length.")
+			gpLocation := ctx.grandParentNode.Location()
 
-			wrapWithIfStatement(
+			wrapWithCondStatement(
 				step,
 				cd.MainError.Document,
+				"if",
 				fmt.Sprintf("%d < %s.length()", index, obj.Text()),
-				lib.Location{
-					StartPos: ctx.grandParentNode.StartPosition(),
-					EndPos:   ctx.grandParentNode.EndPosition(),
-				},
+				gpLocation,
+				false,
 			)
+
+			wrapWithCondStatement(
+				step,
+				cd.MainError.Document,
+				"else",
+				"",
+				lib.Location{
+					StartPos: gpLocation.EndPos,
+					EndPos:   gpLocation.EndPos,
+				},
+				true,
+			)
+
+			space := getSpace(
+				cd.MainError.Document,
+				gpLocation.StartPos.Line, 0, gpLocation.StartPos.Column, true)
+
+			step.AddFix(lib.FixSuggestion{
+				NewText: indentSpace(space, 1) + `System.out.println("Index out of range.")`,
+				StartPosition: lib.Position{
+					Line: gpLocation.EndPos.Line - 2,
+				},
+				EndPosition: lib.Position{
+					Line: gpLocation.EndPos.Line - 2,
+				},
+			})
 		})
 	},
 }
