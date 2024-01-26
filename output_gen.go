@@ -152,12 +152,21 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						}
 
 						// do not adjust position if the current fix is above the previous fix position
-						if fIdx-1 >= 0 && step.Fixes[fIdx-1].StartPosition.Line <= fix.StartPosition.Line {
+						// if fIdx >= 0 && step.Fixes[fIdx-1].StartPosition.Line <= fix.StartPosition.Line {
+						if fIdx-1 >= 0 {
 							changeset = changeset.Add(diffPosition)
 						}
 
 						diffPosition = diffPosition.addUnsafe(editedDoc.Apply(changeset))
-						origStartLine = min(origStartLine, fix.StartPosition.Line)
+
+						// change origStartLine only if
+						// - the fix is a "deletion" and less than the current origStartLine
+						// - the fix is an "insertion" or "replacement" and greater than the current origStartLine
+						origStartLine2 := min(origStartLine, fix.StartPosition.Line)
+						if len(fix.NewText) == 0 || fix.StartPosition.Line > origStartLine {
+							origStartLine = origStartLine2
+						}
+
 						origAfterLine = max(origAfterLine, fix.EndPosition.Line)
 
 						startLine = min(startLine, fix.StartPosition.Line+diffPosition.Line)
