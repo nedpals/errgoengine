@@ -1,0 +1,33 @@
+template: "Java.NoSuchElementException"
+---
+Exception in thread "main" java.util.NoSuchElementException
+	at java.base/java.util.ArrayList$Itr.next(ArrayList.java:1052)
+	at Main.main(Main.java:8)
+===
+template: "Java.NoSuchElementException"
+---
+# NoSuchElementException
+This error occurs when attempting to retrieve an element from an empty collection using an iterator.
+```
+        // Attempting to get an element from an empty list
+        String element = iterator.next();
+                                  ^^^^
+        System.out.println(element);
+    }
+```
+## Steps to fix
+### Check if the iterator has next elements before calling `next()`
+Ensure that the iterator has elements before attempting to retrieve the next one.
+```diff
+        Iterator<String> iterator = myList.iterator();
+        // Attempting to get an element from an empty list
+-         String element = iterator.next();
++         if (iterator.hasNext()) {
++             String element = iterator.next();
++         } else {
++             System.out.println("No elements in the list.")
++         }
++
+        System.out.println(element);
+    }
+```

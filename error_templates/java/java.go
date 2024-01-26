@@ -16,6 +16,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, ArithmeticException)
 	errorTemplates.MustAdd(java.Language, NegativeArraySizeException)
 	errorTemplates.MustAdd(java.Language, StringIndexOutOfBoundsException)
+	errorTemplates.MustAdd(java.Language, NoSuchElementException)
 
 	// Compile time
 	errorTemplates.MustAdd(java.Language, PublicClassFilenameMismatchError)
