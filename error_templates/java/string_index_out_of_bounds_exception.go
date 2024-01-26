@@ -47,13 +47,12 @@ var StringIndexOutOfBoundsException = lib.ErrorTemplate{
 		index, _ := strconv.Atoi(cd.Variables["index"])
 		// symbolTree := cd.Store.InitOrGetSymbolTree(cd.MainError.DocumentPath())
 
-		// TODO: add a suggestion to add an if statement if the array length is 0
-
 		gen.Add("Ensure the index is within the string length", func(s *lib.BugFixSuggestion) {
 			obj := ctx.parentNode.ChildByFieldName("object")
 			step := s.AddStep("Check that the index used for accessing the character is within the valid range of the string length.")
 			gpLocation := ctx.grandParentNode.Location()
 
+			// TODO: detect the statements that are using the variable to expand the position range of the if statement
 			wrapWithCondStatement(
 				step,
 				cd.MainError.Document,
