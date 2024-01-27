@@ -1,0 +1,30 @@
+name: "If"
+template: "Java.CharacterExpectedError"
+---
+Main.java:3: error: ')' expected
+        if (1 > 0 {
+                 ^
+1 error
+===
+template: "Java.CharacterExpectedError"
+---
+# CharacterExpectedError
+This error occurs when there is an unexpected character in the code, and ')' is expected.
+```
+    public static void main(String[] args) {
+        if (1 > 0 {
+                 ^
+            System.out.println("Condition is true.");
+        }
+```
+## Steps to fix
+### Add the missing character
+Ensure that the array declaration has the correct syntax by adding the missing `)`.
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         if (1 > 0 {
++         if (1 > 0) {
+            System.out.println("Condition is true.");
+        }
+```

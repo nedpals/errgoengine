@@ -20,7 +20,7 @@ type identifierExpectedErrorCtx struct {
 
 var IdentifierExpectedError = lib.ErrorTemplate{
 	Name:              "IdentifierExpectedError",
-	Pattern:           comptimeErrorPattern(`(?P<symbolKind>\S+) expected`),
+	Pattern:           comptimeErrorPattern(`<identifier> expected`),
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
 		iCtx := identifierExpectedErrorCtx{}

@@ -46,32 +46,3 @@ var ParseEndOfFileError = lib.ErrorTemplate{
 		})
 	},
 }
-
-func nearestMissingNodeFromPos(cursor *sitter.TreeCursor, pos lib.Position) *sitter.Node {
-	defer cursor.GoToParent()
-
-	// hope it executes to avoid stack overflow
-	if !cursor.GoToFirstChild() {
-		return nil
-	}
-
-	for {
-		currentNode := cursor.CurrentNode()
-		pointA := currentNode.StartPoint()
-		pointB := currentNode.EndPoint()
-
-		if uint32(pos.Line) >= pointA.Row+1 && uint32(pos.Line) <= pointB.Row+1 {
-			if currentNode.IsMissing() {
-				return currentNode
-			} else if currentNode.ChildCount() != 0 {
-				if gotNode := nearestMissingNodeFromPos(cursor, pos); gotNode != nil {
-					return gotNode
-				}
-			}
-		}
-
-		if !cursor.GoToNextSibling() {
-			return nil
-		}
-	}
-}

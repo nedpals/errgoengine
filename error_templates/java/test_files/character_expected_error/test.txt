@@ -1,0 +1,29 @@
+template: "Java.CharacterExpectedError"
+---
+MissingArrayBracketsExample.java:4: error: '}' expected
+        int[] numbers = {1, 2, 3;
+                                ^
+1 error
+===
+template: "Java.CharacterExpectedError"
+---
+# CharacterExpectedError
+This error occurs when there is an unexpected character in the code, and '}' is expected.
+```
+        // Missing closing bracket in the array declaration
+        int[] numbers = {1, 2, 3;
+                                ^
+        for (int num : numbers) {
+            System.out.println(num);
+```
+## Steps to fix
+### Add the missing character
+Ensure that the array declaration has the correct syntax by adding the missing `}`.
+```diff
+    public static void main(String[] args) {
+        // Missing closing bracket in the array declaration
+-         int[] numbers = {1, 2, 3;
++         int[] numbers = {1, 2, 3};
+        for (int num : numbers) {
+            System.out.println(num);
+```
