@@ -1,0 +1,29 @@
+template: "Java.IllegalCharacterError"
+---
+Main.java:3: error: illegal character: '\ufeff'
+        System.out.println("Hello, World!"+\uFEFF); // Error: Illegal character (BOM)
+                                           ^
+1 error
+===
+template: "Java.IllegalCharacterError"
+---
+# IllegalCharacterError
+This error occurs when there is an attempt to use an illegal character in the code.
+```
+    public static void main(String[] args) {
+        System.out.println("Hello, World!"+\uFEFF); // Error: Illegal character (BOM)
+                                            ^^^^^
+    }
+}
+```
+## Steps to fix
+### Remove the illegal character
+Remove the illegal character `\ufeff` from the code.
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         System.out.println("Hello, World!"+\uFEFF); // Error: Illegal character (BOM)
++         System.out.println("Hello, World!"); // Error: Illegal character (BOM)
+    }
+}
+```

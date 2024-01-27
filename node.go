@@ -58,6 +58,11 @@ func (n SyntaxNode) Child(idx int) SyntaxNode {
 	return WrapNode(n.Doc, cNode)
 }
 
+func (n SyntaxNode) NextSibling() SyntaxNode {
+	cNode := n.Node.NextSibling()
+	return WrapNode(n.Doc, cNode)
+}
+
 func (n SyntaxNode) PrevSibling() SyntaxNode {
 	cNode := n.Node.PrevSibling()
 	return WrapNode(n.Doc, cNode)

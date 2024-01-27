@@ -40,6 +40,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, BracketMismatchError)
 	errorTemplates.MustAdd(java.Language, InvalidMethodDeclarationError)
 	errorTemplates.MustAdd(java.Language, IdentifierExpectedError)
+	errorTemplates.MustAdd(java.Language, IllegalCharacterError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {
