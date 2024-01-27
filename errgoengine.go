@@ -151,22 +151,25 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	mainTraceNode := contextData.TraceStack.NearestTo(contextData.WorkingPath)
 
 	// get nearest node
-	doc := contextData.Documents[mainTraceNode.DocumentPath]
-	nearest := doc.Tree.RootNode().NamedDescendantForPointRange(
-		sitter.Point{Row: uint32(mainTraceNode.StartPos.Line)},
-		sitter.Point{Row: uint32(mainTraceNode.EndPos.Line)},
-	)
+	if doc, ok := contextData.Documents[mainTraceNode.DocumentPath]; ok {
+		nearest := doc.Tree.RootNode().NamedDescendantForPointRange(
+			sitter.Point{Row: uint32(mainTraceNode.StartPos.Line)},
+			sitter.Point{Row: uint32(mainTraceNode.EndPos.Line)},
+		)
 
-	if nearest.StartPoint().Row != uint32(mainTraceNode.StartPos.Line) {
-		cursor := sitter.NewTreeCursor(nearest)
-		nearest = nearestNodeFromPos(cursor, mainTraceNode.StartPos)
-	}
+		if nearest.StartPoint().Row != uint32(mainTraceNode.StartPos.Line) {
+			cursor := sitter.NewTreeCursor(nearest)
+			nearest = nearestNodeFromPos(cursor, mainTraceNode.StartPos)
+		}
 
-	// further analyze main error
-	contextData.MainError = &MainError{
-		ErrorNode: &mainTraceNode,
-		Document:  doc,
-		Nearest:   WrapNode(doc, nearest),
+		// further analyze main error
+		contextData.MainError = &MainError{
+			ErrorNode: &mainTraceNode,
+			Document:  doc,
+			Nearest:   WrapNode(doc, nearest),
+		}
+	} else {
+		return nil, nil, fmt.Errorf("main trace node document not found")
 	}
 
 	if contextData.MainError != nil && template.OnAnalyzeErrorFn != nil {
