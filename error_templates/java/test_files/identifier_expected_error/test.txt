@@ -1,0 +1,32 @@
+template: "Java.IdentifierExpectedError"
+---
+MyClass.java:3: error: <identifier> expected
+  input.equals("");
+              ^
+MyClass.java:3: error: illegal start of type
+  input.equals("");
+               ^
+2 errors
+===
+template: "Java.IdentifierExpectedError"
+---
+# IdentifierExpectedError
+This error occurs when an identifier is expected, but an expression is found in a location where a statement or declaration is expected.
+```
+  String input = "";
+  input.equals("");
+  ^^^^^^^^^^^^^^^^^
+}
+```
+## Steps to fix
+### Use the correct syntax
+Use a valid statement or expression within a method or block.
+```diff
+public class MyClass {
+  String input = "";
+-   input.equals("");
++   public void someMethod() {
++     input.equals("");
++   }
+}
+```

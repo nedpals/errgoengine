@@ -39,6 +39,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, CannotBeAppliedError)
 	errorTemplates.MustAdd(java.Language, BracketMismatchError)
 	errorTemplates.MustAdd(java.Language, InvalidMethodDeclarationError)
+	errorTemplates.MustAdd(java.Language, IdentifierExpectedError)
 }
 
 func runtimeErrorPattern(errorName string, pattern string) string {
