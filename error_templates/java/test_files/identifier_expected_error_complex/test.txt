@@ -1,0 +1,35 @@
+name: "Complex"
+template: "Java.IdentifierExpectedError"
+---
+Main.java:4: error: <identifier> expected
+    System.out.println("Hello, World!");
+                      ^
+Main.java:4: error: illegal start of type
+    System.out.println("Hello, World!");
+                       ^
+2 errors
+===
+template: "Java.IdentifierExpectedError"
+---
+# IdentifierExpectedError
+This error occurs when an identifier is expected, but an expression is found in a location where a statement or declaration is expected.
+```
+
+    System.out.println("Hello, World!");
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    public static void main(String[] args) {
+```
+## Steps to fix
+### Use the correct syntax
+Use a valid statement or expression within a method or block.
+```diff
+    int x = 5;
+
+-     System.out.println("Hello, World!");
++     public void someMethod() {
++         System.out.println("Hello, World!");
++     }
+
+    public static void main(String[] args) {
+```
