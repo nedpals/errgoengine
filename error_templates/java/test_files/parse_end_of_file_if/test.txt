@@ -9,22 +9,18 @@ BracketMismatch.java:8: error: reached end of file while parsing
 template: "Java.ParseEndOfFileError"
 ---
 # ParseEndOfFileError
-This error occurs when there is an unexpected character in the code, and ')' is expected.
+This error occurs when the compiler expects more code but encounters the end of the file.
 ```
-    public static void main(String[] args) {
-        if (1 > 0 {
-                 ^
-            System.out.println("Condition is true.");
-        }
+    }
+}
+ ^
 ```
 ## Steps to fix
-### Add the missing character
-Ensure that the array declaration has the correct syntax by adding the missing `)`.
+### Complete the code
+Add the missing `}` in line 8.
 ```diff
-public class Main {
-    public static void main(String[] args) {
--         if (1 > 0 {
-+         if (1 > 0) {
-            System.out.println("Condition is true.");
-        }
+          // Missing closing bracket for if statement
+    }
+}
++ }
 ```
