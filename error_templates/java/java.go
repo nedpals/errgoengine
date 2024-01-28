@@ -178,30 +178,25 @@ func wrapWithCondStatement(s *lib.BugFixStep, d *lib.Document, condType string, 
 }
 
 func getSpaceBoundary(line string, from int, to int, reverse bool) (int, int) {
-	boundaryCol := from
-	if reverse {
-		boundaryCol = to
-
-		for i := to - 1; i >= 0; i-- {
-			if !unicode.IsSpace(rune(line[i])) {
-				break
-			}
-			boundaryCol--
-		}
-	} else {
-		for i := from; i < to; i++ {
-			if !unicode.IsSpace(rune(line[i])) {
-				break
-			}
-			boundaryCol++
-		}
+	if from > to {
+		from, to = to, from
 	}
 
-	if reverse {
-		return boundaryCol, from
+	for i := to - 1; i >= 0; i-- {
+		if !unicode.IsSpace(rune(line[i])) {
+			break
+		}
+		to = i
 	}
 
-	return from, boundaryCol
+	for i := from; i < to; i++ {
+		if !unicode.IsSpace(rune(line[i])) {
+			break
+		}
+		from++
+	}
+
+	return from, to
 }
 
 func getSpace(doc *lib.Document, line int, from int, to int, reverse bool) string {
@@ -211,6 +206,7 @@ func getSpace(doc *lib.Document, line int, from int, to int, reverse bool) strin
 	}
 
 	lineStr := doc.LineAt(line)
+	fmt.Println(startCol, endCol, lineStr)
 	return lineStr[startCol:endCol]
 }
 

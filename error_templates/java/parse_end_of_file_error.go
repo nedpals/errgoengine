@@ -1,6 +1,8 @@
 package java
 
 import (
+	"strings"
+
 	lib "github.com/nedpals/errgoengine"
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -36,12 +38,33 @@ var ParseEndOfFileError = lib.ErrorTemplate{
 
 		gen.Add("Complete the code", func(s *lib.BugFixSuggestion) {
 			endPos := cd.MainError.Nearest.EndPosition()
+			endLine := endPos.Line
+			space := ""
+
+			// add the missing at the right depth so we need to identify first
+			// where should we add the missing character
+			for line := endPos.Line; line >= 0; line-- {
+				if strings.TrimSpace(cd.MainError.Document.LineAt(line)) != ctx.missingCharacter {
+					endLine = line
+					break
+				}
+
+				if len(space) == 0 {
+					space = getSpaceFromBeginning(cd.MainError.Document, line, endPos.Column)
+				}
+
+				continue
+			}
 
 			s.AddStep("Add the missing `%s` in line %d", ctx.missingCharacter, endPos.Line+1).
 				AddFix(lib.FixSuggestion{
-					NewText:       "\n" + ctx.missingCharacter,
-					StartPosition: endPos,
-					EndPosition:   endPos,
+					NewText: "\n" + getIndent(space, endPos.Line-endLine) + ctx.missingCharacter,
+					StartPosition: lib.Position{
+						Line: endLine,
+					},
+					EndPosition: lib.Position{
+						Line: endLine,
+					},
 				})
 		})
 	},
