@@ -1,51 +1,18 @@
 package errgoengine_test
 
 import (
-	"context"
 	"testing"
 
 	lib "github.com/nedpals/errgoengine"
 	testutils "github.com/nedpals/errgoengine/test_utils"
 )
 
-type TestAnalyzer struct{}
-
-func (TestAnalyzer) FallbackSymbol() lib.Symbol {
-	return nil
-}
-
-func (TestAnalyzer) FindSymbol(string) lib.Symbol { return nil }
-
-func (TestAnalyzer) AnalyzeNode(context.Context, lib.SyntaxNode) lib.Symbol {
-	return nil
-}
-
-func (TestAnalyzer) AnalyzeImport(lib.ImportParams) lib.ResolvedImport {
-	return lib.ResolvedImport{}
-}
-
-var testLanguage = &lib.Language{
-	Name:              "TestLang",
-	FilePatterns:      []string{".test"},
-	StackTracePattern: `\sin (?P<symbol>\S+) at (?P<path>\S+):(?P<position>\d+)`,
-	LocationConverter: func(ctx lib.LocationConverterContext) lib.Location {
-		return lib.Location{
-			DocumentPath: ctx.Path,
-			StartPos:     lib.Position{0, 0, 0},
-			EndPos:       lib.Position{0, 0, 0},
-		}
-	},
-	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
-		return TestAnalyzer{}
-	},
-}
-
 func emptyExplainFn(cd *lib.ContextData, gen *lib.ExplainGenerator) {}
 func emptyBugFixFn(cd *lib.ContextData, gen *lib.BugFixGenerator)   {}
 
 func setupTemplate(template lib.ErrorTemplate) (*lib.CompiledErrorTemplate, error) {
 	errorTemplates := lib.ErrorTemplates{}
-	return errorTemplates.Add(testLanguage, template)
+	return errorTemplates.Add(lib.TestLanguage, template)
 }
 
 func TestErrorTemplate(t *testing.T) {
@@ -62,7 +29,7 @@ func TestErrorTemplate(t *testing.T) {
 		}
 
 		testutils.Equals(t, tmp.Name, "SampleError")
-		testutils.Equals(t, tmp.Language, testLanguage)
+		testutils.Equals(t, tmp.Language, lib.TestLanguage)
 		testutils.Equals(t, tmp.Pattern.String(), `(?m)^This is a sample error(?P<stacktrace>(?:.|\s)*)$`)
 		testutils.Equals(t, tmp.StackTraceRegex().String(), `(?m)\sin (?P<symbol>\S+) at (?P<path>\S+):(?P<position>\d+)`)
 		testutils.ExpectNil(t, tmp.StackTracePattern)
@@ -82,7 +49,7 @@ func TestErrorTemplate(t *testing.T) {
 		}
 
 		testutils.Equals(t, tmp.Name, "SampleError2")
-		testutils.Equals(t, tmp.Language, testLanguage)
+		testutils.Equals(t, tmp.Language, lib.TestLanguage)
 		testutils.Equals(t, tmp.Pattern.String(), `(?m)^This is a sample error with stack trace(?P<stacktrace>(?:.|\s)*)$`)
 		testutils.Equals(t, tmp.StackTraceRegex().String(), `(?P<symbol>\S+):(?P<path>\S+):(?P<position>\d+)`)
 	})
@@ -100,7 +67,7 @@ func TestErrorTemplate(t *testing.T) {
 		}
 
 		testutils.Equals(t, tmp.Name, "SampleError3")
-		testutils.Equals(t, tmp.Language, testLanguage)
+		testutils.Equals(t, tmp.Language, lib.TestLanguage)
 		testutils.Equals(t, tmp.Pattern.String(), `(?m)^Stack trace in middle (?P<stacktrace>(?:.|\s)*)test$`)
 		testutils.ExpectNil(t, tmp.StackTracePattern)
 	})
@@ -118,7 +85,7 @@ func TestStackTraceRegex(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		testutils.Equals(t, tmp.StackTraceRegex().String(), "(?m)"+testLanguage.StackTracePattern)
+		testutils.Equals(t, tmp.StackTraceRegex().String(), "(?m)"+lib.TestLanguage.StackTracePattern)
 	})
 
 	t.Run("With custom stack trace", func(t *testing.T) {

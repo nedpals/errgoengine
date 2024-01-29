@@ -1,60 +1,16 @@
 package errgoengine
 
 import (
-	"context"
 	"strings"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/python"
 )
-
-var testLanguage = &Language{
-	Name:              "Python",
-	FilePatterns:      []string{".py"},
-	SitterLanguage:    python.GetLanguage(),
-	StackTracePattern: `\s+File "(?P<path>\S+)", line (?P<position>\d+), in (?P<symbol>\S+)`,
-	ErrorPattern:      `Traceback \(most recent call last\):$stacktrace$message`,
-	AnalyzerFactory: func(cd *ContextData) LanguageAnalyzer {
-		return &testAnalyzer{cd}
-	},
-	SymbolsToCapture: `
-(expression_statement
-	(assignment
-		left: (identifier) @assignment.name
-		right: (identifier) @assignment.content) @assignment)
-`,
-}
-
-type testAnalyzer struct {
-	*ContextData
-}
-
-func (an *testAnalyzer) FallbackSymbol() Symbol {
-	return Builtin("any")
-}
-
-func (an *testAnalyzer) FindSymbol(name string) Symbol {
-	return nil
-}
-
-func (an *testAnalyzer) AnalyzeNode(_ context.Context, n SyntaxNode) Symbol {
-	// TODO:
-	return Builtin("void")
-}
-
-func (an *testAnalyzer) AnalyzeImport(params ImportParams) ResolvedImport {
-	// TODO:
-
-	return ResolvedImport{
-		Path: "",
-	}
-}
 
 func TestParseDocument(t *testing.T) {
 	parser := sitter.NewParser()
 
-	doc, err := ParseDocument("test", strings.NewReader(`hello = 1`), parser, testLanguage, nil)
+	doc, err := ParseDocument("test", strings.NewReader(`hello = 1`), parser, TestLanguage, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -67,7 +23,7 @@ func TestParseDocument(t *testing.T) {
 func TestEditableDocument(t *testing.T) {
 	parser := sitter.NewParser()
 
-	doc, err := ParseDocument("test", strings.NewReader(`hello = 1`), parser, testLanguage, nil)
+	doc, err := ParseDocument("test", strings.NewReader(`hello = 1`), parser, TestLanguage, nil)
 	if err != nil {
 		t.Error(err)
 	} else if doc.TotalLines() < 1 {
@@ -371,7 +327,7 @@ func TestEditableDocument(t *testing.T) {
 	})
 
 	t.Run("EditableDocument.ReplaceWithPadding", func(t *testing.T) {
-		doc, err := ParseDocument("test", strings.NewReader(`        hello = 1`), parser, testLanguage, nil)
+		doc, err := ParseDocument("test", strings.NewReader(`        hello = 1`), parser, TestLanguage, nil)
 		if err != nil {
 			t.Error(err)
 		} else if doc.TotalLines() < 1 {
