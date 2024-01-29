@@ -26,7 +26,7 @@ Check that the index used for accessing the character is within the valid range 
 +         if (20 < text.length()) {
 +             char character = text.charAt(20);
 +         } else {
-+             System.out.println("Index out of range.")
++             System.out.println("Index out of range.");
 +         }
 +
         System.out.println(character);
