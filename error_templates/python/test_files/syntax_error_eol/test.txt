@@ -8,4 +8,18 @@ SyntaxError: '(' was never closed
 ===
 template: "Python.SyntaxError"
 ---
-Your program did not close a parenthesis properly
+# SyntaxError
+This error occurs when there is a syntax error in the code, and the open parenthesis `(` is not closed properly.
+```
+print("Hello, world!"
+^^^^^^^^^^^^^^^^^^^^^
+
+```
+## Steps to fix
+### Close the open parenthesis
+Ensure that the open parenthesis (`(`) is closed properly.
+```diff
+- print("Hello, world!"
++ print("Hello, world!")
+
+```
