@@ -25,7 +25,7 @@ Ensure that the iterator has elements before attempting to retrieve the next one
 +         if (iterator.hasNext()) {
 +             String element = iterator.next();
 +         } else {
-+             System.out.println("No elements in the list.")
++             System.out.println("No elements in the list.");
 +         }
 +
         System.out.println(element);
