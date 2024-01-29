@@ -14,8 +14,10 @@ func WithSymbolTree(tree *SymbolTree) context.Context {
 }
 
 func GetSymbolTreeCtx(ctx context.Context) *SymbolTree {
-	if tree, ok := ctx.Value(symbolTreeKey{}).(*SymbolTree); ok {
-		return tree
+	if ctx != nil {
+		if tree, ok := ctx.Value(symbolTreeKey{}).(*SymbolTree); ok {
+			return tree
+		}
 	}
 	return nil
 }
