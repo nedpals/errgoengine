@@ -558,4 +558,72 @@ func TestEditableDocument(t *testing.T) {
 			t.Errorf("Expected contents to be \"a = 1\\nello = 1\", got %q", editableDoc.String())
 		}
 	})
+
+	t.Run("EditableDocument.WrapWithBlock", func(t *testing.T) {
+		editableDoc := doc.Editable()
+
+		editableDoc.Apply(Changeset{
+			NewText: "inner text\n{\n\t",
+			StartPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   0,
+				Column: 0,
+				Index:  0,
+			},
+		})
+
+		editableDoc.Apply(Changeset{
+			NewText: "\n}",
+			StartPos: Position{
+				Line:   2,
+				Column: 10,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   2,
+				Column: 10,
+				Index:  0,
+			},
+		})
+
+		editableDoc.Apply(Changeset{
+			NewText: "if {\n\t\t",
+			StartPos: Position{
+				Line:   2,
+				Column: 1,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   2,
+				Column: 1,
+				Index:  0,
+			},
+		})
+
+		if editableDoc.String() != "inner text\n{\n\tif {\n\t\thello = 1\n}" {
+			t.Errorf("Expected contents to be \"inner text\\n{\\n\\tif {\\n\\t\\thello = 1\\n}\", got %q", editableDoc.String())
+		}
+
+		editableDoc.Apply(Changeset{
+			NewText: "\t\n}",
+			StartPos: Position{
+				Line:   3,
+				Column: 11,
+				Index:  0,
+			},
+			EndPos: Position{
+				Line:   3,
+				Column: 11,
+				Index:  0,
+			},
+		})
+
+		if editableDoc.String() != "inner text\n{\n\tif {\n\t\thello = 1\t\n}\n}" {
+			t.Errorf("Expected contents to be \"inner text\\n{\\n\\tif {\\n\\t\\thello = 1\\t\\n}\\n}\", got %q", editableDoc.String())
+		}
+	})
 }
