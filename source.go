@@ -15,6 +15,13 @@ type Position struct {
 	Index  int
 }
 
+func (pos Position) Point() sitter.Point {
+	return sitter.Point{
+		Row:    uint32(pos.Line),
+		Column: uint32(pos.Column),
+	}
+}
+
 func (pos Position) IsInBetween(loc Location) bool {
 	return pos.Index >= loc.StartPos.Index && pos.Index <= loc.EndPos.Index
 }
@@ -27,7 +34,7 @@ func (pos Position) Add(pos2 Position) Position {
 	}
 }
 
-func (pos Position) addUnsafe(pos2 Position) Position {
+func (pos Position) AddUnsafe(pos2 Position) Position {
 	return Position{
 		Line:   pos.Line + pos2.Line,
 		Column: pos.Column + pos2.Column,
@@ -59,10 +66,7 @@ func (loc Location) IsWithin(other Location) bool {
 }
 
 func (loc Location) Point() sitter.Point {
-	return sitter.Point{
-		Row:    uint32(loc.StartPos.Line),
-		Column: uint32(loc.StartPos.Column),
-	}
+	return loc.StartPos.Point()
 }
 
 func (loc Location) Range() sitter.Range {
@@ -116,6 +120,21 @@ func NewEditableDocument(doc *Document) *EditableDocument {
 
 	editableDoc.Reset()
 	return editableDoc
+}
+
+func (doc *EditableDocument) Copy() *EditableDocument {
+	newDoc := &EditableDocument{
+		Document:      doc.Document,
+		tree:          doc.tree,
+		currentId:     doc.currentId,
+		modifiedLines: make([]string, len(doc.modifiedLines)),
+		parser:        doc.parser,
+		changesets:    make([]Changeset, len(doc.changesets)),
+	}
+
+	copy(newDoc.modifiedLines, doc.modifiedLines)
+	copy(newDoc.changesets, doc.changesets)
+	return newDoc
 }
 
 func (doc *EditableDocument) FillIndex(pos Position) Position {
@@ -232,16 +251,24 @@ func applyInsertOperation(doc *EditableDocument, changeset Changeset) Position {
 	return diffPosition
 }
 
-func applyOperation(op string, doc *EditableDocument, changeset Changeset) Position {
+type applyOpCode int
+
+const (
+	applyOpCodeInsert applyOpCode = iota
+	applyOpCodeDelete
+	applyOpCodeReplace
+)
+
+func applyOperation(op applyOpCode, doc *EditableDocument, changeset Changeset) Position {
 	// to avoid out of bounds error. limit the endpos column to the length of the doc line
 	changeset.EndPos.Column = min(changeset.EndPos.Column, len(doc.modifiedLines[changeset.EndPos.Line]))
 
 	switch op {
-	case "insert":
+	case applyOpCodeInsert:
 		return applyInsertOperation(doc, changeset)
-	case "delete":
+	case applyOpCodeDelete:
 		return applyDeleteOperation(doc, changeset)
-	case "replace":
+	case applyOpCodeReplace:
 		deleteDiff := Position{}
 
 		if !changeset.StartPos.Eq2(changeset.EndPos) {
@@ -261,7 +288,7 @@ func applyOperation(op string, doc *EditableDocument, changeset Changeset) Posit
 		})
 
 		// combine the diff to create an interesecting diff
-		return insertDiff.addUnsafe(deleteDiff)
+		return insertDiff.AddUnsafe(deleteDiff)
 	default:
 		return Position{}
 	}
@@ -313,7 +340,7 @@ func (doc *EditableDocument) Apply(changeset Changeset) Position {
 				continue
 			}
 
-			diffPosition = diffPosition.addUnsafe(
+			diffPosition = diffPosition.AddUnsafe(
 				doc.Apply(finalChangeset),
 			)
 		}
@@ -348,7 +375,7 @@ func (doc *EditableDocument) Apply(changeset Changeset) Position {
 				endPos.Column = len(doc.modifiedLines[changeset.StartPos.Line+i])
 			}
 
-			diffPosition = diffPosition.addUnsafe(
+			diffPosition = diffPosition.AddUnsafe(
 				doc.Apply(
 					Changeset{
 						Id:       changeset.Id,
@@ -363,23 +390,23 @@ func (doc *EditableDocument) Apply(changeset Changeset) Position {
 		return diffPosition
 	}
 
-	selectedOperation := "insert"
+	selectedOperation := applyOpCodeInsert
 
 	// if the changeset has a definite position range, check if it is a replacement or a deletion
 	if !changeset.StartPos.Eq(changeset.EndPos) {
 		if len(changeset.NewText) == 0 {
 			// if the changeset text is empty but has a definite position
 			// range, this means that the changeset is a deletion
-			selectedOperation = "delete"
+			selectedOperation = applyOpCodeDelete
 		} else if !hasTrailingNewLine {
 			// if the changeset has no trailing newline, this
 			// means that the changeset is a replacement
-			selectedOperation = "replace"
+			selectedOperation = applyOpCodeReplace
 		}
 	}
 
 	// apply editing operation
-	diffPosition = diffPosition.addUnsafe(
+	diffPosition = diffPosition.AddUnsafe(
 		applyOperation(
 			selectedOperation,
 			doc,
