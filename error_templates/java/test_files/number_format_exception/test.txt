@@ -1,0 +1,30 @@
+template: "Java.NumberFormatException"
+---
+Exception in thread "main" java.lang.NumberFormatException: For input string: "abc"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:661)
+	at java.base/java.lang.Integer.parseInt(Integer.java:777)
+	at Main.main(Main.java:5)
+===
+template: "Java.NumberFormatException"
+---
+# NumberFormatException
+This error occurs when there is an attempt to convert a string to a numeric type, but the string does not represent a valid number.
+```
+        String invalidNumber = "abc";
+        int result = Integer.parseInt(invalidNumber);
+                                      ^^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Ensure valid input for parsing
+Make sure the string contains a valid numeric representation before attempting to parse it.
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         String invalidNumber = "abc";
++         String invalidNumber = "123";
+        int result = Integer.parseInt(invalidNumber);
+    }
+```
