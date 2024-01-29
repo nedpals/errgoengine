@@ -56,6 +56,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	// initial context data extraction
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
+	contextData.AddVariable("message", msg)
 
 	groupNames := template.Pattern.SubexpNames()
 	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
@@ -69,11 +70,11 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	}
 
 	// extract stack trace
-	rawStackTraces := contextData.Variables["stacktrace"]
+	rawStackTraceItem := contextData.Variables["stacktrace"]
 	symbolGroupIdx := template.StackTraceRegex().SubexpIndex("symbol")
 	pathGroupIdx := template.StackTraceRegex().SubexpIndex("path")
 	posGroupIdx := template.StackTraceRegex().SubexpIndex("position")
-	stackTraceMatches := template.StackTraceRegex().FindAllStringSubmatch(rawStackTraces, -1)
+	stackTraceMatches := template.StackTraceRegex().FindAllStringSubmatch(rawStackTraceItem, -1)
 
 	for _, submatches := range stackTraceMatches {
 		if len(submatches) == 0 {
@@ -92,7 +93,11 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 			rawPath = filepath.Clean(filepath.Join(workingPath, rawPath))
 		}
 
-		stLoc := template.Language.LocationConverter(rawPath, rawPos)
+		stLoc := template.Language.LocationConverter(LocationConverterContext{
+			Path:        rawPath,
+			Pos:         rawPos,
+			ContextData: contextData,
+		})
 		if contextData.TraceStack == nil {
 			contextData.TraceStack = TraceStack{}
 		}

@@ -22,6 +22,12 @@ type LanguageAnalyzer interface {
 	AnalyzeImport(ImportParams) ResolvedImport
 }
 
+type LocationConverterContext struct {
+	Path        string
+	Pos         string
+	ContextData *ContextData
+}
+
 type Language struct {
 	isCompiled        bool
 	stackTraceRegex   *regexp.Regexp
@@ -32,7 +38,7 @@ type Language struct {
 	StackTracePattern string
 	ErrorPattern      string
 	SymbolsToCapture  string
-	LocationConverter func(path, pos string) Location
+	LocationConverter func(ctx LocationConverterContext) Location
 	AnalyzerFactory   func(cd *ContextData) LanguageAnalyzer
 	ExternFS          fs.ReadFileFS
 }
@@ -115,13 +121,13 @@ func SetTemplateStackTraceRegex(lang *Language, pattern *regexp.Regexp) {
 	lang.stackTraceRegex = pattern
 }
 
-func DefaultLocationConverter(path, pos string) Location {
+func DefaultLocationConverter(ctx LocationConverterContext) Location {
 	var trueLine int
-	if _, err := fmt.Sscanf(pos, "%d", &trueLine); err != nil {
+	if _, err := fmt.Sscanf(ctx.Pos, "%d", &trueLine); err != nil {
 		panic(err)
 	}
 	return Location{
-		DocumentPath: path,
+		DocumentPath: ctx.Path,
 		StartPos:     Position{Line: trueLine},
 		EndPos:       Position{Line: trueLine},
 	}

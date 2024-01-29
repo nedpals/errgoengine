@@ -26,6 +26,17 @@ var Language = &lib.Language{
 	},
 	SymbolsToCapture: symbols,
 	ExternFS:         externs,
+	LocationConverter: func(ctx lib.LocationConverterContext) lib.Location {
+		var trueLine int
+		if _, err := fmt.Sscanf(ctx.Pos, "%d", &trueLine); err != nil {
+			panic(err)
+		}
+		return lib.Location{
+			DocumentPath: ctx.Path,
+			StartPos:     lib.Position{Line: trueLine},
+			EndPos:       lib.Position{Line: trueLine},
+		}
+	},
 }
 
 type javaAnalyzer struct {

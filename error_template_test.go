@@ -28,9 +28,9 @@ var testLanguage = &lib.Language{
 	Name:              "TestLang",
 	FilePatterns:      []string{".test"},
 	StackTracePattern: `\sin (?P<symbol>\S+) at (?P<path>\S+):(?P<position>\d+)`,
-	LocationConverter: func(path, pos string) lib.Location {
+	LocationConverter: func(ctx lib.LocationConverterContext) lib.Location {
 		return lib.Location{
-			DocumentPath: path,
+			DocumentPath: ctx.Path,
 			StartPos:     lib.Position{0, 0, 0},
 			EndPos:       lib.Position{0, 0, 0},
 		}
