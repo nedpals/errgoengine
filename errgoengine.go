@@ -181,7 +181,9 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) (mainExp string, fullExp string) {
 	expGen := &ExplainGenerator{errorName: template.Name}
-	fixGen := &BugFixGenerator{}
+	fixGen := &BugFixGenerator{
+		Document: contextData.MainError.Document,
+	}
 
 	// execute error generator function
 	template.OnGenExplainFn(contextData, expGen)

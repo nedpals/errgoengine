@@ -113,9 +113,6 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 
 	if bugFix.Suggestions != nil && len(bugFix.Suggestions) != 0 {
 		for sIdx, s := range bugFix.Suggestions {
-			diffPosition := Position{}
-			editedDoc := doc.Editable()
-
 			if len(bugFix.Suggestions) == 1 {
 				gen.heading(3, s.Title)
 			} else {
@@ -137,69 +134,26 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					descriptionBuilder := &strings.Builder{}
 
 					// get the start and end line after applying the diff
-					startLine := step.Fixes[0].StartPosition.Line
-					afterLine := step.Fixes[0].EndPosition.Line
+					startLine := step.StartLine
+					afterLine := step.AfterLine
 
 					// get the original start and end line
-					origStartLine := step.Fixes[0].StartPosition.Line
-					origAfterLine := step.Fixes[0].EndPosition.Line
-
-					for fIdx, fix := range step.Fixes {
-						changeset := Changeset{
-							NewText:  fix.NewText,
-							StartPos: fix.StartPosition,
-							EndPos:   fix.EndPosition,
-						}
-
-						// do not adjust position if the current fix is above the previous fix position
-						// if fIdx >= 0 && step.Fixes[fIdx-1].StartPosition.Line <= fix.StartPosition.Line {
-						if fIdx-1 >= 0 {
-							changeset = changeset.Add(diffPosition)
-						}
-
-						diffPosition = diffPosition.addUnsafe(editedDoc.Apply(changeset))
-
-						// change origStartLine only if
-						// - the fix is a "deletion" and less than the current origStartLine
-						// - the fix is an "insertion" or "replacement" and greater than the current origStartLine
-						origStartLine2 := min(origStartLine, fix.StartPosition.Line)
-						if len(fix.NewText) == 0 || fix.StartPosition.Line > origStartLine {
-							origStartLine = origStartLine2
-						}
-
-						origAfterLine = max(origAfterLine, fix.EndPosition.Line)
-
-						startLine = min(startLine, fix.StartPosition.Line+diffPosition.Line)
-
-						// if the diff position is negative, we need to set the after line to the latest position
-						if diffPosition.Line < 0 {
-							afterLine = fix.EndPosition.Line + diffPosition.Line
-						} else {
-							afterLine = max(afterLine, fix.EndPosition.Line+diffPosition.Line)
-						}
-
-						if len(fix.Description) != 0 {
-							if fIdx < len(step.Fixes)-1 {
-								descriptionBuilder.WriteString(fix.Description + "\n")
-							} else {
-								descriptionBuilder.WriteString(fix.Description)
-							}
-						}
-					}
+					origStartLine := step.OrigStartLine
+					origAfterLine := step.OrigAfterLine
 
 					gen.writeln("```diff")
 
 					// use origStartLine instead of startLine because we want to show the original lines
 					if startLine > 0 {
 						deduct := -2
-						if diffPosition.Line < 0 {
-							deduct += diffPosition.Line
+						if step.DiffPosition.Line < 0 {
+							deduct += step.DiffPosition.Line
 						}
-						gen.writeLines(editedDoc.LinesAt(origStartLine+deduct, origStartLine-1)...)
+						gen.writeLines(step.Doc.LinesAt(origStartLine+deduct, origStartLine-1)...)
 					}
 
-					modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
-					original := editedDoc.LinesAt(origStartLine, origAfterLine)
+					modified := step.Doc.ModifiedLinesAt(startLine, afterLine)
+					original := step.Doc.LinesAt(origStartLine, origAfterLine)
 					for i, origLine := range original {
 						if i >= len(modified) || modified[i] != origLine {
 							gen.write("- ")
@@ -214,9 +168,9 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					// show this only if the total is not negative
 					if startLine >= origStartLine && afterLine >= origAfterLine {
 						// TODO: redundant
-						modified := editedDoc.ModifiedLinesAt(startLine, afterLine)
+						modified := step.Doc.ModifiedLinesAt(startLine, afterLine)
 						// TODO: merge with previous `original` variable
-						originalLines := doc.LinesAt(origStartLine, min(origAfterLine+diffPosition.Line, doc.TotalLines()))
+						originalLines := doc.LinesAt(origStartLine, min(origAfterLine+step.DiffPosition.Line, doc.TotalLines()))
 						for i, modifiedLine := range modified {
 							if i == 0 && len(modified) == 1 && len(modifiedLine) == 0 {
 								continue
@@ -239,8 +193,19 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						}
 					}
 
-					gen.writeLines(editedDoc.LinesAt(origAfterLine+1, min(origAfterLine+2, editedDoc.TotalLines()))...)
+					gen.writeLines(step.Doc.LinesAt(origAfterLine+1, min(origAfterLine+2, step.Doc.TotalLines()))...)
 					gen.writeln("```")
+
+					for fIdx, fix := range step.Fixes {
+						if len(fix.Description) != 0 {
+							if fIdx < len(step.Fixes)-1 {
+								descriptionBuilder.WriteString(fix.Description + "\n")
+							} else {
+								descriptionBuilder.WriteString(fix.Description)
+							}
+						}
+					}
+
 					if descriptionBuilder.Len() != 0 {
 						gen.writeln(descriptionBuilder.String())
 					}
@@ -251,7 +216,6 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 				gen._break()
 			}
 
-			editedDoc.Reset()
 		}
 	} else {
 		gen.writeln("Nothing to fix")
