@@ -23,7 +23,6 @@ var NameError = lib.ErrorTemplate{
 			// get to the very parent (before `block`)
 			parent := cd.MainError.Nearest.Parent()
 			for !parent.IsNull() && parent.Type() != "module" && parent.Type() != "block" {
-				fmt.Println(parent.Type())
 				parent = parent.Parent()
 			}
 

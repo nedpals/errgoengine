@@ -1,8 +1,6 @@
 package python
 
 import (
-	"fmt"
-
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -20,7 +18,6 @@ var IndentationError = lib.ErrorTemplate{
 				prevSibling = prevSibling.ChildByFieldName("body").LastNamedChild()
 			}
 
-			fmt.Println(prevSibling.String())
 			spaces := cd.MainError.Document.LineAt(prevSibling.StartPosition().Line)[:prevSibling.StartPosition().Column]
 
 			s.AddStep("Ensure consistent indentation by using the correct spacing for each level of indentation.").
