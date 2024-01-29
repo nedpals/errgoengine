@@ -19,6 +19,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, StringIndexOutOfBoundsException)
 	errorTemplates.MustAdd(java.Language, NoSuchElementException)
 	errorTemplates.MustAdd(java.Language, NumberFormatException)
+	errorTemplates.MustAdd(java.Language, InputMismatchException)
 
 	// Compile time
 	errorTemplates.MustAdd(java.Language, PublicClassFilenameMismatchError)

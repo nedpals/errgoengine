@@ -1,0 +1,41 @@
+template: "Java.InputMismatchException"
+---
+Exception in thread "main" java.util.InputMismatchException
+	at java.base/java.util.Scanner.throwFor(Scanner.java:947)
+	at java.base/java.util.Scanner.next(Scanner.java:1602)
+	at java.base/java.util.Scanner.nextInt(Scanner.java:2267)
+	at java.base/java.util.Scanner.nextInt(Scanner.java:2221)
+	at Main.main(Main.java:7)
+===
+template: "Java.InputMismatchException"
+---
+# InputMismatchException
+This error occurs when a non-integer input is passed to the `nextInt()` method of the `Scanner` class.
+```
+        System.out.print("Enter an integer: ");
+        int number = scanner.nextInt(); // Error: InputMismatchException for non-integer input
+                             ^^^^^^^
+        System.out.println("You entered: " + number);
+    }
+```
+## Steps to fix
+### Add a try-catch for error handling
+Implement error handling to account for input mismatches and prompt the user for valid input.
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         Scanner scanner = new Scanner(System.in);
+-         System.out.print("Enter an integer: ");
+-         int number = scanner.nextInt(); // Error: InputMismatchException for non-integer input
+-         System.out.println("You entered: " + number);
++         try {
++             Scanner scanner = new Scanner(System.in);
++         System.out.print("Enter an integer: ");
++         int number = scanner.nextInt(); // Error: InputMismatchException for non-integer input
++         System.out.println("You entered: " + number);
++ } catch (InputMismatchException e) {
++             System.out.println("Invalid input. Please try again.");
++         }
+    }
+}
+```
