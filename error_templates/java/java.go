@@ -18,6 +18,7 @@ func LoadErrorTemplates(errorTemplates *lib.ErrorTemplates) {
 	errorTemplates.MustAdd(java.Language, NegativeArraySizeException)
 	errorTemplates.MustAdd(java.Language, StringIndexOutOfBoundsException)
 	errorTemplates.MustAdd(java.Language, NoSuchElementException)
+	errorTemplates.MustAdd(java.Language, NumberFormatException)
 
 	// Compile time
 	errorTemplates.MustAdd(java.Language, PublicClassFilenameMismatchError)
@@ -126,94 +127,173 @@ func castValueNode(node lib.SyntaxNode, targetSym lib.Symbol) string {
 	}
 }
 
-func wrapWithCondStatement(s *lib.BugFixStep, d *lib.Document, condType string, cond string, loc lib.Location, withNewLine bool) {
-	if len(condType) == 0 {
-		condType = "if"
-	}
-
-	line := d.LineAt(loc.StartPos.Line)
-	startCol, endCol := getSpaceBoundary(line, loc.StartPos.Column, loc.StartPos.Column, true)
+func wrapStatement(s *lib.BugFixStep, header string, footer string, loc lib.Location, withTrailingNewLine bool) lib.Position {
+	line := s.Doc.ModifiedLineAt(loc.StartPos.Line)
+	startCol, endCol := GetSpaceBoundary(line, loc.StartPos.Column, loc.StartPos.Column)
 	spaces := line[startCol:endCol]
-
-	opening := fmt.Sprintf("%s (%s)", condType, cond)
-	if condType == "else" || len(cond) == 0 {
-		if startCol == loc.StartPos.Column && condType == "else" {
-			opening = " else"
-		} else {
-			opening = condType
-		}
-	}
+	// fmt.Printf("%q %d %d %q\n", line, startCol, endCol, spaces)
 
 	s.AddFix(lib.FixSuggestion{
-		NewText: spaces + opening + " {\n" + getIndent(spaces, 1),
-		StartPosition: lib.Position{
-			Line:   loc.StartPos.Line,
-			Column: startCol,
-		},
-		EndPosition: lib.Position{
-			Line:   loc.StartPos.Line,
-			Column: startCol,
-		},
+		NewText:       spaces + header + "\n" + getIndent(spaces, 1),
+		StartPosition: loc.StartPos,
+		EndPosition:   loc.StartPos,
 	})
 
 	// get spaces from the first index to the non-space boundary
 	// in order to get the correct indentation
 	if len(spaces) == 0 {
 		// get spaces from the start line
-		startCol, endCol := getSpaceBoundary(line, 0, len(line), false)
-		spaces = line[startCol:endCol]
+		spaces = getSpaceFromBeginning2(line, loc.StartPos.Line, len(line))
 	}
 
-	closing := "\n" + spaces + "}"
-	if withNewLine {
-		closing += "\n"
+	footer = "\n" + footer
+	if withTrailingNewLine {
+		footer += "\n"
 	}
+
+	indent := getIndent(spaces, 1)
 
 	s.AddFix(lib.FixSuggestion{
-		NewText:       closing,
+		NewText:       strings.Replace(strings.Replace(footer, "<i>", indent, -1), "\t", spaces, -1),
 		StartPosition: loc.EndPos,
 		EndPosition:   loc.EndPos,
 	})
+
+	return s.DiffPosition
 }
 
-func getSpaceBoundary(line string, from int, to int, reverse bool) (int, int) {
+type spaceComputeDirection int
+
+const (
+	spaceComputeDirectionLeft spaceComputeDirection = iota
+	spaceComputeDirectionRight
+)
+
+func isSpace(line string, idx int) bool {
+	if idx >= len(line) || idx < 0 {
+		return false
+	}
+	return unicode.IsSpace(rune(line[idx]))
+}
+
+func getSpaceBoundaryIndiv(line string, idx int, defaultDirection spaceComputeDirection) int {
+	stopOnSpace := true
+	if isSpace(line, idx) {
+		stopOnSpace = false
+	}
+
+	if defaultDirection == spaceComputeDirectionLeft {
+		if idx-1 >= 0 && ((!stopOnSpace && !isSpace(line, idx-1)) ||
+			(stopOnSpace && isSpace(line, idx-1))) {
+			return idx
+		}
+
+		if idx-1 < 0 {
+			// check if the current index is not a space
+			if !isSpace(line, idx) {
+				// go to the reverse direction to get the nearest space
+				newIdx := getSpaceBoundaryIndiv(line, idx, spaceComputeDirectionRight)
+				return newIdx
+			}
+
+			return idx
+		}
+
+		for idx > 0 {
+			if (stopOnSpace && isSpace(line, idx)) ||
+				(!stopOnSpace && !isSpace(line, idx)) {
+				break
+			}
+			idx--
+		}
+	}
+
+	if defaultDirection == spaceComputeDirectionRight {
+		if idx == len(line) {
+			// go to the last character of the line
+			idx--
+		}
+
+		if idx+1 < len(line)-1 && ((!stopOnSpace && !isSpace(line, idx+1)) ||
+			(stopOnSpace && isSpace(line, idx+1))) {
+			return idx
+		}
+
+		// check if the current index is not a space
+		if !isSpace(line, idx) {
+			// go to the reverse direction to get the nearest space
+			newIdx := getSpaceBoundaryIndiv(line, idx, spaceComputeDirectionLeft)
+			if newIdx+1 < len(line) {
+				return newIdx + 1
+			}
+			return newIdx
+		}
+
+		for idx < len(line) {
+			if (stopOnSpace && isSpace(line, idx)) ||
+				(!stopOnSpace && !isSpace(line, idx)) {
+				break
+			}
+			idx++
+		}
+	}
+
+	return idx
+}
+
+func GetSpaceBoundary(line string, from int, to int) (int, int) {
+	if len(line) == 0 {
+		return 0, 0
+	}
+
 	if from > to {
 		from, to = to, from
 	}
 
-	for i := to - 1; i >= 0; i-- {
-		if !unicode.IsSpace(rune(line[i])) {
-			break
-		}
-		to = i
+	from = getSpaceBoundaryIndiv(line, from, spaceComputeDirectionLeft)
+	if from > 0 && from == to && isSpace(line, from-1) {
+		from = getSpaceBoundaryIndiv(line, from-1, spaceComputeDirectionLeft)
 	}
 
-	for i := from; i < to; i++ {
-		if !unicode.IsSpace(rune(line[i])) {
-			break
+	to = getSpaceBoundaryIndiv(line, to, spaceComputeDirectionRight)
+
+	if from != to {
+		// check if there are still non-space characters in the range
+		for i := from; i < to; i++ {
+			if isSpace(line, i) {
+				continue
+			}
+
+			// return the nearest space boundary
+			return from, i
 		}
-		from++
 	}
 
 	return from, to
 }
 
-func getSpace(doc *lib.Document, line int, from int, to int, reverse bool) string {
-	startCol, endCol := getSpaceBoundary(doc.LineAt(from), from, to, reverse)
+func getSpace(lineStr string, line int, from int, to int) string {
+	startCol, endCol := GetSpaceBoundary(lineStr, from, to)
 	if startCol > endCol {
 		startCol, endCol = endCol, startCol
 	}
 
-	lineStr := doc.LineAt(line)
-	fmt.Println(startCol, endCol, lineStr)
 	return lineStr[startCol:endCol]
 }
 
 func getSpaceFromBeginning(doc *lib.Document, line int, to int) string {
-	return getSpace(doc, line, 0, to, true)
+	return getSpaceFromBeginning2(doc.LineAt(line), line, to)
+}
+
+func getSpaceFromBeginning2(lines string, line int, to int) string {
+	return getSpace(lines, line, 0, to)
 }
 
 func getIndent(spaces string, by int) string {
+	if len(spaces) < 4 {
+		return spaces
+	}
+
 	indent := spaces
 	if len(indent) > 4 {
 		indent = spaces[:4]

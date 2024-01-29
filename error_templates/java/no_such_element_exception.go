@@ -52,40 +52,18 @@ var NoSuchElementException = lib.ErrorTemplate{
 			gpLocation := ctx.grandParentNode.Location()
 			parentName := ctx.parentNode.ChildByFieldName("object").Text()
 			// TODO: detect the statements that are using the variable to expand the position range of the if statement
-			wrapWithCondStatement(
+			wrapStatement(
 				step,
-				cd.MainError.Document,
-				"if",
-				fmt.Sprintf("%s.hasNext()", parentName),
-				gpLocation,
-				false,
-			)
-
-			wrapWithCondStatement(
-				step,
-				cd.MainError.Document,
-				"else",
-				"",
+				fmt.Sprintf("if (%s.hasNext()) {", parentName),
+				"\t} else {\n\t<i>System.out.println(\"No elements in the list.\");\n\t}",
 				lib.Location{
-					StartPos: gpLocation.EndPos,
-					EndPos:   gpLocation.EndPos,
+					StartPos: lib.Position{
+						Line: gpLocation.StartPos.Line,
+					},
+					EndPos: gpLocation.EndPos,
 				},
 				true,
 			)
-
-			space := getSpace(
-				cd.MainError.Document,
-				gpLocation.StartPos.Line, 0, gpLocation.StartPos.Column, true)
-
-			step.AddFix(lib.FixSuggestion{
-				NewText: indentSpace(space, 1) + `System.out.println("No elements in the list.")`,
-				StartPosition: lib.Position{
-					Line: gpLocation.EndPos.Line - 2,
-				},
-				EndPosition: lib.Position{
-					Line: gpLocation.EndPos.Line - 2,
-				},
-			})
 		})
 	},
 }

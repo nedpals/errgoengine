@@ -125,12 +125,16 @@ var NullPointerException = lib.ErrorTemplate{
 
 		if parent.Type() == "expression_statement" {
 			gen.Add("Wrap with an if statement", func(s *lib.BugFixSuggestion) {
-				wrapWithCondStatement(
+				wrapStatement(
 					s.AddStep("Check for the variable that is being used as `null`."),
-					cd.MainError.Document,
-					"if",
-					fmt.Sprintf("%s != null", ctx.origin),
-					parent.Location(),
+					fmt.Sprintf("if (%s != null) {", ctx.origin),
+					"\t}",
+					lib.Location{
+						StartPos: lib.Position{
+							Line: parent.StartPosition().Line,
+						},
+						EndPos: parent.EndPosition(),
+					},
 					true,
 				)
 			})
