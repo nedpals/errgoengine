@@ -276,17 +276,17 @@ func TestExtractVariables(t *testing.T) {
 }
 
 func TestExtractStackTrace(t *testing.T) {
-	t.Run("Extract stack trace", func(t *testing.T) {
-		tmp, err := setupTemplate(lib.ErrorTemplate{
-			Name:           "A",
-			Pattern:        "invalid input '(?P<input>.*)'",
-			OnGenExplainFn: emptyExplainFn,
-			OnGenBugFixFn:  emptyBugFixFn,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+	tmp, err := setupTemplate(lib.ErrorTemplate{
+		Name:           "A",
+		Pattern:        "invalid input '(?P<input>.*)'",
+		OnGenExplainFn: emptyExplainFn,
+		OnGenBugFixFn:  emptyBugFixFn,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	t.Run("Simple", func(t *testing.T) {
 		cd := lib.NewContextData(lib.NewEmptyStore(), "/home/user")
 		cd.Variables = map[string]string{
 			"stacktrace": "\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1",
@@ -296,6 +296,81 @@ func TestExtractStackTrace(t *testing.T) {
 		exp := lib.TraceStack{
 			lib.StackTraceEntry{
 				SymbolName: "main",
+				Location: lib.Location{
+					DocumentPath: "/home/user/main.py",
+					StartPos: lib.Position{
+						Line:   123,
+						Column: 0,
+						Index:  0,
+					},
+					EndPos: lib.Position{
+						Line:   123,
+						Column: 0,
+						Index:  0,
+					},
+				},
+			},
+			lib.StackTraceEntry{
+				SymbolName: "main",
+				Location: lib.Location{
+					DocumentPath: "/home/user/main.py",
+					StartPos: lib.Position{
+						Line:   1,
+						Column: 0,
+						Index:  0,
+					},
+					EndPos: lib.Position{
+						Line:   1,
+						Column: 0,
+						Index:  0,
+					},
+				},
+			},
+		}
+
+		if !reflect.DeepEqual(stackTrace, exp) {
+			t.Fatalf("expected %v, got %v", exp, stackTrace)
+		}
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		cd := lib.NewContextData(lib.NewEmptyStore(), "/home/user")
+		cd.Variables = map[string]string{
+			"stacktrace": "",
+		}
+
+		stackTrace := tmp.ExtractStackTrace(cd)
+		exp := lib.TraceStack{}
+
+		if !reflect.DeepEqual(stackTrace, exp) {
+			t.Fatalf("expected %v, got %v", exp, stackTrace)
+		}
+	})
+
+	t.Run("Invalid stack trace", func(t *testing.T) {
+		cd := lib.NewContextData(lib.NewEmptyStore(), "/home/user")
+		cd.Variables = map[string]string{
+			"stacktrace": "\nin main at 123\nin main at 1",
+		}
+
+		stackTrace := tmp.ExtractStackTrace(cd)
+		exp := lib.TraceStack{}
+
+		if !reflect.DeepEqual(stackTrace, exp) {
+			t.Fatalf("expected %v, got %v", exp, stackTrace)
+		}
+	})
+
+	t.Run("Invalid in the middle", func(t *testing.T) {
+		cd := lib.NewContextData(lib.NewEmptyStore(), "/home/user")
+		cd.Variables = map[string]string{
+			"stacktrace": "\nin funcB at /home/user/main.py:123\nin funcA at 123\nin main at /home/user/main.py:1",
+		}
+
+		stackTrace := tmp.ExtractStackTrace(cd)
+		exp := lib.TraceStack{
+			lib.StackTraceEntry{
+				SymbolName: "funcB",
 				Location: lib.Location{
 					DocumentPath: "/home/user/main.py",
 					StartPos: lib.Position{
