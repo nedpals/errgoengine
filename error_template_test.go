@@ -197,6 +197,23 @@ func TestExtractVariables(t *testing.T) {
 	})
 
 	t.Run("No variables", func(t *testing.T) {
+		input := "invalid input '123abc'\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1"
+		if !tmp2.Match(input) {
+			t.Fatalf("expected template to match input, got false instead")
+		}
+
+		variables := tmp2.ExtractVariables(input)
+		exp := map[string]string{
+			"stacktrace": "\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1",
+		}
+
+		fmt.Printf("%q\n", variables)
+		if !reflect.DeepEqual(variables, exp) {
+			t.Fatalf("expected %v, got %v", exp, variables)
+		}
+	})
+
+	t.Run("No variables + no stack trace", func(t *testing.T) {
 		input := "invalid input '123abc'"
 		if !tmp2.Match(input) {
 			t.Fatalf("expected template to match input, got false instead")
