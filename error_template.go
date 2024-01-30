@@ -93,6 +93,10 @@ func (tmp *CompiledErrorTemplate) ExtractStackTrace(cd *ContextData) TraceStack 
 	return traceStack
 }
 
+func (tmp *CompiledErrorTemplate) Match(str string) bool {
+	return tmp.Pattern.MatchString(str)
+}
+
 type ErrorTemplates map[string]*CompiledErrorTemplate
 
 const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
@@ -166,7 +170,7 @@ func (tmps ErrorTemplates) MustAdd(language *Language, template ErrorTemplate) *
 
 func (tmps ErrorTemplates) Match(msg string) *CompiledErrorTemplate {
 	for _, tmp := range tmps {
-		if tmp.Pattern.MatchString(msg) {
+		if tmp.Match(msg) {
 			return tmp
 		}
 	}

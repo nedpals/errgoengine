@@ -161,7 +161,12 @@ func TestExtractVariables(t *testing.T) {
 	}
 
 	t.Run("Simple", func(t *testing.T) {
-		variables := tmp.ExtractVariables("invalid input '123abc'\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1")
+		input := "invalid input '123abc'\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1"
+		if !tmp.Match(input) {
+			t.Fatalf("expected template to match input, got false instead")
+		}
+
+		variables := tmp.ExtractVariables(input)
 		exp := map[string]string{
 			"stacktrace": "\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1",
 			"input":      "123abc",
@@ -174,7 +179,12 @@ func TestExtractVariables(t *testing.T) {
 	})
 
 	t.Run("No stack trace", func(t *testing.T) {
-		variables := tmp.ExtractVariables("invalid input 'wxyz88@'")
+		input := "invalid input 'wxyz88@'"
+		if !tmp.Match(input) {
+			t.Fatalf("expected template to match input, got false instead")
+		}
+
+		variables := tmp.ExtractVariables(input)
 		exp := map[string]string{
 			"input":      "wxyz88@",
 			"stacktrace": "",
@@ -187,7 +197,12 @@ func TestExtractVariables(t *testing.T) {
 	})
 
 	t.Run("No variables", func(t *testing.T) {
-		variables := tmp2.ExtractVariables("invalid input '123abc'")
+		input := "invalid input '123abc'"
+		if !tmp2.Match(input) {
+			t.Fatalf("expected template to match input, got false instead")
+		}
+
+		variables := tmp2.ExtractVariables(input)
 		exp := map[string]string{
 			"stacktrace": "",
 		}
