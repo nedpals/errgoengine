@@ -137,71 +137,69 @@ func TestStackTraceRegex(t *testing.T) {
 		t.Fatal("expected panic, got successful execution instead")
 	})
 
-	t.Run("Extract variables", func(t *testing.T) {
-		tmp, err := setupTemplate(lib.ErrorTemplate{
-			Name:           "A",
-			Pattern:        "invalid input '(?P<input>.*)'",
-			OnGenExplainFn: emptyExplainFn,
-			OnGenBugFixFn:  emptyBugFixFn,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+}
 
+func TestExtractVariables(t *testing.T) {
+	tmp, err := setupTemplate(lib.ErrorTemplate{
+		Name:           "WithVarError",
+		Pattern:        "invalid input '(?P<input>.*)'",
+		OnGenExplainFn: emptyExplainFn,
+		OnGenBugFixFn:  emptyBugFixFn,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tmp2, err := setupTemplate(lib.ErrorTemplate{
+		Name:           "WithoutVarError",
+		Pattern:        "invalid input '.*'",
+		OnGenExplainFn: emptyExplainFn,
+		OnGenBugFixFn:  emptyBugFixFn,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Simple", func(t *testing.T) {
 		variables := tmp.ExtractVariables("invalid input '123abc'\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1")
 		exp := map[string]string{
 			"stacktrace": "\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1",
 			"input":      "123abc",
 		}
 
+		fmt.Printf("%q\n", variables)
 		if !reflect.DeepEqual(variables, exp) {
 			t.Fatalf("expected %v, got %v", exp, variables)
 		}
 	})
 
-	t.Run("Extract variables no stack trace", func(t *testing.T) {
-		tmp, err := setupTemplate(lib.ErrorTemplate{
-			Name:           "A",
-			Pattern:        "invalid input '(?P<input>.*)'",
-			OnGenExplainFn: emptyExplainFn,
-			OnGenBugFixFn:  emptyBugFixFn,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		variables := tmp.ExtractVariables("invalid input '123abc'")
+	t.Run("No stack trace", func(t *testing.T) {
+		variables := tmp.ExtractVariables("invalid input 'wxyz88@'")
 		exp := map[string]string{
-			"input":      "123abc",
+			"input":      "wxyz88@",
 			"stacktrace": "",
 		}
 
+		fmt.Printf("%q\n", variables)
 		if !reflect.DeepEqual(variables, exp) {
 			t.Fatalf("expected %v, got %v", exp, variables)
 		}
 	})
 
-	t.Run("Extract variables no variables", func(t *testing.T) {
-		tmp, err := setupTemplate(lib.ErrorTemplate{
-			Name:           "A",
-			Pattern:        "invalid input '123abc'",
-			OnGenExplainFn: emptyExplainFn,
-			OnGenBugFixFn:  emptyBugFixFn,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		variables := tmp.ExtractVariables("invalid input '123abc'")
+	t.Run("No variables", func(t *testing.T) {
+		variables := tmp2.ExtractVariables("invalid input '123abc'")
 		exp := map[string]string{
 			"stacktrace": "",
 		}
 
+		fmt.Printf("%q\n", variables)
 		if !reflect.DeepEqual(variables, exp) {
 			t.Fatalf("expected %v, got %v", exp, variables)
 		}
 	})
+}
 
+func TestExtractStackTrace(t *testing.T) {
 	t.Run("Extract stack trace", func(t *testing.T) {
 		tmp, err := setupTemplate(lib.ErrorTemplate{
 			Name:           "A",
