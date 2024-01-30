@@ -1,6 +1,7 @@
 package errgoengine_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -275,6 +276,11 @@ func TestExtractVariables(t *testing.T) {
 	})
 }
 
+func printStackTraceJson(stackTrace lib.TraceStack) {
+	b, _ := json.MarshalIndent(stackTrace, "", "  ")
+	fmt.Println(string(b))
+}
+
 func TestExtractStackTrace(t *testing.T) {
 	tmp, err := setupTemplate(lib.ErrorTemplate{
 		Name:           "A",
@@ -289,13 +295,13 @@ func TestExtractStackTrace(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		cd := lib.NewContextData(lib.NewEmptyStore(), "/home/user")
 		cd.Variables = map[string]string{
-			"stacktrace": "\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1",
+			"stacktrace": "\nin funcA at /home/user/main.py:123\nin main at /home/user/main.py:1",
 		}
 
 		stackTrace := tmp.ExtractStackTrace(cd)
 		exp := lib.TraceStack{
 			lib.StackTraceEntry{
-				SymbolName: "main",
+				SymbolName: "funcA",
 				Location: lib.Location{
 					DocumentPath: "/home/user/main.py",
 					StartPos: lib.Position{
@@ -328,6 +334,8 @@ func TestExtractStackTrace(t *testing.T) {
 			},
 		}
 
+		printStackTraceJson(exp)
+		printStackTraceJson(stackTrace)
 		if !reflect.DeepEqual(stackTrace, exp) {
 			t.Fatalf("expected %v, got %v", exp, stackTrace)
 		}
@@ -342,6 +350,8 @@ func TestExtractStackTrace(t *testing.T) {
 		stackTrace := tmp.ExtractStackTrace(cd)
 		exp := lib.TraceStack{}
 
+		printStackTraceJson(exp)
+		printStackTraceJson(stackTrace)
 		if !reflect.DeepEqual(stackTrace, exp) {
 			t.Fatalf("expected %v, got %v", exp, stackTrace)
 		}
@@ -356,6 +366,8 @@ func TestExtractStackTrace(t *testing.T) {
 		stackTrace := tmp.ExtractStackTrace(cd)
 		exp := lib.TraceStack{}
 
+		printStackTraceJson(exp)
+		printStackTraceJson(stackTrace)
 		if !reflect.DeepEqual(stackTrace, exp) {
 			t.Fatalf("expected %v, got %v", exp, stackTrace)
 		}
@@ -403,6 +415,8 @@ func TestExtractStackTrace(t *testing.T) {
 			},
 		}
 
+		printStackTraceJson(exp)
+		printStackTraceJson(stackTrace)
 		if !reflect.DeepEqual(stackTrace, exp) {
 			t.Fatalf("expected %v, got %v", exp, stackTrace)
 		}
