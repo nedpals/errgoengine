@@ -28,6 +28,8 @@ type LocationConverterContext struct {
 	ContextData *ContextData
 }
 
+type LocationConverterFunc func(ctx LocationConverterContext) Position
+
 type Language struct {
 	isCompiled        bool
 	stackTraceRegex   *regexp.Regexp
@@ -126,6 +128,7 @@ func DefaultLocationConverter(ctx LocationConverterContext) Location {
 	if _, err := fmt.Sscanf(ctx.Pos, "%d", &trueLine); err != nil {
 		panic(err)
 	}
+
 	return Location{
 		DocumentPath: ctx.Path,
 		StartPos:     Position{Line: trueLine},

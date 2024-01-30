@@ -8,13 +8,6 @@ var TestLanguage = &Language{
 	Name:              "TestLang",
 	FilePatterns:      []string{".test"},
 	StackTracePattern: `\sin (?P<symbol>\S+) at (?P<path>\S+):(?P<position>\d+)`,
-	LocationConverter: func(ctx LocationConverterContext) Location {
-		return Location{
-			DocumentPath: ctx.Path,
-			StartPos:     Position{Line: 0, Column: 0, Index: 0},
-			EndPos:       Position{Line: 0, Column: 0, Index: 0},
-		}
-	},
 	AnalyzerFactory: func(cd *ContextData) LanguageAnalyzer {
 		return &testAnalyzer{}
 	},

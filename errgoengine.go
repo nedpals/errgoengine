@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"path/filepath"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -58,52 +57,11 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
 	contextData.AddVariable("message", msg)
 
-	groupNames := template.Pattern.SubexpNames()
-	for _, submatches := range template.Pattern.FindAllStringSubmatch(msg, -1) {
-		for idx, matchedContent := range submatches {
-			if len(groupNames[idx]) == 0 {
-				continue
-			}
-
-			contextData.AddVariable(groupNames[idx], matchedContent)
-		}
-	}
+	// extract variables from the error message
+	contextData.AddVariables(template.ExtractVariables(msg))
 
 	// extract stack trace
-	rawStackTraceItem := contextData.Variables["stacktrace"]
-	symbolGroupIdx := template.StackTraceRegex().SubexpIndex("symbol")
-	pathGroupIdx := template.StackTraceRegex().SubexpIndex("path")
-	posGroupIdx := template.StackTraceRegex().SubexpIndex("position")
-	stackTraceMatches := template.StackTraceRegex().FindAllStringSubmatch(rawStackTraceItem, -1)
-
-	for _, submatches := range stackTraceMatches {
-		if len(submatches) == 0 {
-			continue
-		}
-
-		rawSymbolName := ""
-		if symbolGroupIdx != -1 {
-			rawSymbolName = submatches[symbolGroupIdx]
-		}
-		rawPath := submatches[pathGroupIdx]
-		rawPos := submatches[posGroupIdx]
-
-		// convert relative paths to absolute for parsing
-		if len(workingPath) != 0 && !filepath.IsAbs(rawPath) {
-			rawPath = filepath.Clean(filepath.Join(workingPath, rawPath))
-		}
-
-		stLoc := template.Language.LocationConverter(LocationConverterContext{
-			Path:        rawPath,
-			Pos:         rawPos,
-			ContextData: contextData,
-		})
-		if contextData.TraceStack == nil {
-			contextData.TraceStack = TraceStack{}
-		}
-
-		contextData.TraceStack.Add(rawSymbolName, stLoc)
-	}
+	contextData.TraceStack = template.ExtractStackTrace(contextData)
 
 	// open contents of the extracted stack file locations
 	parser := sitter.NewParser()

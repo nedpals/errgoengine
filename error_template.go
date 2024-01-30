@@ -2,6 +2,7 @@ package errgoengine
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -35,6 +36,61 @@ func (tmp *CompiledErrorTemplate) StackTraceRegex() *regexp.Regexp {
 		panic("expected stacktrace pattern got compiled, got nil regex instead")
 	}
 	return tmp.Language.stackTraceRegex
+}
+
+func (tmp *CompiledErrorTemplate) ExtractVariables(msg string) map[string]string {
+	variables := map[string]string{}
+	groupNames := tmp.Pattern.SubexpNames()
+	for _, submatches := range tmp.Pattern.FindAllStringSubmatch(msg, -1) {
+		for idx, matchedContent := range submatches {
+			if len(groupNames[idx]) == 0 {
+				continue
+			}
+
+			variables[groupNames[idx]] = matchedContent
+		}
+	}
+	return variables
+}
+
+func (tmp *CompiledErrorTemplate) ExtractStackTrace(cd *ContextData) TraceStack {
+	traceStack := TraceStack{}
+	workingPath := cd.WorkingPath
+
+	rawStackTraceItem := cd.Variables["stacktrace"]
+	stackTraceRegex := tmp.StackTraceRegex()
+	symbolGroupIdx := stackTraceRegex.SubexpIndex("symbol")
+	pathGroupIdx := stackTraceRegex.SubexpIndex("path")
+	posGroupIdx := stackTraceRegex.SubexpIndex("position")
+	stackTraceMatches := stackTraceRegex.FindAllStringSubmatch(rawStackTraceItem, -1)
+
+	for _, submatches := range stackTraceMatches {
+		if len(submatches) == 0 {
+			continue
+		}
+
+		rawSymbolName := ""
+		if symbolGroupIdx != -1 {
+			rawSymbolName = submatches[symbolGroupIdx]
+		}
+		rawPath := submatches[pathGroupIdx]
+		rawPos := submatches[posGroupIdx]
+
+		// convert relative paths to absolute for parsing
+		if len(workingPath) != 0 && !filepath.IsAbs(rawPath) {
+			rawPath = filepath.Clean(filepath.Join(workingPath, rawPath))
+		}
+
+		stLoc := tmp.Language.LocationConverter(LocationConverterContext{
+			Path:        rawPath,
+			Pos:         rawPos,
+			ContextData: cd,
+		})
+
+		traceStack.Add(rawSymbolName, stLoc)
+	}
+
+	return traceStack
 }
 
 type ErrorTemplates map[string]*CompiledErrorTemplate
