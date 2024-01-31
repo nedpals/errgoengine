@@ -53,3 +53,17 @@ func (data *ContextData) AddVariable(name string, value string) {
 
 	data.Variables[name] = value
 }
+
+func (data *ContextData) AddVariables(vars map[string]string) {
+	if len(vars) == 0 {
+		return
+	}
+
+	if data.Variables == nil {
+		data.Variables = make(map[string]string)
+	}
+
+	for k, v := range vars {
+		data.Variables[k] = v
+	}
+}
