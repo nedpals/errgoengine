@@ -1,0 +1,30 @@
+name: "Call"
+template: "Java.CharacterExpectedError"
+---
+Main.java:3: error: ')' or ',' expected
+        System.out.println("Hello, World!" // Error: Expected ';'
+                                          ^
+1 error
+===
+template: "Java.CharacterExpectedError"
+---
+# CharacterExpectedError
+This error occurs when there is an unexpected character in the code, and ')' is expected.
+```
+    public static void main(String[] args) {
+        System.out.println("Hello, World!" // Error: Expected ';'
+                           ^^^^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Add the missing character
+Ensure that the array declaration has the correct syntax by adding the missing `)`.
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         System.out.println("Hello, World!" // Error: Expected ';'
++         System.out.println("Hello, World!") // Error: Expected ';'
+    }
+}
+```

@@ -12,23 +12,51 @@ const (
 	characterExpectedFixWrapFunction characterExpectedFixKind = iota
 )
 
+type characterInsertDirection int
+
+const (
+	characterInsertDirectionLeft characterInsertDirection = iota
+	characterInsertDirectionRight
+)
+
 type characterExpectedErrorCtx struct {
-	fixKind characterExpectedFixKind
+	fixKind   characterExpectedFixKind
+	direction characterInsertDirection
 }
 
 var CharacterExpectedError = lib.ErrorTemplate{
 	Name:              "CharacterExpectedError",
-	Pattern:           comptimeErrorPattern(`'(?P<character>\S+)' expected`),
+	Pattern:           comptimeErrorPattern(`'(?P<character>\S+)'(?: or '(?P<altCharacter>\S+)')? expected`),
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
-		iCtx := characterExpectedErrorCtx{}
+		iCtx := characterExpectedErrorCtx{
+			direction: characterInsertDirectionLeft,
+		}
 
 		// TODO: check if node is parsable
 		rootNode := m.Document.Tree.RootNode()
 		cursor := sitter.NewTreeCursor(rootNode)
 		rawNearestMissingNode := nearestMissingNodeFromPos(cursor, m.ErrorNode.StartPos)
-		nearestMissingNode := lib.WrapNode(m.Document, rawNearestMissingNode)
-		m.Nearest = nearestMissingNode
+		if rawNearestMissingNode == nil {
+			if rawNearestMissingNode2 := nearestNodeFromPos2(cursor, m.ErrorNode.StartPos); rawNearestMissingNode2 != nil {
+				rawNearestMissingNode = rawNearestMissingNode2
+			}
+		}
+
+		if rawNearestMissingNode != nil {
+			if rawNearestMissingNode.IsExtra() {
+				// go back
+				rawNearestMissingNode = rawNearestMissingNode.PrevSibling()
+			}
+
+			if rawNearestMissingNode.IsNamed() {
+				iCtx.direction = characterInsertDirectionRight
+			}
+
+			nearestMissingNode := lib.WrapNode(m.Document, rawNearestMissingNode)
+			m.Nearest = nearestMissingNode
+		}
+
 		m.Context = iCtx
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
@@ -46,15 +74,23 @@ var CharacterExpectedError = lib.ErrorTemplate{
 		// }
 	},
 	OnGenBugFixFn: func(cd *lib.ContextData, gen *lib.BugFixGenerator) {
-		// ctx := cd.MainError.Context.(characterExpectedErrorCtx)
+		ctx := cd.MainError.Context.(characterExpectedErrorCtx)
 
 		gen.Add("Add the missing character", func(s *lib.BugFixSuggestion) {
-			s.AddStep("Ensure that the array declaration has the correct syntax by adding the missing `%s`.", cd.Variables["character"]).
-				AddFix(lib.FixSuggestion{
+			step := s.AddStep("Ensure that the array declaration has the correct syntax by adding the missing `%s`.", cd.Variables["character"])
+			if ctx.direction == characterInsertDirectionLeft {
+				step.AddFix(lib.FixSuggestion{
 					NewText:       cd.Variables["character"],
 					StartPosition: cd.MainError.Nearest.StartPosition(),
 					EndPosition:   cd.MainError.Nearest.StartPosition(),
 				})
+			} else if ctx.direction == characterInsertDirectionRight {
+				step.AddFix(lib.FixSuggestion{
+					NewText:       cd.Variables["character"],
+					StartPosition: cd.MainError.Nearest.EndPosition(),
+					EndPosition:   cd.MainError.Nearest.EndPosition(),
+				})
+			}
 		})
 
 		// switch ctx.fixKind {
@@ -81,4 +117,41 @@ var CharacterExpectedError = lib.ErrorTemplate{
 		// 	})
 		// }
 	},
+}
+
+func nearestNodeFromPos2(cursor *sitter.TreeCursor, pos lib.Position) *sitter.Node {
+	defer cursor.GoToParent()
+
+	// hope it executes to avoid stack overflow
+	if !cursor.GoToFirstChild() {
+		return nil
+	}
+
+	var nearest *sitter.Node
+
+	for {
+		currentNode := cursor.CurrentNode()
+		pointA := currentNode.StartPoint()
+		if pointA.Row+1 > uint32(pos.Line) {
+			break
+		}
+
+		if (nearest == nil && int(pointA.Row+1) <= pos.Line) || currentNode.StartByte() >= nearest.StartByte() {
+			nearest = currentNode
+		}
+
+		if currentNode.ChildCount() != 0 {
+			if nearestFromInner := nearestNodeFromPos2(cursor, pos); nearestFromInner != nil {
+				if (nearest == nil && int(nearestFromInner.StartPoint().Row+1) <= pos.Line) || nearestFromInner.StartByte() >= nearest.StartByte() {
+					nearest = nearestFromInner
+				}
+			}
+		}
+
+		if !cursor.GoToNextSibling() {
+			break
+		}
+	}
+
+	return nearest
 }
