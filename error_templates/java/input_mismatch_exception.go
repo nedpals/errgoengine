@@ -1,8 +1,6 @@
 package java
 
 import (
-	"fmt"
-
 	lib "github.com/nedpals/errgoengine"
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -78,8 +76,6 @@ func nearestNodeFromPosByType(cursor *sitter.TreeCursor, expType string, pos lib
 		pointA := currentNode.StartPoint()
 		pointB := currentNode.EndPoint()
 
-		fmt.Println(currentNode.Type(), currentNode.StartByte())
-
 		// stop if node is above the position
 		if uint32(pos.Line) < pointA.Row+1 {
 			break
@@ -101,8 +97,6 @@ func nearestNodeFromPosByType(cursor *sitter.TreeCursor, expType string, pos lib
 		if !cursor.GoToNextSibling() {
 			break
 		}
-
-		fmt.Println("next")
 	}
 
 	return nearest
