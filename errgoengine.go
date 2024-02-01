@@ -64,50 +64,8 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	contextData.TraceStack = template.ExtractStackTrace(contextData)
 
 	// open contents of the extracted stack file locations
-	parser := sitter.NewParser()
-	analyzer := &SymbolAnalyzer{ContextData: contextData}
-
-	for _, node := range contextData.TraceStack {
-		contents, err := e.FS.ReadFile(node.DocumentPath)
-		if err != nil {
-			// return nil, nil, err
-			// Do not return error if file not found
-			continue
-		}
-
-		// Skip stub files
-		if len(contents) == 0 {
-			continue
-		}
-
-		var selectedLanguage *Language
-		existingDoc, docExists := contextData.Documents[node.DocumentPath]
-
-		// check matched languages
-		if docExists {
-			selectedLanguage = existingDoc.Language
-		} else {
-			selectedLanguage = template.Language
-			if !selectedLanguage.MatchPath(node.DocumentPath) {
-				return nil, nil, fmt.Errorf("no language found for %s", node.DocumentPath)
-			}
-
-			// compile language first (if not yet)
-			selectedLanguage.Compile()
-		}
-
-		// do semantic analysis
-		doc, err := ParseDocument(node.DocumentPath, bytes.NewReader(contents), parser, selectedLanguage, existingDoc)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		// add doc if it does not already exist
-		if doc != existingDoc {
-			doc = contextData.AddDocument(doc)
-		}
-
-		analyzer.Analyze(doc)
+	if err := ParseFromStackTrace(contextData, template, e.FS); err != nil {
+		return nil, nil, err
 	}
 
 	// locate main error
@@ -156,4 +114,54 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 	defer e.OutputGen.Reset()
 
 	return expGen.mainExp.String(), output
+}
+
+func ParseFromStackTrace(contextData *ContextData, template *CompiledErrorTemplate, files *MultiReadFileFS) error {
+	parser := sitter.NewParser()
+	analyzer := &SymbolAnalyzer{ContextData: contextData}
+
+	for _, node := range contextData.TraceStack {
+		contents, err := files.ReadFile(node.DocumentPath)
+		if err != nil {
+			// return err
+			// Do not return error if file not found
+			continue
+		}
+
+		// Skip stub files
+		if len(contents) == 0 {
+			continue
+		}
+
+		var selectedLanguage *Language
+		existingDoc, docExists := contextData.Documents[node.DocumentPath]
+
+		// check matched languages
+		if docExists {
+			selectedLanguage = existingDoc.Language
+		} else {
+			selectedLanguage = template.Language
+			if !selectedLanguage.MatchPath(node.DocumentPath) {
+				return fmt.Errorf("no language found for %s", node.DocumentPath)
+			}
+
+			// compile language first (if not yet)
+			selectedLanguage.Compile()
+		}
+
+		// do semantic analysis
+		doc, err := ParseDocument(node.DocumentPath, bytes.NewReader(contents), parser, selectedLanguage, existingDoc)
+		if err != nil {
+			return err
+		}
+
+		// add doc if it does not already exist
+		if doc != existingDoc {
+			doc = contextData.AddDocument(doc)
+		}
+
+		analyzer.Analyze(doc)
+	}
+
+	return nil
 }
