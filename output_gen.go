@@ -82,7 +82,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	gen.generateFromExp(1, explain)
 	doc := cd.MainError.Document
 
-	if gen.IsTesting && !cd.MainError.Nearest.IsNull() {
+	if doc != nil && gen.IsTesting && !cd.MainError.Nearest.IsNull() {
 		startLineNr := cd.MainError.Nearest.StartPosition().Line
 		startLines := doc.LinesAt(max(startLineNr-1, 0), startLineNr)
 		endLines := doc.LinesAt(min(startLineNr+1, doc.TotalLines()), min(startLineNr+2, doc.TotalLines()))

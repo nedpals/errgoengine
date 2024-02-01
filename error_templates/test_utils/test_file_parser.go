@@ -236,9 +236,19 @@ func (p *Parser) ParseInputExpected(filename string, input string) (*TestOutput,
 		return nil, nil, err
 	}
 
+	if len(inputOut.Language) != 0 && len(inputOut.Template) == 0 {
+		inputOut.Template = inputOut.Language
+		inputOut.Language = ""
+	}
+
 	expOut, err := p.Parse(strings.NewReader(rawOutputs[1]))
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if len(expOut.Language) != 0 && len(expOut.Template) == 0 {
+		expOut.Template = expOut.Language
+		expOut.Language = ""
 	}
 
 	return inputOut, expOut, nil

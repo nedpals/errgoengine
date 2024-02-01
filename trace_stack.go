@@ -12,6 +12,9 @@ func (st *TraceStack) Add(symbolName string, loc Location) {
 }
 
 func (st TraceStack) Top() StackTraceEntry {
+	if len(st) == 0 {
+		return StackTraceEntry{}
+	}
 	return st[len(st)-1]
 }
 

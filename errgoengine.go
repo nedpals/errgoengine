@@ -91,6 +91,12 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 			Document:  doc,
 			Nearest:   WrapNode(doc, nearest),
 		}
+	} else if template == FallbackErrorTemplate {
+		contextData.MainError = &MainError{
+			ErrorNode: nil,
+			Document:  nil,
+			Nearest:   SyntaxNode{},
+		}
 	} else {
 		// return error template for bugbuddy to handle
 		// incomplete error messages
@@ -106,13 +112,18 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) (mainExp string, fullExp string) {
 	expGen := &ExplainGenerator{errorName: template.Name}
-	fixGen := &BugFixGenerator{
-		Document: contextData.MainError.Document,
+	fixGen := &BugFixGenerator{}
+	if contextData.MainError != nil {
+		fixGen.Document = contextData.MainError.Document
 	}
 
 	// execute error generator function
 	template.OnGenExplainFn(contextData, expGen)
-	template.OnGenBugFixFn(contextData, fixGen)
+
+	// execute bug fix generator function
+	if template.OnGenBugFixFn != nil {
+		template.OnGenBugFixFn(contextData, fixGen)
+	}
 
 	output := e.OutputGen.Generate(contextData, expGen, fixGen)
 	defer e.OutputGen.Reset()

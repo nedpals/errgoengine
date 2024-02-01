@@ -39,6 +39,9 @@ func (tmp *CompiledErrorTemplate) StackTraceRegex() *regexp.Regexp {
 }
 
 func (tmp *CompiledErrorTemplate) ExtractVariables(msg string) map[string]string {
+	if tmp.Pattern == nil {
+		return map[string]string{}
+	}
 	variables := map[string]string{}
 	groupNames := tmp.Pattern.SubexpNames()
 	for _, submatches := range tmp.Pattern.FindAllStringSubmatch(msg, -1) {
@@ -55,10 +58,13 @@ func (tmp *CompiledErrorTemplate) ExtractVariables(msg string) map[string]string
 
 func (tmp *CompiledErrorTemplate) ExtractStackTrace(cd *ContextData) TraceStack {
 	traceStack := TraceStack{}
-	workingPath := cd.WorkingPath
-
-	rawStackTraceItem := cd.Variables["stacktrace"]
 	stackTraceRegex := tmp.StackTraceRegex()
+	if stackTraceRegex == nil {
+		return traceStack
+	}
+
+	workingPath := cd.WorkingPath
+	rawStackTraceItem := cd.Variables["stacktrace"]
 	symbolGroupIdx := stackTraceRegex.SubexpIndex("symbol")
 	pathGroupIdx := stackTraceRegex.SubexpIndex("path")
 	posGroupIdx := stackTraceRegex.SubexpIndex("position")
@@ -94,6 +100,9 @@ func (tmp *CompiledErrorTemplate) ExtractStackTrace(cd *ContextData) TraceStack 
 }
 
 func (tmp *CompiledErrorTemplate) Match(str string) bool {
+	if tmp == FallbackErrorTemplate {
+		return true
+	}
 	return tmp.Pattern.MatchString(str)
 }
 
@@ -187,5 +196,28 @@ func (tmps ErrorTemplates) Find(language, name string) *CompiledErrorTemplate {
 }
 
 func TemplateKey(language, name string) string {
+	if len(language) == 0 {
+		return name
+	}
 	return fmt.Sprintf("%s.%s", language, name)
+}
+
+var FallbackErrorTemplate = &CompiledErrorTemplate{
+	ErrorTemplate: ErrorTemplate{
+		Name:    "UnknownError",
+		Pattern: `.*`,
+		OnGenExplainFn: func(cd *ContextData, gen *ExplainGenerator) {
+			gen.Add("There are no available error templates for this error.\n")
+			gen.Add("```\n")
+			gen.Add(cd.Variables["message"])
+			gen.Add("\n```")
+		},
+	},
+	Language: &Language{
+		AnalyzerFactory: func(cd *ContextData) LanguageAnalyzer {
+			return nil
+		},
+	},
+	Pattern:           nil,
+	StackTracePattern: nil,
 }

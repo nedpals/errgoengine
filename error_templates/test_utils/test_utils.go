@@ -111,7 +111,7 @@ func SetupTest(tb testing.TB, cfg SetupTestConfig) TestCases {
 				return e
 			}
 
-			if expTemp.Language.MatchPath(path) {
+			if (expTemp == lib.FallbackErrorTemplate && !d.IsDir()) || expTemp.Language.MatchPath(path) {
 				fileContent, err := os.ReadFile(path)
 				if err != nil {
 					return err
