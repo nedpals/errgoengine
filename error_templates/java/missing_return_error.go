@@ -62,7 +62,7 @@ var MissingReturnError = lib.ErrorTemplate{
 			// nearest sym will be at the last
 			valueToReturn := getDefaultValueForType(expectedTypeSym)
 			if len(symbolsForReturn) != 0 {
-				nearestSym := symbolsForReturn[len(symbolsForReturn)-1]
+				nearestSym := symbolsForReturn[0]
 				valueToReturn = nearestSym.Name()
 			}
 

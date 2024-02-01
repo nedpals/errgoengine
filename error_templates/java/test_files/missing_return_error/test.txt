@@ -23,7 +23,7 @@ Since the `addNumbers` method is declared to return an `int`, you need to provid
 public class MissingReturn {
     public int addNumbers(int a, int b) {
         // Missing return statement
-+         return b;
++         return a;
     }
 
 ```
