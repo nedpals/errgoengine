@@ -271,6 +271,8 @@ func (an *SymbolAnalyzer) analyzeFunction(pre string, symbolTree *SymbolTree, qu
 		switch tag {
 		case "name":
 			nodes[tag] = node
+		case "return-type":
+			returnType = an.ContextData.Analyzer.AnalyzeNode(WithSymbolTree(childTree), node)
 		}
 	}
 
