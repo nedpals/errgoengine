@@ -55,6 +55,10 @@ func (tree *SymbolTree) Find(name string) Symbol {
 func (tree *SymbolTree) GetNearestScopedTree(index int) *SymbolTree {
 	if tree.Scopes != nil {
 		for _, scopedTree := range tree.Scopes {
+			if scopedTree == tree || scopedTree == nil {
+				continue
+			}
+
 			if index >= scopedTree.StartPos.Index && index <= scopedTree.EndPos.Index {
 				return scopedTree.GetNearestScopedTree(index)
 			}
@@ -84,9 +88,16 @@ func (tree *SymbolTree) Add(sym Symbol) {
 		tree.EndPos = loc.EndPos
 	}
 
-	if cSym := CastChildrenSymbol(sym); cSym != nil {
+	if cSym := CastChildrenSymbol(sym); cSym != nil && cSym.Children() != tree {
 		if tree.Scopes == nil {
 			tree.Scopes = []*SymbolTree{}
+		}
+
+		// check if already exists
+		for _, scopedTree := range tree.Scopes {
+			if scopedTree == cSym.Children() {
+				return
+			}
 		}
 
 		tree.Scopes = append(tree.Scopes, cSym.Children())
