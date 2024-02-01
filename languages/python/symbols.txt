@@ -1,18 +1,41 @@
 (import_statement
-	name: (_) @import.path) @import
+  name: (_) @import.path) @import
+
+(module [(class_definition
+  name: (identifier) @class.name
+  body: (block [
+  (expression_statement
+    (assignment
+      left: (identifier) @variable.name
+      type: (_)? @variable.return-type
+      right: (_) @variable.content) @variable)
+
+  (function_definition
+    name: (identifier) @method.name
+    parameters: (parameters
+      [
+        (identifier) @parameter.name
+        (typed_parameter
+          ((identifier) @parameter.name)
+          type: (_) @parameter.return-type)
+      ]? @parameter) @parameters
+    body: (block
+      (return_statement (_) @block.content)?) @block) @method
+]) @class.body) @class
 
 (function_definition
-	parameters: (parameters
-    	[
-        	(identifier) @parameter.name
-            (typed_parameter
-            	((identifier) @parameter.name)
-                type: (_) @parameter.return-type)
-        ]? @parameter) @parameters) @function
-  	(return_statement
-  		(_) @block.content)?
+  name: (identifier) @function.name
+  parameters: (parameters
+    [
+      (identifier) @parameter.name
+      (typed_parameter
+        ((identifier) @parameter.name)
+          type: (_) @parameter.return-type)
+    ]? @parameter) @parameters
+  body: (block
+    (return_statement (_) @block.content)?) @block) @function])
 
 (expression_statement
-	(assignment
-    	left: (identifier) @assignment.name
-        right: (identifier) @assignment.content) @assignment)
+  (assignment
+      left: (identifier) @assignment.name
+        right: (_) @assignment.content) @assignment)
