@@ -65,7 +65,9 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 
 	// open contents of the extracted stack file locations
 	if err := ParseFromStackTrace(contextData, template, e.FS); err != nil {
-		return nil, nil, err
+		// return error template for bugbuddy to handle
+		// incomplete error messages
+		return template, nil, err
 	}
 
 	// locate main error
@@ -90,7 +92,9 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 			Nearest:   WrapNode(doc, nearest),
 		}
 	} else {
-		return nil, nil, fmt.Errorf("main trace node document not found")
+		// return error template for bugbuddy to handle
+		// incomplete error messages
+		return template, nil, fmt.Errorf("main trace node document not found")
 	}
 
 	if contextData.MainError != nil && template.OnAnalyzeErrorFn != nil {
