@@ -113,6 +113,7 @@ func (an *SymbolAnalyzer) analyzeImport(symbolTree *SymbolTree, it *captureItera
 
 func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitter.Query, it *captureIterator) {
 	pNodes := []map[string]SyntaxNode{}
+	paramTagMentionCount := 0
 
 	for it.Next() {
 		c := it.Current()
@@ -122,7 +123,13 @@ func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitte
 		}
 
 		if tag == "parameter" {
+			if paramTagMentionCount < len(pNodes) {
+				paramTagMentionCount++
+				continue
+			}
+
 			// start a new set of parameter node
+			paramTagMentionCount++
 			pNodes = append(pNodes, map[string]SyntaxNode{})
 			continue
 		} else if !strings.HasPrefix(tag, "parameter.") {
@@ -132,7 +139,17 @@ func (an *SymbolAnalyzer) analyzeParameters(symbolTree *SymbolTree, query *sitte
 
 		tag = strings.TrimPrefix(tag, "parameter.")
 		node := it.CurrentNode()
-		pNodes[len(pNodes)-1][tag] = node
+
+		if paramTagMentionCount == 0 || paramTagMentionCount < len(pNodes) {
+			pNodes = append(pNodes, map[string]SyntaxNode{})
+		}
+
+		idx := paramTagMentionCount
+		if len(pNodes) > 0 && paramTagMentionCount == len(pNodes) {
+			idx--
+		}
+
+		pNodes[idx][tag] = node
 	}
 
 	for _, nodes := range pNodes {
