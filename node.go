@@ -110,6 +110,9 @@ func (n SyntaxNode) RawNode() *sitter.Node {
 }
 
 func (n SyntaxNode) Query(q string, d ...any) *QueryNodeCursor {
+	if len(d) == 0 {
+		return queryNode2(n, q)
+	}
 	return queryNode2(n, fmt.Sprintf(q, d...))
 }
 
@@ -273,6 +276,5 @@ func queryNode2(node SyntaxNode, queryR string) *QueryNodeCursor {
 		rawQuery:     queryR,
 	}
 
-	cursor.NextMatch()
 	return cursor
 }
