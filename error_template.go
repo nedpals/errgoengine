@@ -50,6 +50,10 @@ func (tmp *CompiledErrorTemplate) ExtractVariables(msg string) map[string]string
 				continue
 			}
 
+			if v, ok := variables[groupNames[idx]]; ok && len(v) != 0 {
+				continue
+			}
+
 			variables[groupNames[idx]] = matchedContent
 		}
 	}
@@ -108,7 +112,11 @@ func (tmp *CompiledErrorTemplate) Match(str string) bool {
 
 type ErrorTemplates map[string]*CompiledErrorTemplate
 
-const defaultStackTraceRegex = `(?P<stacktrace>(?:.|\s)*)`
+const defaultStackTraceRegexOpening = `(?P<stacktrace>(?:`
+const defaultStackTraceRegexClosing = `)*)`
+const defaultStackTraceRegex = defaultStackTraceRegexOpening + `.|\s` + defaultStackTraceRegexClosing
+
+var stackTraceCaptureGroupRegex = regexp.MustCompile(`\(\?P<(?:symbol|path|position)>([a-z0-9A-Z_\\//+.]+)\)`)
 
 func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) (*CompiledErrorTemplate, error) {
 	key := TemplateKey(language.Name, template.Name)
@@ -143,8 +151,10 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) (*Co
 	}
 
 	if strings.Contains(patternForCompile, "$stacktrace") {
-		patternForCompile =
-			strings.ReplaceAll(patternForCompile, "$stacktrace", defaultStackTraceRegex)
+		rawStackTracePattern := template.StackTracePattern
+		if len(rawStackTracePattern) == 0 && len(language.StackTracePattern) != 0 {
+			rawStackTracePattern = language.StackTracePattern
+		}
 
 		if len(template.StackTracePattern) != 0 {
 			var err error
@@ -152,6 +162,19 @@ func (tmps *ErrorTemplates) Add(language *Language, template ErrorTemplate) (*Co
 			if err != nil {
 				return nil, err
 			}
+		}
+
+		if len(rawStackTracePattern) != 0 {
+			// strip first the group names before replacing $stacktrace
+			strippedStackTracePattern := stackTraceCaptureGroupRegex.ReplaceAllString(rawStackTracePattern, "$1")
+
+			// replace $stacktrace with the actual stack trace pattern
+			patternForCompile =
+				strings.ReplaceAll(patternForCompile, "$stacktrace",
+					defaultStackTraceRegexOpening+strippedStackTracePattern+defaultStackTraceRegexClosing)
+		} else {
+			patternForCompile =
+				strings.ReplaceAll(patternForCompile, "$stacktrace", defaultStackTraceRegex)
 		}
 	}
 

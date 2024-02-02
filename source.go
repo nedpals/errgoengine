@@ -543,6 +543,11 @@ func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *
 	}
 
 	defer parser.Reset()
+
+	if selectLang.SitterLanguage == nil {
+		return nil, fmt.Errorf("Language %s does not have a parser", selectLang.Name)
+	}
+
 	parser.SetLanguage(selectLang.SitterLanguage)
 
 	var existingTree *sitter.Tree

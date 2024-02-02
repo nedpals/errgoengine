@@ -34,7 +34,7 @@ func TestErrorTemplate(t *testing.T) {
 
 		testutils.Equals(t, tmp.Name, "ErrorA")
 		testutils.Equals(t, tmp.Language, lib.TestLanguage)
-		testutils.Equals(t, tmp.Pattern.String(), `(?m)^This is a sample error(?P<stacktrace>(?:.|\s)*)$`)
+		testutils.Equals(t, tmp.Pattern.String(), `(?m)^This is a sample error(?P<stacktrace>(?:\sin \S+ at \S+:\d+)*)$`)
 		testutils.Equals(t, tmp.StackTraceRegex().String(), `(?m)\sin (?P<symbol>\S+) at (?P<path>\S+):(?P<position>\d+)`)
 		testutils.ExpectNil(t, tmp.StackTracePattern)
 	})
@@ -54,7 +54,7 @@ func TestErrorTemplate(t *testing.T) {
 
 		testutils.Equals(t, tmp.Name, "ErrorB")
 		testutils.Equals(t, tmp.Language, lib.TestLanguage)
-		testutils.Equals(t, tmp.Pattern.String(), `(?m)^This is a sample error with stack trace(?P<stacktrace>(?:.|\s)*)$`)
+		testutils.Equals(t, tmp.Pattern.String(), `(?m)^This is a sample error with stack trace(?P<stacktrace>(?:\S+:\S+:\d+)*)$`)
 		testutils.Equals(t, tmp.StackTraceRegex().String(), `(?P<symbol>\S+):(?P<path>\S+):(?P<position>\d+)`)
 	})
 
@@ -72,7 +72,7 @@ func TestErrorTemplate(t *testing.T) {
 
 		testutils.Equals(t, tmp.Name, "ErrorC")
 		testutils.Equals(t, tmp.Language, lib.TestLanguage)
-		testutils.Equals(t, tmp.Pattern.String(), `(?m)^Stack trace in middle (?P<stacktrace>(?:.|\s)*)test$`)
+		testutils.Equals(t, tmp.Pattern.String(), `(?m)^Stack trace in middle (?P<stacktrace>(?:\sin \S+ at \S+:\d+)*)test$`)
 		testutils.ExpectNil(t, tmp.StackTracePattern)
 	})
 }
@@ -265,7 +265,7 @@ func TestExtractVariables(t *testing.T) {
 
 		variables := tmp.ExtractVariables(input)
 		exp := map[string]string{
-			"stacktrace": "\nin main at /home/user/main.py:123\nin main at /home/user/main.py:1",
+			"stacktrace": "",
 			"input":      "123abc",
 		}
 
@@ -439,6 +439,8 @@ func TestErrorTemplates(t *testing.T) {
 		OnGenBugFixFn:  emptyBugFixFn,
 	})
 
+	inputStackTrace := " in Abcd at test.file:10"
+
 	fmt.Println(tmp.Pattern.String())
 	fmt.Println(tmp2.Pattern.String())
 
@@ -454,7 +456,10 @@ func TestErrorTemplates(t *testing.T) {
 		}
 
 		for i, input := range inputs {
-			matched := errorTemplates.Match(input + "\n" + lib.TestLanguage.StackTracePattern)
+			matched := errorTemplates.Match(input + "\n" + inputStackTrace)
+			if matched == nil {
+				t.Fatalf("expected %s, got nil", expected[i].Name)
+			}
 
 			if !reflect.DeepEqual(matched, expected[i]) {
 				t.Fatalf("expected %s, got %s", expected[i].Name, matched.Name)
@@ -474,7 +479,10 @@ func TestErrorTemplates(t *testing.T) {
 		}
 
 		for i, input := range inputs {
-			matched := errorTemplates.Match(input + "\n" + lib.TestLanguage.StackTracePattern)
+			matched := errorTemplates.Match(input + "\n" + inputStackTrace)
+			if matched == nil {
+				t.Fatalf("expected %s, got nil", expected[i].Name)
+			}
 
 			if !reflect.DeepEqual(matched, expected[i]) {
 				t.Fatalf("expected %s, got %s", expected[i].Name, matched.Name)
@@ -486,8 +494,8 @@ func TestErrorTemplates(t *testing.T) {
 		inputs := []string{
 			"This is a sample errorz\n",
 			"AAnother exmaple error\n",
-			"Another eaaxmaple error\n" + lib.TestLanguage.StackTracePattern,
-			"This is a sample erroar\n" + lib.TestLanguage.StackTracePattern,
+			"Another eaaxmaple error\n" + inputStackTrace,
+			"This is a sample erroar\n" + inputStackTrace,
 		}
 
 		for _, input := range inputs {
@@ -505,8 +513,11 @@ func TestErrorTemplates(t *testing.T) {
 			"Another exmaple error",
 		}
 
-		input := strings.Join(inputs, "\nin main at /home/user/main.py:1\n\n")
+		input := strings.Join(inputs, "\n in main at /home/user/main.py:1\n\n")
 		matched := errorTemplates.Match(input)
+		if matched == nil {
+			t.Fatalf("expected %s, got nil", tmp.Name)
+		}
 
 		if !reflect.DeepEqual(matched, tmp) {
 			t.Fatalf("expected %s, got %s", tmp.Name, matched.Name)
@@ -520,8 +531,11 @@ func TestErrorTemplates(t *testing.T) {
 			"This is a sample error",
 		}
 
-		input := strings.Join(inputs, "\nin main at /home/user/main.py:1\n\n")
+		input := strings.Join(inputs, "\n in main at /home/user/main.py:1\n\n")
 		matched := errorTemplates.Match(input)
+		if matched == nil {
+			t.Fatalf("expected %s, got nil", tmp2.Name)
+		}
 
 		if !reflect.DeepEqual(matched, tmp2) {
 			t.Fatalf("expected %s, got %s", tmp2.Name, matched.Name)
