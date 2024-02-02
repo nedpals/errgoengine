@@ -2,11 +2,14 @@ package errgoengine
 
 import (
 	"context"
+
+	"github.com/smacker/go-tree-sitter/python"
 )
 
 var TestLanguage = &Language{
 	Name:              "TestLang",
 	FilePatterns:      []string{".test"},
+	SitterLanguage:    python.GetLanguage(),
 	StackTracePattern: `\sin (?P<symbol>\S+) at (?P<path>\S+):(?P<position>\d+)`,
 	AnalyzerFactory: func(cd *ContextData) LanguageAnalyzer {
 		return &testAnalyzer{}
