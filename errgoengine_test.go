@@ -171,13 +171,11 @@ func TestParseFromStackTrace(t *testing.T) {
 
 	t.Run("ExistingDoc", func(t *testing.T) {
 		currentLang := python.Language
-		contextData := Setup(currentLang, "main.py", lib.Position{Line: 2})
+		contextData := Setup(currentLang, "hello.py", lib.Position{Line: 2})
 		files := fstest.MapFS{
-			"main.py": &fstest.MapFile{
-				Data: []byte(`def main():
-	a = 1
-	print(a/0)
-`),
+			"hello.py": &fstest.MapFile{
+				Data: []byte(`a = 1
+print(a/0)`),
 			},
 		}
 
@@ -188,9 +186,9 @@ func TestParseFromStackTrace(t *testing.T) {
 		}
 
 		// check if the document is parsed
-		doc, ok := contextData.Documents["main.py"]
+		doc, ok := contextData.Documents["hello.py"]
 		if !ok {
-			t.Error("main.py document not found")
+			t.Error("hello.py document not found")
 		}
 
 		// check if doc language is same as currentLang
@@ -213,7 +211,7 @@ func TestParseFromStackTrace(t *testing.T) {
 		}
 
 		newFiles := fstest.MapFS{
-			"main.py": &fstest.MapFile{
+			"hello.py": &fstest.MapFile{
 				Data: []byte(`def main():
 	print("Hello, World!")
 `),
@@ -232,9 +230,9 @@ func TestParseFromStackTrace(t *testing.T) {
 		}
 
 		// check if the document is parsed
-		doc, ok = contextData.Documents["main.py"]
+		doc, ok = contextData.Documents["hello.py"]
 		if !ok {
-			t.Error("main.py document not found")
+			t.Error("hello.py document not found")
 		}
 
 		// check if doc language is same as currentLang
