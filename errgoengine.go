@@ -64,7 +64,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	contextData.TraceStack = template.ExtractStackTrace(contextData)
 
 	// open contents of the extracted stack file locations
-	if err := ParseFromStackTrace(contextData, template, e.FS); err != nil {
+	if err := ParseFromStackTrace(contextData, template.Language, e.FS); err != nil {
 		// return error template for bugbuddy to handle
 		// incomplete error messages
 		return template, nil, err
@@ -131,12 +131,14 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 	return expGen.mainExp.String(), output
 }
 
-func ParseFromStackTrace(contextData *ContextData, template *CompiledErrorTemplate, files *MultiReadFileFS) error {
+func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS) error {
 	parser := sitter.NewParser()
 	analyzer := &SymbolAnalyzer{ContextData: contextData}
 
 	for _, node := range contextData.TraceStack {
-		contents, err := files.ReadFile(node.DocumentPath)
+		path := node.DocumentPath
+
+		contents, err := files.ReadFile(path)
 		if err != nil {
 			// return err
 			// Do not return error if file not found
@@ -148,16 +150,16 @@ func ParseFromStackTrace(contextData *ContextData, template *CompiledErrorTempla
 			continue
 		}
 
-		var selectedLanguage *Language
-		existingDoc, docExists := contextData.Documents[node.DocumentPath]
+		// check if document already exists
+		existingDoc, docExists := contextData.Documents[path]
 
 		// check matched languages
+		selectedLanguage := defaultLanguage
 		if docExists {
 			selectedLanguage = existingDoc.Language
 		} else {
-			selectedLanguage = template.Language
-			if !selectedLanguage.MatchPath(node.DocumentPath) {
-				return fmt.Errorf("no language found for %s", node.DocumentPath)
+			if !selectedLanguage.MatchPath(path) {
+				return fmt.Errorf("no language found for %s", path)
 			}
 
 			// compile language first (if not yet)
@@ -165,7 +167,8 @@ func ParseFromStackTrace(contextData *ContextData, template *CompiledErrorTempla
 		}
 
 		// do semantic analysis
-		doc, err := ParseDocument(node.DocumentPath, bytes.NewReader(contents), parser, selectedLanguage, existingDoc)
+		contentReader := bytes.NewReader(contents)
+		doc, err := ParseDocument(path, contentReader, parser, selectedLanguage, existingDoc)
 		if err != nil {
 			return err
 		}
