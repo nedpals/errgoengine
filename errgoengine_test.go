@@ -125,8 +125,8 @@ func TestParseFromStackTrace(t *testing.T) {
 	})
 
 	t.Run("FileNotFound", func(t *testing.T) {
-		currentLang := python.Language
-		contextData := Setup(currentLang, "main.py", lib.Position{Line: 2})
+		currentLang := java.Language
+		contextData := Setup(currentLang, "Test.java", lib.Position{Line: 2})
 		files := fstest.MapFS{}
 
 		err := lib.ParseFromStackTrace(contextData, currentLang, files)
@@ -135,8 +135,8 @@ func TestParseFromStackTrace(t *testing.T) {
 		}
 
 		// document should not be present
-		if _, ok := contextData.Documents["main.py"]; ok {
-			t.Error("main.py document is present")
+		if _, ok := contextData.Documents["Test.java"]; ok {
+			t.Error("Test.java document is present")
 		}
 	})
 
