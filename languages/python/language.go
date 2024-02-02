@@ -15,7 +15,7 @@ var Language = &lib.Language{
 	Name:              "Python",
 	FilePatterns:      []string{".py"},
 	SitterLanguage:    python.GetLanguage(),
-	StackTracePattern: `\s+File "(?P<path>\S+)", line (?P<position>\d+)(?:, in (?P<symbol>\S+))?`,
+	StackTracePattern: `\s+File "(?P<path>\S+)", line (?P<position>\d+)(?:, in (?P<symbol>\S+))?(?:\n.+(?:\n[ ^~]+)?\n)?`,
 	ErrorPattern:      `$stacktrace$message`,
 	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
 		return &pyAnalyzer{cd}
