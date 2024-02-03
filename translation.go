@@ -39,6 +39,12 @@ func (gen *ExplainGenerator) CreateSection(name string) *ExplainGenerator {
 	return gen.Sections[name]
 }
 
+func NewExplainGeneratorForError(name string) *ExplainGenerator {
+	return &ExplainGenerator{
+		ErrorName: name,
+	}
+}
+
 type BugFixSuggestion struct {
 	Title        string
 	Steps        []*BugFixStep

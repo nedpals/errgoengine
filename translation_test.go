@@ -10,7 +10,7 @@ import (
 
 func TestExplainGenerator(t *testing.T) {
 	t.Run("errorName", func(t *testing.T) {
-		gen := &lib.ExplainGenerator{ErrorName: "TestError"}
+		gen := lib.NewExplainGeneratorForError("TestError")
 
 		if gen.ErrorName != "TestError" {
 			t.Errorf("Expected 'TestError', got %s", gen.ErrorName)
@@ -65,7 +65,7 @@ func TestExplainGenerator(t *testing.T) {
 		})
 
 		t.Run("Append with newline", func(t *testing.T) {
-			gen := &lib.ExplainGenerator{ErrorName: "TestError"}
+			gen := lib.NewExplainGeneratorForError("TestError")
 			gen.Add("This is a simple error explanation.\n")
 			gen.Add("This is another error message.")
 
