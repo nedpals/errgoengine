@@ -262,6 +262,20 @@ func TestBugFixGenerator(t *testing.T) {
 			})
 		})
 
+		t.Run("With punctuation", func(t *testing.T) {
+			gen := &lib.BugFixGenerator{
+				Document: doc,
+			}
+
+			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
+				s.AddStep("Oh wow!", func(step *lib.BugFixStep) {
+					if step.Content != "Oh wow!" {
+						t.Errorf("Expected 'Oh wow!', got %s", step.Content)
+					}
+				})
+			})
+		})
+
 		t.Run("With string data", func(t *testing.T) {
 			gen := &lib.BugFixGenerator{
 				Document: doc,
