@@ -170,9 +170,7 @@ func TestBugFixGenerator(t *testing.T) {
 
 	t.Run("Add", func(t *testing.T) {
 		t.Run("Simple", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				if s.Title != "A descriptive suggestion sentence or phrase" {
@@ -186,9 +184,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Empty title", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			err := gen.Add("", func(s *lib.BugFixSuggestion) {})
 			if err == nil {
@@ -201,9 +197,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Empty function", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			err := gen.Add("A descriptive suggestion sentence or phrase", nil)
 			if err == nil {
@@ -216,9 +210,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Multiple", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {})
 			gen.Add("This is another error message.", func(s *lib.BugFixSuggestion) {})
@@ -231,9 +223,7 @@ func TestBugFixGenerator(t *testing.T) {
 
 	t.Run("Suggestion/AddStep", func(t *testing.T) {
 		t.Run("Simple", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("This is a step.", func(step *lib.BugFixStep) {
@@ -249,9 +239,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Without period", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("This is a step", func(step *lib.BugFixStep) {
@@ -263,9 +251,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("With punctuation", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("Oh wow!", func(step *lib.BugFixStep) {
@@ -277,9 +263,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("With string data", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("This is a step with data: %s", "Hello", func(step *lib.BugFixStep) {
@@ -291,9 +275,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("With int data", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("This is a step with data: %d", 10, func(step *lib.BugFixStep) {
@@ -305,9 +287,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("With mixed data", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("This is a step with data: %s and %d", "Hello", 10, func(step *lib.BugFixStep) {
@@ -319,9 +299,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Empty content", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				// recover

@@ -211,3 +211,9 @@ func (gen *BugFixGenerator) Add(title string, makerFn func(s *BugFixSuggestion))
 	gen.Suggestions = append(gen.Suggestions, suggestion)
 	return nil
 }
+
+func NewBugFixGenerator(doc *Document) *BugFixGenerator {
+	return &BugFixGenerator{
+		Document: doc,
+	}
+}
