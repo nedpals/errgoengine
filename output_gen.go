@@ -20,7 +20,7 @@ func (gen *OutputGenerator) Heading(level int, text string) {
 	gen.Writeln(text)
 }
 
-func (gen *OutputGenerator) _break() {
+func (gen *OutputGenerator) Break() {
 	gen.Builder.WriteByte('\n')
 }
 
@@ -36,12 +36,12 @@ func (gen *OutputGenerator) FromExplanation(level int, explain *ExplainGenerator
 
 	if explain.Sections != nil {
 		for sectionName, exp := range explain.Sections {
-			gen._break()
+			gen.Break()
 			gen.Heading(level+1, sectionName)
 			gen.FromExplanation(level+1, exp)
 		}
 	} else {
-		gen._break()
+		gen.Break()
 	}
 }
 
@@ -50,7 +50,7 @@ func (gen *OutputGenerator) Writeln(str string, d ...any) {
 		return
 	}
 	gen.Write(str, d...)
-	gen._break()
+	gen.Break()
 }
 
 func (gen *OutputGenerator) Write(str string, d ...any) {
@@ -68,7 +68,7 @@ func (gen *OutputGenerator) Write(str string, d ...any) {
 func (gen *OutputGenerator) WriteLines(lines ...string) {
 	for _, line := range lines {
 		if len(line) == 0 {
-			gen._break()
+			gen.Break()
 		} else {
 			gen.Writeln(line)
 		}
@@ -140,7 +140,7 @@ func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGe
 							gen.Write("- ")
 						}
 						if len(origLine) == 0 {
-							gen._break()
+							gen.Break()
 						} else {
 							gen.Writeln(origLine)
 						}
@@ -161,7 +161,7 @@ func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGe
 								// write only if the line is not the last line
 								if startLine+i < origAfterLine {
 									gen.Write(modifiedLine)
-									gen._break()
+									gen.Break()
 								}
 								continue
 							}
@@ -170,7 +170,7 @@ func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGe
 								gen.Write(" ")
 							}
 							gen.Write(modifiedLine)
-							gen._break()
+							gen.Break()
 						}
 					}
 
@@ -194,7 +194,7 @@ func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGe
 			}
 
 			if sIdx < len(bugFix.Suggestions)-1 {
-				gen._break()
+				gen.Break()
 			}
 
 		}

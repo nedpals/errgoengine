@@ -163,7 +163,7 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 				gen.Builder.WriteByte('^')
 			}
 
-			gen._break()
+			gen.Break()
 			gen.WriteLines(endLines...)
 			gen.Writeln("```")
 		}
