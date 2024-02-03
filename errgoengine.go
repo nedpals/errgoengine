@@ -13,6 +13,7 @@ type ErrgoEngine struct {
 	ErrorTemplates ErrorTemplates
 	FS             *MultiReadFileFS
 	OutputGen      *OutputGenerator
+	IsTesting      bool
 }
 
 func New() *ErrgoEngine {
@@ -125,7 +126,50 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 		template.OnGenBugFixFn(contextData, fixGen)
 	}
 
-	output := e.OutputGen.Generate(contextData, expGen, fixGen)
+	if e.IsTesting {
+		// add a code snippet that points to the error
+		e.OutputGen.GenAfterExplain = func(gen *OutputGenerator) {
+			err := contextData.MainError
+			if err == nil {
+				return
+			}
+
+			doc := err.Document
+			if doc == nil || err.Nearest.IsNull() {
+				return
+			}
+
+			startLineNr := err.Nearest.StartPosition().Line
+			startLines := doc.LinesAt(max(startLineNr-1, 0), startLineNr)
+			endLines := doc.LinesAt(min(startLineNr+1, doc.TotalLines()), min(startLineNr+2, doc.TotalLines()))
+			arrowLength := int(err.Nearest.EndByte() - err.Nearest.StartByte())
+			if arrowLength == 0 {
+				arrowLength = 1
+			}
+
+			startArrowPos := err.Nearest.StartPosition().Column
+			gen.Writeln("```")
+			gen.WriteLines(startLines...)
+
+			for i := 0; i < startArrowPos; i++ {
+				if startLines[len(startLines)-1][i] == '\t' {
+					gen.Builder.WriteString("    ")
+				} else {
+					gen.Builder.WriteByte(' ')
+				}
+			}
+
+			for i := 0; i < arrowLength; i++ {
+				gen.Builder.WriteByte('^')
+			}
+
+			gen._break()
+			gen.WriteLines(endLines...)
+			gen.Writeln("```")
+		}
+	}
+
+	output := e.OutputGen.Generate(expGen, fixGen)
 	defer e.OutputGen.Reset()
 
 	return expGen.Builder.String(), output

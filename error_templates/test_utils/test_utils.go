@@ -57,7 +57,7 @@ func SetupTest(tb testing.TB, cfg SetupTestConfig) TestCases {
 
 	// load error templates
 	engine := lib.New()
-	engine.OutputGen.IsTesting = true
+	engine.IsTesting = true
 
 	cfg.TemplateLoader(&engine.ErrorTemplates)
 

@@ -6,8 +6,8 @@ import (
 )
 
 type OutputGenerator struct {
-	IsTesting bool
-	Builder   *strings.Builder
+	GenAfterExplain func(*OutputGenerator)
+	Builder         *strings.Builder
 }
 
 func (gen *OutputGenerator) Heading(level int, text string) {
@@ -70,7 +70,7 @@ func (gen *OutputGenerator) WriteLines(lines ...string) {
 	}
 }
 
-func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator, bugFix *BugFixGenerator) string {
+func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGenerator) string {
 	if gen.Builder == nil {
 		gen.Builder = &strings.Builder{}
 	}
@@ -80,33 +80,8 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 	}
 
 	gen.ExpGen(1, explain)
-	doc := cd.MainError.Document
-
-	if doc != nil && gen.IsTesting && !cd.MainError.Nearest.IsNull() {
-		startLineNr := cd.MainError.Nearest.StartPosition().Line
-		startLines := doc.LinesAt(max(startLineNr-1, 0), startLineNr)
-		endLines := doc.LinesAt(min(startLineNr+1, doc.TotalLines()), min(startLineNr+2, doc.TotalLines()))
-		arrowLength := int(cd.MainError.Nearest.EndByte() - cd.MainError.Nearest.StartByte())
-		if arrowLength == 0 {
-			arrowLength = 1
-		}
-
-		startArrowPos := cd.MainError.Nearest.StartPosition().Column
-		gen.Writeln("```")
-		gen.WriteLines(startLines...)
-		for i := 0; i < startArrowPos; i++ {
-			if startLines[len(startLines)-1][i] == '\t' {
-				gen.Builder.WriteString("    ")
-			} else {
-				gen.Builder.WriteByte(' ')
-			}
-		}
-		for i := 0; i < arrowLength; i++ {
-			gen.Builder.WriteByte('^')
-		}
-		gen._break()
-		gen.WriteLines(endLines...)
-		gen.Writeln("```")
+	if gen.GenAfterExplain != nil {
+		gen.GenAfterExplain(gen)
 	}
 
 	gen.Heading(2, "Steps to fix")
@@ -131,6 +106,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 				}
 
 				if len(step.Fixes) != 0 {
+					doc := step.Doc.Document
 					descriptionBuilder := &strings.Builder{}
 
 					// get the start and end line after applying the diff
@@ -225,5 +201,8 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 }
 
 func (gen *OutputGenerator) Reset() {
+	if gen.GenAfterExplain != nil {
+		gen.GenAfterExplain = nil
+	}
 	gen.Builder.Reset()
 }
