@@ -6,8 +6,6 @@ import (
 	"unicode"
 )
 
-type GenExplainFn func(*ContextData, *ExplainGenerator)
-
 type ExplainGenerator struct {
 	ErrorName string
 	Builder   *strings.Builder
@@ -40,8 +38,6 @@ func (gen *ExplainGenerator) CreateSection(name string) *ExplainGenerator {
 	}
 	return gen.Sections[name]
 }
-
-type GenBugFixFn func(*ContextData, *BugFixGenerator)
 
 type BugFixSuggestion struct {
 	Title        string
