@@ -7,79 +7,79 @@ import (
 
 type OutputGenerator struct {
 	IsTesting bool
-	wr        *strings.Builder
+	Builder   *strings.Builder
 }
 
-func (gen *OutputGenerator) heading(level int, text string) {
+func (gen *OutputGenerator) Heading(level int, text string) {
 	// dont go below zero, dont go above 6
 	level = max(min(6, level), 0)
 	for i := 0; i < level; i++ {
-		gen.wr.WriteByte('#')
+		gen.Builder.WriteByte('#')
 	}
-	gen.wr.WriteByte(' ')
-	gen.writeln(text)
+	gen.Builder.WriteByte(' ')
+	gen.Writeln(text)
 }
 
 func (gen *OutputGenerator) _break() {
-	gen.wr.WriteByte('\n')
+	gen.Builder.WriteByte('\n')
 }
 
-func (gen *OutputGenerator) generateFromExp(level int, explain *ExplainGenerator) {
+func (gen *OutputGenerator) ExpGen(level int, explain *ExplainGenerator) {
 	if explain.Builder != nil {
-		gen.write(explain.Builder.String())
+		gen.Write(explain.Builder.String())
 	}
 
 	if explain.Sections != nil {
 		for sectionName, exp := range explain.Sections {
 			gen._break()
-			gen.heading(level+1, sectionName)
-			gen.generateFromExp(level+1, exp)
+			gen.Heading(level+1, sectionName)
+			gen.ExpGen(level+1, exp)
 		}
 	} else {
 		gen._break()
 	}
 }
 
-func (gen *OutputGenerator) writeln(str string, d ...any) {
+func (gen *OutputGenerator) Writeln(str string, d ...any) {
 	if len(str) == 0 {
 		return
 	}
-	gen.write(str, d...)
+	gen.Write(str, d...)
 	gen._break()
 }
 
-func (gen *OutputGenerator) write(str string, d ...any) {
+func (gen *OutputGenerator) Write(str string, d ...any) {
 	final := fmt.Sprintf(str, d...)
 	for _, c := range final {
 		if c == '\t' {
 			// 1 tab = 4 spaces
-			gen.wr.WriteString("    ")
+			gen.Builder.WriteString("    ")
 		} else {
-			gen.wr.WriteRune(c)
+			gen.Builder.WriteRune(c)
 		}
 	}
 }
 
-func (gen *OutputGenerator) writeLines(lines ...string) {
+func (gen *OutputGenerator) WriteLines(lines ...string) {
 	for _, line := range lines {
 		if len(line) == 0 {
 			gen._break()
 		} else {
-			gen.writeln(line)
+			gen.Writeln(line)
 		}
 	}
 }
 
 func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator, bugFix *BugFixGenerator) string {
-	if gen.wr == nil {
-		gen.wr = &strings.Builder{}
+	if gen.Builder == nil {
+		gen.Builder = &strings.Builder{}
 	}
 
 	if len(explain.ErrorName) != 0 {
-		gen.heading(1, explain.ErrorName)
+		gen.Heading(1, explain.ErrorName)
 	}
 
-	gen.generateFromExp(1, explain)
+	gen.ExpGen(1, explain)
 	doc := cd.MainError.Document
 
 	if doc != nil && gen.IsTesting && !cd.MainError.Nearest.IsNull() {
@@ -92,38 +92,38 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 		}
 
 		startArrowPos := cd.MainError.Nearest.StartPosition().Column
-		gen.writeln("```")
-		gen.writeLines(startLines...)
+		gen.Writeln("```")
+		gen.WriteLines(startLines...)
 		for i := 0; i < startArrowPos; i++ {
 			if startLines[len(startLines)-1][i] == '\t' {
-				gen.wr.WriteString("    ")
+				gen.Builder.WriteString("    ")
 			} else {
-				gen.wr.WriteByte(' ')
+				gen.Builder.WriteByte(' ')
 			}
 		}
 		for i := 0; i < arrowLength; i++ {
-			gen.wr.WriteByte('^')
+			gen.Builder.WriteByte('^')
 		}
 		gen._break()
-		gen.writeLines(endLines...)
-		gen.writeln("```")
+		gen.WriteLines(endLines...)
+		gen.Writeln("```")
 	}
 
-	gen.heading(2, "Steps to fix")
+	gen.Heading(2, "Steps to fix")
 
 	if bugFix.Suggestions != nil && len(bugFix.Suggestions) != 0 {
 		for sIdx, s := range bugFix.Suggestions {
 			if len(bugFix.Suggestions) == 1 {
-				gen.heading(3, s.Title)
+				gen.Heading(3, s.Title)
 			} else {
-				gen.heading(3, fmt.Sprintf("%d. %s", sIdx+1, s.Title))
+				gen.Heading(3, fmt.Sprintf("%d. %s", sIdx+1, s.Title))
 			}
 
 			for idx, step := range s.Steps {
 				if len(s.Steps) == 1 {
-					gen.writeln(step.Content)
+					gen.Writeln(step.Content)
 				} else {
-					gen.writeln(fmt.Sprintf("%d. %s", idx+1, step.Content))
+					gen.Writeln(fmt.Sprintf("%d. %s", idx+1, step.Content))
 				}
 
 				if step.Fixes == nil && len(step.Fixes) == 0 {
@@ -141,7 +141,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					origStartLine := step.OrigStartLine
 					origAfterLine := step.OrigAfterLine
 
-					gen.writeln("```diff")
+					gen.Writeln("```diff")
 
 					// use origStartLine instead of startLine because we want to show the original lines
 					if startLine > 0 {
@@ -149,19 +149,19 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 						if step.DiffPosition.Line < 0 {
 							deduct += step.DiffPosition.Line
 						}
-						gen.writeLines(step.Doc.LinesAt(origStartLine+deduct, origStartLine-1)...)
+						gen.WriteLines(step.Doc.LinesAt(origStartLine+deduct, origStartLine-1)...)
 					}
 
 					modified := step.Doc.ModifiedLinesAt(startLine, afterLine)
 					original := step.Doc.LinesAt(origStartLine, origAfterLine)
 					for i, origLine := range original {
 						if i >= len(modified) || modified[i] != origLine {
-							gen.write("- ")
+							gen.Write("- ")
 						}
 						if len(origLine) == 0 {
 							gen._break()
 						} else {
-							gen.writeln(origLine)
+							gen.Writeln(origLine)
 						}
 					}
 
@@ -179,22 +179,22 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 							if i < len(originalLines) && modifiedLine == originalLines[i] {
 								// write only if the line is not the last line
 								if startLine+i < origAfterLine {
-									gen.write(modifiedLine)
+									gen.Write(modifiedLine)
 									gen._break()
 								}
 								continue
 							}
-							gen.write("+")
+							gen.Write("+")
 							if len(modifiedLine) != 0 {
-								gen.write(" ")
+								gen.Write(" ")
 							}
-							gen.write(modifiedLine)
+							gen.Write(modifiedLine)
 							gen._break()
 						}
 					}
 
-					gen.writeLines(step.Doc.LinesAt(origAfterLine+1, min(origAfterLine+2, step.Doc.TotalLines()))...)
-					gen.writeln("```")
+					gen.WriteLines(step.Doc.LinesAt(origAfterLine+1, min(origAfterLine+2, step.Doc.TotalLines()))...)
+					gen.Writeln("```")
 
 					for fIdx, fix := range step.Fixes {
 						if len(fix.Description) != 0 {
@@ -207,7 +207,7 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 					}
 
 					if descriptionBuilder.Len() != 0 {
-						gen.writeln(descriptionBuilder.String())
+						gen.Writeln(descriptionBuilder.String())
 					}
 				}
 			}
@@ -218,12 +218,12 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 
 		}
 	} else {
-		gen.writeln("Nothing to fix")
+		gen.Writeln("Nothing to fix")
 	}
 
-	return strings.TrimSpace(gen.wr.String())
+	return strings.TrimSpace(gen.Builder.String())
 }
 
 func (gen *OutputGenerator) Reset() {
-	gen.wr.Reset()
+	gen.Builder.Reset()
 }
