@@ -9,45 +9,52 @@ import (
 type GenExplainFn func(*ContextData, *ExplainGenerator)
 
 type ExplainGenerator struct {
-	errorName string
-	mainExp   *strings.Builder
-	sections  map[string]*ExplainGenerator
+	ErrorName string
+	Builder   *strings.Builder
+	Sections  map[string]*ExplainGenerator
 }
 
 func (gen *ExplainGenerator) Add(text string, data ...any) {
-	if gen.mainExp == nil {
-		gen.mainExp = &strings.Builder{}
+	if gen.Builder == nil {
+		gen.Builder = &strings.Builder{}
 	}
 
 	if len(data) != 0 {
-		gen.mainExp.WriteString(fmt.Sprintf(text, data...))
+		gen.Builder.WriteString(fmt.Sprintf(text, data...))
 	} else {
-		gen.mainExp.WriteString(text)
+		gen.Builder.WriteString(text)
 	}
 }
 
 func (gen *ExplainGenerator) CreateSection(name string) *ExplainGenerator {
-	if gen.sections == nil {
-		gen.sections = map[string]*ExplainGenerator{}
+	if len(name) == 0 {
+		return nil
 	}
-	_, ok := gen.sections[name]
+
+	if gen.Sections == nil {
+		gen.Sections = map[string]*ExplainGenerator{}
+	}
+	_, ok := gen.Sections[name]
 	if !ok {
-		gen.sections[name] = &ExplainGenerator{}
+		gen.Sections[name] = &ExplainGenerator{}
 	}
-	return gen.sections[name]
+	return gen.Sections[name]
 }
 
 type GenBugFixFn func(*ContextData, *BugFixGenerator)
 
 type BugFixSuggestion struct {
 	Title        string
-	Description  string
 	Steps        []*BugFixStep
 	diffPosition Position
 	Doc          *EditableDocument
 }
 
-func (gen *BugFixSuggestion) addStep(doc *EditableDocument, content string, d ...any) *BugFixStep {
+func (gen *BugFixSuggestion) addStep(isCopyable bool, content string, d ...any) (*BugFixStep, error) {
+	if len(content) == 0 {
+		return nil, fmt.Errorf("content cannot be empty")
+	}
+
 	if gen.Steps == nil {
 		gen.Steps = []*BugFixStep{}
 	}
@@ -56,23 +63,34 @@ func (gen *BugFixSuggestion) addStep(doc *EditableDocument, content string, d ..
 		content += "."
 	}
 
+	doc := gen.Doc
+	if isCopyable {
+		if len(gen.Steps) == 0 {
+			doc = gen.Doc.Copy()
+		} else {
+			// use the last document as the base
+			doc = gen.Steps[len(gen.Steps)-1].Doc.Copy()
+		}
+	}
+
 	gen.Steps = append(gen.Steps, &BugFixStep{
 		suggestion: gen,
 		Content:    fmt.Sprintf(content, d...),
-		Doc:        gen.Doc,
+		Doc:        doc,
+		isCopyable: isCopyable,
 	})
 
-	return gen.Steps[len(gen.Steps)-1]
+	return gen.Steps[len(gen.Steps)-1], nil
 }
 
 func (gen *BugFixSuggestion) AddStep(content string, d ...any) *BugFixStep {
-	s := gen.addStep(gen.Doc.Copy(), content, d...)
-	s.isCopyable = true
-	return s
-}
-
-func (gen *BugFixSuggestion) AddDescription(exp string, d ...any) {
-	gen.Description = fmt.Sprintf(exp, d...)
+	step, err := gen.addStep(true, content, d...)
+	// we cannot panic here because we need to return the step
+	// to get the error, use recover() to catch the panic
+	if err != nil {
+		panic(err)
+	}
+	return step
 }
 
 type BugFixStep struct {
@@ -174,16 +192,26 @@ type BugFixGenerator struct {
 	Suggestions []*BugFixSuggestion
 }
 
-func (gen *BugFixGenerator) Add(title string, makerFn func(s *BugFixSuggestion)) {
+func (gen *BugFixGenerator) Add(title string, makerFn func(s *BugFixSuggestion)) error {
+	if len(title) == 0 {
+		return fmt.Errorf("title cannot be empty")
+	}
+
+	if makerFn == nil {
+		return fmt.Errorf("maker function cannot be nil")
+	}
+
 	if gen.Suggestions == nil {
 		gen.Suggestions = []*BugFixSuggestion{}
 	}
 
 	suggestion := &BugFixSuggestion{
 		Title: title,
-		Doc:   gen.Document.Editable(),
+		// Copy the document to avoid modifying the original document
+		Doc: gen.Document.Editable(),
 	}
-	makerFn(suggestion)
 
+	makerFn(suggestion)
 	gen.Suggestions = append(gen.Suggestions, suggestion)
+	return nil
 }

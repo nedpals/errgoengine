@@ -25,12 +25,12 @@ func (gen *OutputGenerator) _break() {
 }
 
 func (gen *OutputGenerator) generateFromExp(level int, explain *ExplainGenerator) {
-	if explain.mainExp != nil {
-		gen.write(explain.mainExp.String())
+	if explain.Builder != nil {
+		gen.write(explain.Builder.String())
 	}
 
-	if explain.sections != nil {
-		for sectionName, exp := range explain.sections {
+	if explain.Sections != nil {
+		for sectionName, exp := range explain.Sections {
 			gen._break()
 			gen.heading(level+1, sectionName)
 			gen.generateFromExp(level+1, exp)
@@ -75,8 +75,8 @@ func (gen *OutputGenerator) Generate(cd *ContextData, explain *ExplainGenerator,
 		gen.wr = &strings.Builder{}
 	}
 
-	if len(explain.errorName) != 0 {
-		gen.heading(1, explain.errorName)
+	if len(explain.ErrorName) != 0 {
+		gen.heading(1, explain.ErrorName)
 	}
 
 	gen.generateFromExp(1, explain)

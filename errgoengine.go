@@ -111,7 +111,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 }
 
 func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *ContextData) (mainExp string, fullExp string) {
-	expGen := &ExplainGenerator{errorName: template.Name}
+	expGen := &ExplainGenerator{ErrorName: template.Name}
 	fixGen := &BugFixGenerator{}
 	if contextData.MainError != nil {
 		fixGen.Document = contextData.MainError.Document
@@ -128,7 +128,7 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 	output := e.OutputGen.Generate(contextData, expGen, fixGen)
 	defer e.OutputGen.Reset()
 
-	return expGen.mainExp.String(), output
+	return expGen.Builder.String(), output
 }
 
 func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS) error {
