@@ -24,7 +24,12 @@ func (gen *OutputGenerator) _break() {
 	gen.Builder.WriteByte('\n')
 }
 
-func (gen *OutputGenerator) ExpGen(level int, explain *ExplainGenerator) {
+func (gen *OutputGenerator) FromExplanation(level int, explain *ExplainGenerator) {
+	if level == 1 && (explain.Builder == nil || explain.Builder.Len() == 0) && explain.Sections == nil {
+		gen.Writeln("No explanation found for this error.")
+		return
+	}
+
 	if explain.Builder != nil {
 		gen.Write(explain.Builder.String())
 	}
@@ -33,7 +38,7 @@ func (gen *OutputGenerator) ExpGen(level int, explain *ExplainGenerator) {
 		for sectionName, exp := range explain.Sections {
 			gen._break()
 			gen.Heading(level+1, sectionName)
-			gen.ExpGen(level+1, exp)
+			gen.FromExplanation(level+1, exp)
 		}
 	} else {
 		gen._break()
@@ -79,7 +84,7 @@ func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGe
 		gen.Heading(1, explain.ErrorName)
 	}
 
-	gen.ExpGen(1, explain)
+	gen.FromExplanation(1, explain)
 	if gen.GenAfterExplain != nil {
 		gen.GenAfterExplain(gen)
 	}
@@ -194,7 +199,7 @@ func (gen *OutputGenerator) Generate(explain *ExplainGenerator, bugFix *BugFixGe
 
 		}
 	} else {
-		gen.Writeln("Nothing to fix")
+		gen.Writeln("No bug fixes found for this error.")
 	}
 
 	return strings.TrimSpace(gen.Builder.String())
