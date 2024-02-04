@@ -56,7 +56,7 @@ var SymbolNotFoundError = lib.ErrorTemplate{
 		ctx := cd.MainError.Context.(symbolNotFoundErrorCtx)
 		switch ctx.symbolType {
 		case "variable":
-			gen.Add(`The program cannot find variable "%s"`, ctx.symbolName)
+			gen.Add(`The error indicates that the compiler cannot find variable "%s"`, ctx.symbolName)
 		case "method":
 			gen.Add("The error indicates that the compiler cannot find the method `%s` in the `%s` class.", ctx.symbolName, ctx.locationClass)
 		case "class":

@@ -11,7 +11,7 @@ Program.java:3: error: cannot find symbol
 template: "Java.SymbolNotFoundError"
 ---
 # SymbolNotFoundError
-The program cannot find variable "a"
+The error indicates that the compiler cannot find variable "a"
 ```
     public static void main(String[] args) {
         System.out.println(a);
