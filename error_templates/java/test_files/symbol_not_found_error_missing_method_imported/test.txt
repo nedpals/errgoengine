@@ -1,0 +1,35 @@
+name: "MissingMethodImported"
+template: "Java.SymbolNotFoundError"
+---
+Test.java:4: error: cannot find symbol
+        tri.getArea();
+           ^
+  symbol:   method getArea()
+  location: variable tri of type Triangle
+1 error
+===
+template: "Java.SymbolNotFoundError"
+---
+# SymbolNotFoundError
+The error indicates that the compiler cannot find the method `getArea()` in the `Triangle` class.
+```
+        Triangle tri = new Triangle();
+        tri.getArea();
+        ^^^^^^^^^^^^^^
+    }
+}
+```
+## Steps to fix
+### Define the missing method.
+In `Triangle.java`, add the missing method `getArea` to the `Triangle` class.
+```diff
+    public static int getSides() {
+        return 3;
+    }
++
++     private static void getArea() {
++         // Add code here
++     }
+}
+
+```
