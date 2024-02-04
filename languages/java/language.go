@@ -5,6 +5,8 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	lib "github.com/nedpals/errgoengine"
 	"github.com/smacker/go-tree-sitter/java"
@@ -22,7 +24,7 @@ var Language = &lib.Language{
 	SitterLanguage:    java.GetLanguage(),
 	StackTracePattern: `\s+at (?P<symbol>\S+)\((?P<path>\S+):(?P<position>\d+)\)`,
 	AnalyzerFactory: func(cd *lib.ContextData) lib.LanguageAnalyzer {
-		return &javaAnalyzer{cd}
+		return &javaAnalyzer{cd, map[string][]string{}}
 	},
 	SymbolsToCapture: symbols,
 	ExternFS:         externs,
@@ -41,6 +43,7 @@ var Language = &lib.Language{
 
 type javaAnalyzer struct {
 	*lib.ContextData
+	markedAsUnresolved map[string][]string // map of file path to symbol names
 }
 
 func (an *javaAnalyzer) FallbackSymbol() lib.Symbol {
@@ -48,8 +51,58 @@ func (an *javaAnalyzer) FallbackSymbol() lib.Symbol {
 }
 
 func (an *javaAnalyzer) FindSymbol(name string) lib.Symbol {
-	sym, _ := builtinTypesStore.FindByName(name)
-	return sym
+	sym, ok := builtinTypesStore.FindByName(name)
+	if ok {
+		return sym
+	}
+
+	// check if symbol name is included in the unresolved list
+	if list, ok := an.markedAsUnresolved[an.ContextData.CurrentDocumentPath]; ok {
+		for _, n := range list {
+			if n == name {
+				// if it's in the list, return unresolved symbol
+				return lib.UnresolvedSymbol
+			}
+		}
+	}
+
+	// maybe it's a class from another file?
+	dir := filepath.Dir(an.ContextData.CurrentDocumentPath)
+	targetPath := filepath.Join(dir, fmt.Sprintf("%s.java", strings.ReplaceAll(name, ".", "/")))
+	if sym := an.Store.FindSymbol(targetPath, name, -1); sym != nil {
+		return sym
+	}
+
+	// if not yet parsed, parse the file and mark the symbol as unresolved (if not found)
+	if an.MainError == nil || an.MainError.Document == nil {
+		return an.markAsUnresolved(name)
+	}
+
+	// if error, return nil symbol
+	if err := lib.ParseFiles(an.ContextData, an.MainError.Document.Language, an.FS, []string{
+		targetPath,
+	}); err != nil {
+		return an.markAsUnresolved(name)
+	}
+
+	// if parsed, find the symbol again
+	return an.FindSymbol(name)
+}
+
+func (an *javaAnalyzer) markAsUnresolved(name string) lib.Symbol {
+	// add to unresolved list to avoid looping
+	if _, ok := an.markedAsUnresolved[an.ContextData.CurrentDocumentPath]; !ok {
+		an.markedAsUnresolved[an.ContextData.CurrentDocumentPath] = []string{}
+	}
+
+	an.markedAsUnresolved[an.ContextData.CurrentDocumentPath] = append(
+		an.markedAsUnresolved[an.ContextData.CurrentDocumentPath],
+		name,
+	)
+
+	// nil symbol handling will be done in the next call
+	// can be a unresolved symbol or a builtin symbol. depends
+	return nil
 }
 
 func (an *javaAnalyzer) AnalyzeNode(ctx context.Context, n lib.SyntaxNode) lib.Symbol {
