@@ -57,6 +57,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
 	contextData.AddVariable("message", msg)
+	contextData.FS = e.FS
 
 	// extract variables from the error message
 	contextData.AddVariables(template.ExtractVariables(msg))

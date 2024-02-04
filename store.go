@@ -1,9 +1,12 @@
 package errgoengine
 
+import "io/fs"
+
 type Store struct {
 	DepGraph  DepGraph
 	Documents map[string]*Document
 	Symbols   map[string]*SymbolTree
+	FS        fs.ReadFileFS
 }
 
 func NewEmptyStore() *Store {
