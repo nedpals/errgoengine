@@ -175,13 +175,15 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 	return expGen.Builder.String(), output
 }
 
-func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS) error {
+func ParseFiles(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS, fileNames []string) error {
+	if files == nil {
+		return fmt.Errorf("files is nil")
+	}
+
 	parser := sitter.NewParser()
 	analyzer := &SymbolAnalyzer{ContextData: contextData}
 
-	for _, node := range contextData.TraceStack {
-		path := node.DocumentPath
-
+	for _, path := range fileNames {
 		contents, err := files.ReadFile(path)
 		if err != nil {
 			// return err
@@ -226,4 +228,37 @@ func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, fi
 	}
 
 	return nil
+}
+
+func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS) error {
+	filesToParse := []string{}
+
+	for _, node := range contextData.TraceStack {
+		path := node.DocumentPath
+		if path == "" {
+			continue
+		}
+
+		// check if file is already parsed
+		if _, ok := contextData.Documents[path]; ok {
+			continue
+		}
+
+		// check if file is already in the list
+		found := false
+		for _, f := range filesToParse {
+			if f == path {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			continue
+		}
+
+		filesToParse = append(filesToParse, path)
+	}
+
+	return ParseFiles(contextData, defaultLanguage, files, filesToParse)
 }
