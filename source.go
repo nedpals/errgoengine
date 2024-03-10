@@ -504,6 +504,14 @@ type Document struct {
 	Tree        *sitter.Tree
 }
 
+func (doc *Document) StringContentEquals(str string) bool {
+	return doc.Contents == str
+}
+
+func (doc *Document) BytesContentEquals(cnt []byte) bool {
+	return doc.Contents == string(cnt)
+}
+
 func (doc *Document) RootNode() SyntaxNode {
 	return WrapNode(doc, doc.Tree.RootNode())
 }

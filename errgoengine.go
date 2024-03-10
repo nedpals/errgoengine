@@ -200,6 +200,11 @@ func ParseFiles(contextData *ContextData, defaultLanguage *Language, files fs.Re
 		// check if document already exists
 		existingDoc, docExists := contextData.Documents[path]
 
+		if docExists && existingDoc.BytesContentEquals(contents) {
+			// do not parse if content is the same
+			continue
+		}
+
 		// check matched languages
 		selectedLanguage := defaultLanguage
 		if docExists {
