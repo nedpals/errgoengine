@@ -496,6 +496,7 @@ func (doc *EditableDocument) Reset() {
 }
 
 type Document struct {
+	Version     int
 	Path        string
 	Contents    string
 	cachedLines []string
@@ -537,6 +538,11 @@ func (doc *Document) TotalLines() int {
 }
 
 func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *Language, existingDoc *Document) (*Document, error) {
+	version := 1
+	if existingDoc != nil {
+		version = existingDoc.Version + 1
+	}
+
 	inputBytes, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -571,5 +577,6 @@ func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *
 		Language: selectLang,
 		Contents: string(inputBytes),
 		Tree:     tree,
+		Version:  version,
 	}, nil
 }
