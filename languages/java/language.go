@@ -51,6 +51,15 @@ func (an *javaAnalyzer) FallbackSymbol() lib.Symbol {
 }
 
 func (an *javaAnalyzer) FindSymbol(name string) lib.Symbol {
+	return an.findSymbolWithRetries(name, 0)
+}
+
+func (an *javaAnalyzer) findSymbolWithRetries(name string, retry int) lib.Symbol {
+	if retry > 3 {
+		// do not retry more than 3 times or it will cause stack overflow
+		return lib.UnresolvedSymbol
+	}
+
 	sym, ok := builtinTypesStore.FindByName(name)
 	if ok {
 		return sym
@@ -86,7 +95,7 @@ func (an *javaAnalyzer) FindSymbol(name string) lib.Symbol {
 	}
 
 	// if parsed, find the symbol again
-	return an.FindSymbol(name)
+	return an.findSymbolWithRetries(name, retry+1)
 }
 
 func (an *javaAnalyzer) markAsUnresolved(name string) lib.Symbol {
