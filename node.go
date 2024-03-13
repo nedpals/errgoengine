@@ -116,6 +116,10 @@ func (n SyntaxNode) Query(q string, d ...any) *QueryNodeCursor {
 	return queryNode2(n, fmt.Sprintf(q, d...))
 }
 
+func (n SyntaxNode) TreeCursor() *sitter.TreeCursor {
+	return sitter.NewTreeCursor(n.Node)
+}
+
 func WrapNode(doc *Document, n *sitter.Node) SyntaxNode {
 	return SyntaxNode{
 		isTextCached: false,
