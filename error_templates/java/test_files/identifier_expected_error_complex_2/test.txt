@@ -1,0 +1,33 @@
+name: "Complex2"
+template: "Java.IdentifierExpectedError"
+---
+Main.java:1: error: class, interface, or enum expected
+public clas Main {
+       ^
+Main.java:2: error: class, interface, or enum expected
+    public static void main(String args[]) {
+                  ^
+Main.java:4: error: class, interface, or enum expected
+    }
+    ^
+3 errors
+===
+template: "Java.IdentifierExpectedError"
+---
+# IdentifierExpectedError
+This error occurs when there's a typo or the keyword `class`, `interface`, or `enum` is missing.
+```
+public clas Main {
+       ^^^^
+    public static void main(String args[]) {
+        String text = null;
+```
+## Steps to fix
+### Correct the typo
+Change `clas` to `class` to properly declare the class.
+```diff
+- public clas Main {
++ public class Main {
+    public static void main(String args[]) {
+        String text = null;
+```
