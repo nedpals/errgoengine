@@ -196,13 +196,6 @@ func getSpaceBoundaryIndiv(line string, idx int, defaultDirection spaceComputeDi
 
 		// if idx is less than 0, return the current index
 		if idx-1 < 0 {
-			// check if the index next to the current index is a space
-			// if it is, then we go to the reverse direction to get the nearest space
-			if isSpace(line, idx+1) {
-				newIdx := getSpaceBoundaryIndiv(line, idx, spaceComputeDirectionRight)
-				return newIdx
-			}
-
 			return idx
 		}
 
