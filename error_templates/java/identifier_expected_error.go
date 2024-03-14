@@ -64,7 +64,8 @@ var IdentifierExpectedError = lib.ErrorTemplate{
 
 			for _, token := range tokens {
 				for ltIdx, lineToken := range lineTokens {
-					if levenshtein.ComputeDistance(token, lineToken) <= 3 {
+					distance := levenshtein.ComputeDistance(token, lineToken)
+					if distance >= 1 && distance <= 3 {
 						wordToReplace = lineToken
 						nearestWord = token
 
