@@ -6,6 +6,7 @@ import (
 
 	lib "github.com/nedpals/errgoengine"
 	"github.com/nedpals/errgoengine/utils/levenshtein"
+	"github.com/nedpals/errgoengine/utils/slice"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -14,6 +15,7 @@ type identifiedExpectedReasonKind int
 const (
 	identifierExpectedReasonUnknown            identifiedExpectedReasonKind = 0
 	identifierExpectedReasonClassInterfaceEnum identifiedExpectedReasonKind = iota
+	identifierExpectedReasonTypo               identifiedExpectedReasonKind = iota
 )
 
 type identifierExpectedFixKind int
@@ -48,8 +50,11 @@ var IdentifierExpectedError = lib.ErrorTemplate{
 
 		// TODO: check if node is parsable
 		if iCtx.reasonKind == identifierExpectedReasonClassInterfaceEnum {
+			accessTokens := []string{"public"}
+			statementTokens := []string{"class", "interface", "enum"}
+
 			// use levenstein distance to check if the word is a typo
-			tokens := []string{"class", "interface", "enum"}
+			tokens := append(accessTokens, statementTokens...)
 
 			// get the nearest word
 			nearestWord := ""
@@ -103,6 +108,11 @@ var IdentifierExpectedError = lib.ErrorTemplate{
 				} else {
 					m.Nearest = initialNearest
 				}
+
+				// if nearestword is not a statement token, then it's a typo
+				if !slice.ContainsString(statementTokens, nearestWord) {
+					iCtx.reasonKind = identifierExpectedReasonTypo
+				}
 			}
 		} else if tree, err := sitter.ParseCtx(
 			context.Background(),
@@ -120,6 +130,8 @@ var IdentifierExpectedError = lib.ErrorTemplate{
 		switch iCtx.reasonKind {
 		case identifierExpectedReasonClassInterfaceEnum:
 			gen.Add("This error occurs when there's a typo or the keyword `class`, `interface`, or `enum` is missing.")
+		case identifierExpectedReasonTypo:
+			gen.Add("This error indicates there's a typo or misspelled word in your code.")
 		default:
 			gen.Add("This error occurs when an identifier is expected, but an expression is found in a location where a statement or declaration is expected.")
 		}
@@ -152,7 +164,7 @@ var IdentifierExpectedError = lib.ErrorTemplate{
 			})
 		case identifierExpectedCorrectTypo:
 			gen.Add("Correct the typo", func(s *lib.BugFixSuggestion) {
-				s.AddStep("Change `%s` to `%s` to properly declare the %s.", ctx.typoWord, ctx.wordForTypo, ctx.wordForTypo).
+				s.AddStep("Change `%s` to `%s`.", ctx.typoWord, ctx.wordForTypo).
 					AddFix(lib.FixSuggestion{
 						NewText:       ctx.wordForTypo,
 						StartPosition: cd.MainError.Nearest.StartPosition(),

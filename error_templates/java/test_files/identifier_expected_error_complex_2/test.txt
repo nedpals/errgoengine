@@ -24,7 +24,7 @@ public clas Main {
 ```
 ## Steps to fix
 ### Correct the typo
-Change `clas` to `class` to properly declare the class.
+Change `clas` to `class`.
 ```diff
 - public clas Main {
 + public class Main {
