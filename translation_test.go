@@ -10,7 +10,7 @@ import (
 
 func TestExplainGenerator(t *testing.T) {
 	t.Run("errorName", func(t *testing.T) {
-		gen := &lib.ExplainGenerator{ErrorName: "TestError"}
+		gen := lib.NewExplainGeneratorForError("TestError")
 
 		if gen.ErrorName != "TestError" {
 			t.Errorf("Expected 'TestError', got %s", gen.ErrorName)
@@ -20,87 +20,87 @@ func TestExplainGenerator(t *testing.T) {
 	t.Run("Add", func(t *testing.T) {
 		t.Run("Simple", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message.")
+			gen.Add("This is a simple error explanation.")
 
-			if gen.Builder.String() != "This is a simple error message." {
-				t.Errorf("Expected 'This is a simple error message.', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation." {
+				t.Errorf("Expected 'This is a simple error explanation.', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Simple with string data", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message with data: %s", "Hello")
+			gen.Add("This is a simple error explanation with data: %s", "Hello")
 
-			if gen.Builder.String() != "This is a simple error message with data: Hello" {
-				t.Errorf("Expected 'This is a simple error message with data: Hello', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation with data: Hello" {
+				t.Errorf("Expected 'This is a simple error explanation with data: Hello', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Simple with int data", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message with data: %d", 10)
+			gen.Add("This is a simple error explanation with data: %d", 10)
 
-			if gen.Builder.String() != "This is a simple error message with data: 10" {
-				t.Errorf("Expected 'This is a simple error message with data: 10', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation with data: 10" {
+				t.Errorf("Expected 'This is a simple error explanation with data: 10', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Simple with mixed data", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message with data: %s and %d", "Hello", 10)
+			gen.Add("This is a simple error explanation with data: %s and %d", "Hello", 10)
 
-			if gen.Builder.String() != "This is a simple error message with data: Hello and 10" {
-				t.Errorf("Expected 'This is a simple error message with data: Hello and 10', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation with data: Hello and 10" {
+				t.Errorf("Expected 'This is a simple error explanation with data: Hello and 10', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Append", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message.")
+			gen.Add("This is a simple error explanation.")
 			gen.Add("This is another error message.")
 
-			if gen.Builder.String() != "This is a simple error message.This is another error message." {
-				t.Errorf("Expected 'This is a simple error message.This is another error message.', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation.This is another error message." {
+				t.Errorf("Expected 'This is a simple error explanation.This is another error message.', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Append with newline", func(t *testing.T) {
-			gen := &lib.ExplainGenerator{ErrorName: "TestError"}
-			gen.Add("This is a simple error message.\n")
+			gen := lib.NewExplainGeneratorForError("TestError")
+			gen.Add("This is a simple error explanation.\n")
 			gen.Add("This is another error message.")
 
-			if gen.Builder.String() != "This is a simple error message.\nThis is another error message." {
-				t.Errorf("Expected 'This is a simple error message.\nThis is another error message.', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation.\nThis is another error message." {
+				t.Errorf("Expected 'This is a simple error explanation.\nThis is another error message.', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Append with string data", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message with data: %s", "Hello")
+			gen.Add("This is a simple error explanation with data: %s", "Hello")
 			gen.Add("This is another error message with data: %s", "World")
 
-			if gen.Builder.String() != "This is a simple error message with data: HelloThis is another error message with data: World" {
-				t.Errorf("Expected 'This is a simple error message with data: HelloThis is another error message with data: World', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation with data: HelloThis is another error message with data: World" {
+				t.Errorf("Expected 'This is a simple error explanation with data: HelloThis is another error message with data: World', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Append with int data", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message with data: %d", 10)
+			gen.Add("This is a simple error explanation with data: %d", 10)
 			gen.Add("This is another error message with data: %d", 20)
 
-			if gen.Builder.String() != "This is a simple error message with data: 10This is another error message with data: 20" {
-				t.Errorf("Expected 'This is a simple error message with data: 10This is another error message with data: 20', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation with data: 10This is another error message with data: 20" {
+				t.Errorf("Expected 'This is a simple error explanation with data: 10This is another error message with data: 20', got %s", gen.Builder.String())
 			}
 		})
 
 		t.Run("Append with mixed data", func(t *testing.T) {
 			gen := &lib.ExplainGenerator{}
-			gen.Add("This is a simple error message with data: %s", "Hello")
+			gen.Add("This is a simple error explanation with data: %s", "Hello")
 			gen.Add("This is another error message with data: %d", 20)
 
-			if gen.Builder.String() != "This is a simple error message with data: HelloThis is another error message with data: 20" {
-				t.Errorf("Expected 'This is a simple error message with data: HelloThis is another error message with data: 20', got %s", gen.Builder.String())
+			if gen.Builder.String() != "This is a simple error explanation with data: HelloThis is another error message with data: 20" {
+				t.Errorf("Expected 'This is a simple error explanation with data: HelloThis is another error message with data: 20', got %s", gen.Builder.String())
 			}
 		})
 
@@ -170,13 +170,11 @@ func TestBugFixGenerator(t *testing.T) {
 
 	t.Run("Add", func(t *testing.T) {
 		t.Run("Simple", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-				if s.Title != "This is a simple error message." {
-					t.Errorf("Expected 'This is a simple error message.', got %s", s.Title)
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+				if s.Title != "A descriptive suggestion sentence or phrase" {
+					t.Errorf("Expected 'A descriptive suggestion sentence or phrase', got %s", s.Title)
 				}
 
 				if s.Doc == nil {
@@ -186,9 +184,7 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Empty title", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
 			err := gen.Add("", func(s *lib.BugFixSuggestion) {})
 			if err == nil {
@@ -201,11 +197,9 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Empty function", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			err := gen.Add("This is a simple error message.", nil)
+			err := gen.Add("A descriptive suggestion sentence or phrase", nil)
 			if err == nil {
 				t.Errorf("Expected error, got nil")
 			}
@@ -216,11 +210,9 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Multiple", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {})
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {})
 			gen.Add("This is another error message.", func(s *lib.BugFixSuggestion) {})
 
 			if len(gen.Suggestions) != 2 {
@@ -231,14 +223,12 @@ func TestBugFixGenerator(t *testing.T) {
 
 	t.Run("Suggestion/AddStep", func(t *testing.T) {
 		t.Run("Simple", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-				s.AddStep("This is a simple step.", func(step *lib.BugFixStep) {
-					if step.Content != "This is a simple step." {
-						t.Errorf("Expected 'This is a simple step.', got %s", step.Content)
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+				s.AddStep("This is a step.", func(step *lib.BugFixStep) {
+					if step.Content != "This is a step." {
+						t.Errorf("Expected 'This is a step.', got %s", step.Content)
 					}
 
 					if step.Doc == nil {
@@ -249,25 +239,21 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("Without period", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-				s.AddStep("This is a simple step", func(step *lib.BugFixStep) {
-					if step.Content != "This is a simple step." {
-						t.Errorf("Expected 'This is a simple step.', got %s", step.Content)
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+				s.AddStep("This is a step", func(step *lib.BugFixStep) {
+					if step.Content != "This is a step." {
+						t.Errorf("Expected 'This is a step.', got %s", step.Content)
 					}
 				})
 			})
 		})
 
 		t.Run("With punctuation", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				s.AddStep("Oh wow!", func(step *lib.BugFixStep) {
 					if step.Content != "Oh wow!" {
 						t.Errorf("Expected 'Oh wow!', got %s", step.Content)
@@ -277,53 +263,45 @@ func TestBugFixGenerator(t *testing.T) {
 		})
 
 		t.Run("With string data", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-				s.AddStep("This is a simple step with data: %s", "Hello", func(step *lib.BugFixStep) {
-					if step.Content != "This is a simple step with data: Hello." {
-						t.Errorf("Expected 'This is a simple step with data: Hello.', got %s", step.Content)
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+				s.AddStep("This is a step with data: %s", "Hello", func(step *lib.BugFixStep) {
+					if step.Content != "This is a step with data: Hello." {
+						t.Errorf("Expected 'This is a step with data: Hello.', got %s", step.Content)
 					}
 				})
 			})
 		})
 
 		t.Run("With int data", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-				s.AddStep("This is a simple step with data: %d", 10, func(step *lib.BugFixStep) {
-					if step.Content != "This is a simple step with data: 10." {
-						t.Errorf("Expected 'This is a simple step with data: 10.', got %s", step.Content)
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+				s.AddStep("This is a step with data: %d", 10, func(step *lib.BugFixStep) {
+					if step.Content != "This is a step with data: 10." {
+						t.Errorf("Expected 'This is a step with data: 10.', got %s", step.Content)
 					}
 				})
 			})
 		})
 
 		t.Run("With mixed data", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-				s.AddStep("This is a simple step with data: %s and %d", "Hello", 10, func(step *lib.BugFixStep) {
-					if step.Content != "This is a simple step with data: Hello and 10." {
-						t.Errorf("Expected 'This is a simple step with data: Hello and 10.', got %s", step.Content)
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+				s.AddStep("This is a step with data: %s and %d", "Hello", 10, func(step *lib.BugFixStep) {
+					if step.Content != "This is a step with data: Hello and 10." {
+						t.Errorf("Expected 'This is a step with data: Hello and 10.', got %s", step.Content)
 					}
 				})
 			})
 		})
 
 		t.Run("Empty content", func(t *testing.T) {
-			gen := &lib.BugFixGenerator{
-				Document: doc,
-			}
+			gen := lib.NewBugFixGenerator(doc)
 
-			gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
+			gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 				// recover
 				defer func() {
 					if r := recover(); r != nil {
@@ -344,9 +322,9 @@ func TestBugFixGenerator(t *testing.T) {
 			Document: doc,
 		}
 
-		gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
+		gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 			// add a = 1 fix
-			step := s.AddStep("This is a simple step.").
+			step := s.AddStep("This is a step.").
 				AddFix(lib.FixSuggestion{
 					NewText: "\na = 1",
 					StartPosition: lib.Position{
@@ -367,7 +345,6 @@ func TestBugFixGenerator(t *testing.T) {
 				t.Errorf("Expected 1 fix, got %d", len(s.Steps[0].Fixes))
 			}
 		})
-
 	})
 
 	t.Run("Suggestion/AddFix/Update", func(t *testing.T) {
@@ -375,8 +352,8 @@ func TestBugFixGenerator(t *testing.T) {
 			Document: doc,
 		}
 
-		gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
-			step := s.AddStep("This is a simple step.").
+		gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
+			step := s.AddStep("This is a step.").
 				AddFix(lib.FixSuggestion{
 					NewText: "Welcome to the world",
 					StartPosition: lib.Position{
@@ -417,9 +394,9 @@ func TestBugFixGenerator(t *testing.T) {
 			Document: doc,
 		}
 
-		gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
+		gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 			// removes the content inside the print function
-			step := s.AddStep("This is a simple step.").
+			step := s.AddStep("This is a step.").
 				AddFix(lib.FixSuggestion{
 					NewText: "",
 					StartPosition: lib.Position{
@@ -443,9 +420,9 @@ func TestBugFixGenerator(t *testing.T) {
 			Document: doc,
 		}
 
-		gen.Add("This is a simple error message.", func(s *lib.BugFixSuggestion) {
+		gen.Add("A descriptive suggestion sentence or phrase", func(s *lib.BugFixSuggestion) {
 			// removes the content inside the print function
-			step := s.AddStep("This is a simple step.").
+			step := s.AddStep("This is a step.").
 				AddFix(lib.FixSuggestion{
 					NewText: "",
 					StartPosition: lib.Position{

@@ -496,11 +496,20 @@ func (doc *EditableDocument) Reset() {
 }
 
 type Document struct {
+	Version     int
 	Path        string
 	Contents    string
 	cachedLines []string
 	Language    *Language
 	Tree        *sitter.Tree
+}
+
+func (doc *Document) StringContentEquals(str string) bool {
+	return doc.Contents == str
+}
+
+func (doc *Document) BytesContentEquals(cnt []byte) bool {
+	return doc.Contents == string(cnt)
 }
 
 func (doc *Document) RootNode() SyntaxNode {
@@ -537,6 +546,11 @@ func (doc *Document) TotalLines() int {
 }
 
 func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *Language, existingDoc *Document) (*Document, error) {
+	version := 1
+	if existingDoc != nil {
+		version = existingDoc.Version + 1
+	}
+
 	inputBytes, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -571,5 +585,6 @@ func ParseDocument(path string, r io.Reader, parser *sitter.Parser, selectLang *
 		Language: selectLang,
 		Contents: string(inputBytes),
 		Tree:     tree,
+		Version:  version,
 	}, nil
 }

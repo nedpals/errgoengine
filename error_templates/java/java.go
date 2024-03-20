@@ -184,19 +184,18 @@ func getSpaceBoundaryIndiv(line string, idx int, defaultDirection spaceComputeDi
 	}
 
 	if defaultDirection == spaceComputeDirectionLeft {
+		// if idx is...
+		// 1. greater than 0
+		// 2. not a space character (if stopOnSpace is false)
+		// 3. or a space character (if stopOnSpace is true)
+		// then return the current index
 		if idx-1 >= 0 && ((!stopOnSpace && !isSpace(line, idx-1)) ||
 			(stopOnSpace && isSpace(line, idx-1))) {
 			return idx
 		}
 
+		// if idx is less than 0, return the current index
 		if idx-1 < 0 {
-			// check if the current index is not a space
-			if !isSpace(line, idx) {
-				// go to the reverse direction to get the nearest space
-				newIdx := getSpaceBoundaryIndiv(line, idx, spaceComputeDirectionRight)
-				return newIdx
-			}
-
 			return idx
 		}
 

@@ -7,15 +7,13 @@ import (
 	"strings"
 )
 
-type GenAnalyzeErrorFn func(cd *ContextData, m *MainError)
-
 type ErrorTemplate struct {
 	Name              string
 	Pattern           string
 	StackTracePattern string
-	OnAnalyzeErrorFn  GenAnalyzeErrorFn
-	OnGenExplainFn    GenExplainFn
-	OnGenBugFixFn     GenBugFixFn
+	OnAnalyzeErrorFn  func(cd *ContextData, m *MainError)
+	OnGenExplainFn    func(cd *ContextData, gen *ExplainGenerator)
+	OnGenBugFixFn     func(cd *ContextData, gen *BugFixGenerator)
 }
 
 func CustomErrorPattern(pattern string) string {

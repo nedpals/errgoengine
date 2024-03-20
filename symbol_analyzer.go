@@ -384,10 +384,12 @@ func (an *SymbolAnalyzer) captureAndAnalyze(parent *SymbolTree, rootNode SyntaxN
 }
 
 func (an *SymbolAnalyzer) Analyze(doc *Document) {
+	oldCurrentDocumentPath := an.ContextData.CurrentDocumentPath
+
 	an.doc = doc
 	rootNode := doc.RootNode()
 	symTree := an.ContextData.InitOrGetSymbolTree(an.doc.Path)
 	an.ContextData.CurrentDocumentPath = an.doc.Path
 	an.captureAndAnalyze(symTree, rootNode, an.doc.Language.SymbolsToCapture)
-	an.ContextData.CurrentDocumentPath = ""
+	an.ContextData.CurrentDocumentPath = oldCurrentDocumentPath
 }

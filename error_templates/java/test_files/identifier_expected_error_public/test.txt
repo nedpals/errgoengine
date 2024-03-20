@@ -1,0 +1,27 @@
+name: "Public"
+template: "Java.IdentifierExpectedError"
+---
+Main.java:1: error: class, interface, or enum expected
+publc class Main {
+^
+1 error
+===
+template: "Java.IdentifierExpectedError"
+---
+# IdentifierExpectedError
+This error indicates there's a typo or misspelled word in your code.
+```
+publc class Main {
+^^^^^
+    public static void main(String[] args) {}
+}
+```
+## Steps to fix
+### Correct the typo
+Change `publc` to `public`.
+```diff
+- publc class Main {
++ public class Main {
+    public static void main(String[] args) {}
+}
+```

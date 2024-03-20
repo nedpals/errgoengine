@@ -6,8 +6,6 @@ import (
 	"unicode"
 )
 
-type GenExplainFn func(*ContextData, *ExplainGenerator)
-
 type ExplainGenerator struct {
 	ErrorName string
 	Builder   *strings.Builder
@@ -41,7 +39,11 @@ func (gen *ExplainGenerator) CreateSection(name string) *ExplainGenerator {
 	return gen.Sections[name]
 }
 
-type GenBugFixFn func(*ContextData, *BugFixGenerator)
+func NewExplainGeneratorForError(name string) *ExplainGenerator {
+	return &ExplainGenerator{
+		ErrorName: name,
+	}
+}
 
 type BugFixSuggestion struct {
 	Title        string
@@ -214,4 +216,10 @@ func (gen *BugFixGenerator) Add(title string, makerFn func(s *BugFixSuggestion))
 	makerFn(suggestion)
 	gen.Suggestions = append(gen.Suggestions, suggestion)
 	return nil
+}
+
+func NewBugFixGenerator(doc *Document) *BugFixGenerator {
+	return &BugFixGenerator{
+		Document: doc,
+	}
 }

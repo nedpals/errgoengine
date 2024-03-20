@@ -13,6 +13,7 @@ type ErrgoEngine struct {
 	ErrorTemplates ErrorTemplates
 	FS             *MultiReadFileFS
 	OutputGen      *OutputGenerator
+	IsTesting      bool
 }
 
 func New() *ErrgoEngine {
@@ -56,6 +57,7 @@ func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, 
 	contextData := NewContextData(e.SharedStore, workingPath)
 	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
 	contextData.AddVariable("message", msg)
+	contextData.FS = e.FS
 
 	// extract variables from the error message
 	contextData.AddVariables(template.ExtractVariables(msg))
@@ -125,19 +127,64 @@ func (e *ErrgoEngine) Translate(template *CompiledErrorTemplate, contextData *Co
 		template.OnGenBugFixFn(contextData, fixGen)
 	}
 
-	output := e.OutputGen.Generate(contextData, expGen, fixGen)
+	if e.IsTesting {
+		// add a code snippet that points to the error
+		e.OutputGen.GenAfterExplain = func(gen *OutputGenerator) {
+			err := contextData.MainError
+			if err == nil {
+				return
+			}
+
+			doc := err.Document
+			if doc == nil || err.Nearest.IsNull() {
+				return
+			}
+
+			startLineNr := err.Nearest.StartPosition().Line
+			startLines := doc.LinesAt(max(startLineNr-1, 0), startLineNr)
+			endLines := doc.LinesAt(min(startLineNr+1, doc.TotalLines()), min(startLineNr+2, doc.TotalLines()))
+			arrowLength := int(err.Nearest.EndByte() - err.Nearest.StartByte())
+			if arrowLength == 0 {
+				arrowLength = 1
+			}
+
+			startArrowPos := err.Nearest.StartPosition().Column
+			gen.Writeln("```")
+			gen.WriteLines(startLines...)
+
+			for i := 0; i < startArrowPos; i++ {
+				if startLines[len(startLines)-1][i] == '\t' {
+					gen.Builder.WriteString("    ")
+				} else {
+					gen.Builder.WriteByte(' ')
+				}
+			}
+
+			for i := 0; i < arrowLength; i++ {
+				gen.Builder.WriteByte('^')
+			}
+
+			gen.Break()
+			gen.WriteLines(endLines...)
+			gen.Writeln("```")
+		}
+	}
+
+	output := e.OutputGen.Generate(expGen, fixGen)
 	defer e.OutputGen.Reset()
 
 	return expGen.Builder.String(), output
 }
 
-func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS) error {
+func ParseFiles(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS, fileNames []string) error {
+	if files == nil {
+		return fmt.Errorf("files is nil")
+	}
+
 	parser := sitter.NewParser()
 	analyzer := &SymbolAnalyzer{ContextData: contextData}
 
-	for _, node := range contextData.TraceStack {
-		path := node.DocumentPath
-
+	for _, path := range fileNames {
 		contents, err := files.ReadFile(path)
 		if err != nil {
 			// return err
@@ -152,6 +199,11 @@ func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, fi
 
 		// check if document already exists
 		existingDoc, docExists := contextData.Documents[path]
+
+		if docExists && existingDoc.BytesContentEquals(contents) {
+			// do not parse if content is the same
+			continue
+		}
 
 		// check matched languages
 		selectedLanguage := defaultLanguage
@@ -182,4 +234,37 @@ func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, fi
 	}
 
 	return nil
+}
+
+func ParseFromStackTrace(contextData *ContextData, defaultLanguage *Language, files fs.ReadFileFS) error {
+	filesToParse := []string{}
+
+	for _, node := range contextData.TraceStack {
+		path := node.DocumentPath
+		if path == "" {
+			continue
+		}
+
+		// check if file is already parsed
+		if _, ok := contextData.Documents[path]; ok {
+			continue
+		}
+
+		// check if file is already in the list
+		found := false
+		for _, f := range filesToParse {
+			if f == path {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			continue
+		}
+
+		filesToParse = append(filesToParse, path)
+	}
+
+	return ParseFiles(contextData, defaultLanguage, files, filesToParse)
 }
