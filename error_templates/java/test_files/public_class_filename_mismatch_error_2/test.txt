@@ -1,0 +1,33 @@
+name: "2"
+template: "Java.PublicClassFilenameMismatchError"
+---
+ReverseString.java:14: error: class ReverzeString is public, should be declared in a file named ReverzeString.java
+public class ReverzeString {
+       ^
+1 error
+===
+template: "Java.PublicClassFilenameMismatchError"
+---
+# PublicClassFilenameMismatchError
+This error occurs because the name of the Java file does not match the name of the public class within it.
+```
+
+public class ReverzeString {
+             ^^^^^^^^^^^^^
+    public static void main(String[] args) {
+        String str = "abcd";
+```
+## Steps to fix
+### 1. Rename your file
+Rename the file to "ReverzeString.java" to match the class.
+
+### 2. Rename the public class
+The filename should match the name of the public class in the file. To resolve this, change the class name to match the filename.
+```diff
+*/
+
+- public class ReverzeString {
++ public class ReverseString {
+    public static void main(String[] args) {
+        String str = "abcd";
+```
