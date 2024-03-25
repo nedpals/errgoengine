@@ -49,15 +49,18 @@ func (e *ErrgoEngine) AttachMainFS(instance fs.ReadFileFS) {
 
 func (e *ErrgoEngine) Analyze(workingPath, msg string) (*CompiledErrorTemplate, *ContextData, error) {
 	template := e.ErrorTemplates.Match(msg)
-	if template == nil {
-		return nil, nil, fmt.Errorf("template not found. \nMessage: %s", msg)
-	}
 
 	// initial context data extraction
 	contextData := NewContextData(e.SharedStore, workingPath)
-	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
 	contextData.AddVariable("message", msg)
 	contextData.FS = e.FS
+
+	// return context data if template is not found
+	if template == nil {
+		return nil, contextData, fmt.Errorf("template not found. \nMessage: %s", msg)
+	}
+
+	contextData.Analyzer = template.Language.AnalyzerFactory(contextData)
 
 	// extract variables from the error message
 	contextData.AddVariables(template.ExtractVariables(msg))
