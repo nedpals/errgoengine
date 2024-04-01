@@ -1,0 +1,30 @@
+template: "Java.IllegalExpressionStartError"
+name: "If"
+---
+Main.java:9: error: illegal start of expression
+        ) else { 
+        ^
+1 errors
+===
+template: "Java.IllegalExpressionStartError"
+---
+# IllegalExpressionStartError
+This error occurs when the compiler encounters an expression that is not valid.
+```
+            System.out.println("b");
+        ) else { 
+        ^^^^^^
+            System.out.println("c");
+        }
+```
+## Steps to fix
+### Use the right closing bracket
+Ensure that the right closing bracket for the else branch of your if statement is used.
+```diff
+        if (true) {
+            System.out.println("b");
+-         ) else { 
++         } else { 
+            System.out.println("c");
+        }
+```

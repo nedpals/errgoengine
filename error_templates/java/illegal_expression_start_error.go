@@ -1,6 +1,8 @@
 package java
 
 import (
+	"strings"
+
 	lib "github.com/nedpals/errgoengine"
 )
 
@@ -9,11 +11,20 @@ var IllegalExpressionStartError = lib.ErrorTemplate{
 	Pattern:           comptimeErrorPattern(`illegal start of expression`),
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, m *lib.MainError) {
-		for q := m.Nearest.Query("(ERROR) @error"); q.Next(); {
-			node := q.CurrentNode()
-			m.Nearest = node
-			// aCtx.NearestClass = node
-			break
+		for nearest := m.Nearest; !nearest.IsNull(); nearest = nearest.Parent() {
+			found := false
+
+			for q := nearest.Query("(ERROR) @error"); q.Next(); {
+				node := q.CurrentNode()
+				m.Nearest = node
+				found = true
+				// aCtx.NearestClass = node
+				break
+			}
+
+			if found {
+				break
+			}
 		}
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
@@ -42,6 +53,15 @@ var IllegalExpressionStartError = lib.ErrorTemplate{
 						NewText:       ")",
 						StartPosition: parent.EndPosition(),
 						EndPosition:   parent.EndPosition(),
+					})
+			})
+		} else if errNodeText := cd.MainError.Nearest.Text(); !strings.HasPrefix(errNodeText, "}") && strings.HasSuffix(errNodeText, "else") {
+			gen.Add("Use the right closing bracket", func(s *lib.BugFixSuggestion) {
+				s.AddStep("Ensure that the right closing bracket for the else branch of your if statement is used").
+					AddFix(lib.FixSuggestion{
+						NewText:       "} else",
+						StartPosition: cd.MainError.Nearest.StartPosition(),
+						EndPosition:   cd.MainError.Nearest.EndPosition(),
 					})
 			})
 		}
