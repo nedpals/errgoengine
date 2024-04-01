@@ -217,9 +217,7 @@ func (c *QueryNodeCursor) Query() *sitter.Query {
 
 func (c *QueryNodeCursor) Len() int {
 	if c.matchCursor == nil {
-		if !c.NextMatch() {
-			return 0
-		}
+		return 0
 	}
 	return len(c.matchCursor.Captures())
 }
