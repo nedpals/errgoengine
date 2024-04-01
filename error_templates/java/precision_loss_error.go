@@ -45,28 +45,30 @@ var PrecisionLossError = lib.ErrorTemplate{
 			})
 		})
 
-		gen.Add(fmt.Sprintf("Use an 'f' suffix for the %s literal", cd.Variables["targetType"]), func(s *lib.BugFixSuggestion) {
-			nearestTree := cd.InitOrGetSymbolTree(cd.MainError.DocumentPath()).GetNearestScopedTree(variableInvolved.StartPosition().Index)
+		if cd.Variables["targetType"] != "int" {
+			gen.Add(fmt.Sprintf("Use an 'f' suffix for the %s literal", cd.Variables["targetType"]), func(s *lib.BugFixSuggestion) {
+				nearestTree := cd.InitOrGetSymbolTree(cd.MainError.DocumentPath()).GetNearestScopedTree(variableInvolved.StartPosition().Index)
 
-			involvedVariable := nearestTree.GetSymbolByNode(variableInvolved)
-			if involvedVariable == nil {
-				// TODO: remove this check(?)
-				return
-			}
+				involvedVariable := nearestTree.GetSymbolByNode(variableInvolved)
+				if involvedVariable == nil {
+					// TODO: remove this check(?)
+					return
+				}
 
-			node := cd.MainError.Document.RootNode().
-				NamedDescendantForPointRange(involvedVariable.Location())
+				node := cd.MainError.Document.RootNode().
+					NamedDescendantForPointRange(involvedVariable.Location())
 
-			involvedVariableValueNode := node.ChildByFieldName("value")
+				involvedVariableValueNode := node.ChildByFieldName("value")
 
-			s.AddStep(
-				"Alternatively, you can use the 'f' suffix to specify that the literal is of type %s.",
-				cd.Variables["targetType"]).AddFix(lib.FixSuggestion{
-				NewText:       involvedVariableValueNode.Text() + "f",
-				StartPosition: variableInvolved.StartPosition(),
-				EndPosition:   variableInvolved.EndPosition(),
-				Description:   "This way, you directly define the float variable without the need for casting.",
+				s.AddStep(
+					"Alternatively, you can use the 'f' suffix to specify that the literal is of type %s.",
+					cd.Variables["targetType"]).AddFix(lib.FixSuggestion{
+					NewText:       involvedVariableValueNode.Text() + "f",
+					StartPosition: variableInvolved.StartPosition(),
+					EndPosition:   variableInvolved.EndPosition(),
+					Description:   "This way, you directly define the float variable without the need for casting.",
+				})
 			})
-		})
+		}
 	},
 }
