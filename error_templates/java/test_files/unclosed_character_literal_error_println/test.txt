@@ -1,0 +1,44 @@
+template: "Java.UnclosedCharacterLiteralError"
+name: "Println"
+---
+Main.java:3: error: unclosed character literal
+        System.out.println('test');
+                           ^
+Main.java:3: error: unclosed character literal
+        System.out.println('test');
+                                ^
+2 errors
+===
+template: "Java.UnclosedCharacterLiteralError"
+---
+# UnclosedCharacterLiteralError
+This error occurs when there's an attempt to define a character literal with more than one character, or if the character literal is not closed properly.
+```
+    public static void main(String[] args) {
+        System.out.println('test');
+                           ^^^^^^
+    }
+}
+```
+## Steps to fix
+### 1. Convert string text to double quotes
+The character literal should contain only one character. If you intend to create a string, use double quotes (`"`).
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         System.out.println('test');
++         System.out.println("test");
+    }
+}
+```
+
+### 2. Use single quotes for characters
+If your intention is to only use a single character, ensure that you use single quotes (`'`) and it only contains one character only.
+```diff
+public class Main {
+    public static void main(String[] args) {
+-         System.out.println('test');
++         System.out.println('t');
+    }
+}
+```

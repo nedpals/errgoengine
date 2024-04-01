@@ -15,19 +15,20 @@ var UnclosedCharacterLiteralError = lib.ErrorTemplate{
 	Pattern:           comptimeErrorPattern(`unclosed character literal`),
 	StackTracePattern: comptimeStackTracePattern,
 	OnAnalyzeErrorFn: func(cd *lib.ContextData, err *lib.MainError) {
-		err.Context = unclosedCharacterLiteralErrorCtx{
+		uContext := unclosedCharacterLiteralErrorCtx{
 			parent: err.Nearest,
 		}
 
-		if err.Nearest.Type() == "character_literal" {
-			return
+		if err.Nearest.Type() != "character_literal" {
+			for q := err.Nearest.Query(`(character_literal) @literal`); q.Next(); {
+				node := q.CurrentNode()
+				err.Nearest = node
+				uContext.parent = node.Parent()
+				break
+			}
 		}
 
-		for q := err.Nearest.Query(`(character_literal) @literal`); q.Next(); {
-			node := q.CurrentNode()
-			err.Nearest = node
-			break
-		}
+		err.Context = uContext
 	},
 	OnGenExplainFn: func(cd *lib.ContextData, gen *lib.ExplainGenerator) {
 		gen.Add("This error occurs when there's an attempt to define a character literal with more than one character, or if the character literal is not closed properly.")
@@ -83,6 +84,44 @@ var UnclosedCharacterLiteralError = lib.ErrorTemplate{
 						})
 				})
 			}
+		} else if isString := len(valueNode.Text()) > 1; isString {
+			valueStartPos := valueNode.StartPosition()
+			valueEndPos := valueNode.EndPosition()
+
+			gen.Add("Convert string text to double quotes", func(s *lib.BugFixSuggestion) {
+				s.AddStep("The character literal should contain only one character. If you intend to create a string, use double quotes (`\"`).").
+					AddFix(lib.FixSuggestion{
+						NewText: "\"",
+						StartPosition: lib.Position{
+							Line:   valueStartPos.Line,
+							Column: valueStartPos.Column,
+						},
+						EndPosition: lib.Position{
+							Line:   valueStartPos.Line,
+							Column: valueStartPos.Column + 1,
+						},
+					}).
+					AddFix(lib.FixSuggestion{
+						NewText: "\"",
+						StartPosition: lib.Position{
+							Line:   valueEndPos.Line,
+							Column: valueEndPos.Column - 2,
+						},
+						EndPosition: lib.Position{
+							Line:   valueEndPos.Line,
+							Column: valueEndPos.Column - 1,
+						},
+					})
+			})
+
+			gen.Add("Use single quotes for characters", func(s *lib.BugFixSuggestion) {
+				s.AddStep("If your intention is to only use a single character, ensure that you use single quotes (`'`) and it only contains one character only.").
+					AddFix(lib.FixSuggestion{
+						NewText:       fmt.Sprintf("'%c'", valueNode.Text()[1]),
+						StartPosition: valueStartPos,
+						EndPosition:   valueEndPos,
+					})
+			})
 		}
 	},
 }
